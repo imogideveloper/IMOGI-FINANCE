@@ -137,13 +137,12 @@ app_license = "mit"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Purchase Invoice": {"on_submit": "imogi_finance.events.purchase_invoice.on_submit"},
+	"Journal Entry": {"on_submit": "imogi_finance.events.journal_entry.on_submit"},
+	"Payment Entry": {"on_submit": "imogi_finance.events.payment_entry.on_submit"},
+	"Asset": {"on_submit": "imogi_finance.events.asset.on_submit"},
+}
 
 # Scheduled Tasks
 # ---------------
@@ -242,3 +241,20 @@ app_license = "mit"
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
+
+
+fixtures = [
+    {
+        "dt": "Custom Field",
+        "filters": [["name", "in", [
+            "Purchase Invoice-imogi_expense_request",
+            "Purchase Invoice-imogi_request_type",
+            "Purchase Invoice-imogi_pph_type",
+            "Payment Entry-imogi_expense_request",
+            "Asset-imogi_expense_request",
+            "Journal Entry-imogi_expense_request",
+        ]]],
+    },
+    {"dt": "Workspace", "filters": [["name", "=", "IMOGI FINANCE"]]},
+    {"dt": "Workflow", "filters": [["name", "=", "Expense Request Workflow"]]},
+]

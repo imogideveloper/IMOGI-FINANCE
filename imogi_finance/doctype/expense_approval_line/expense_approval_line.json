@@ -1,0 +1,90 @@
+{
+  "allow_rename": 0,
+  "autoname": "hash",
+  "creation": "",
+  "docstatus": 0,
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "expense_account",
+    "min_amount",
+    "max_amount",
+    "section_break_1",
+    "level_1_role",
+    "level_1_user",
+    "level_2_role",
+    "level_2_user",
+    "level_3_role",
+    "level_3_user"
+  ],
+  "fields": [
+    {
+      "fieldname": "expense_account",
+      "fieldtype": "Link",
+      "label": "Expense Account",
+      "options": "Account",
+      "reqd": 1
+    },
+    {
+      "fieldname": "min_amount",
+      "fieldtype": "Currency",
+      "label": "Minimum Amount",
+      "reqd": 1
+    },
+    {
+      "fieldname": "max_amount",
+      "fieldtype": "Currency",
+      "label": "Maximum Amount",
+      "reqd": 1
+    },
+    {
+      "fieldname": "section_break_1",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "level_1_role",
+      "fieldtype": "Link",
+      "label": "Level 1 Role",
+      "options": "Role"
+    },
+    {
+      "fieldname": "level_1_user",
+      "fieldtype": "Link",
+      "label": "Level 1 User",
+      "options": "User"
+    },
+    {
+      "fieldname": "level_2_role",
+      "fieldtype": "Link",
+      "label": "Level 2 Role",
+      "options": "Role"
+    },
+    {
+      "fieldname": "level_2_user",
+      "fieldtype": "Link",
+      "label": "Level 2 User",
+      "options": "User"
+    },
+    {
+      "fieldname": "level_3_role",
+      "fieldtype": "Link",
+      "label": "Level 3 Role",
+      "options": "Role"
+    },
+    {
+      "fieldname": "level_3_user",
+      "fieldtype": "Link",
+      "label": "Level 3 User",
+      "options": "User"
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "istable": 1,
+  "module": "Imogi Finance",
+  "name": "Expense Approval Line",
+  "naming_rule": "Random",
+  "permissions": [],
+  "quick_entry": 0,
+  "track_changes": 1
+}

@@ -1,0 +1,36 @@
+{
+  "charts": [],
+  "content": "[\n  {\"id\": \"title\", \"type\": \"header\", \"data\": {\"text\": \"IMOGI FINANCE\"}, \"col\": 12},\n  {\"id\": \"requests\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Expense Request\", \"type\": \"DocType\", \"doc_view\": \"List\", \"label\": \"Expense Request\", \"target\": \"Expense Request\"}, \"col\": 4},\n  {\"id\": \"settings\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Approval Settings\", \"type\": \"DocType\", \"doc_view\": \"List\", \"label\": \"Expense Approval Setting\", \"target\": \"Expense Approval Setting\"}, \"col\": 4},\n  {\"id\": \"pi\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Purchase Invoices\", \"type\": \"URL\", \"label\": \"Purchase Invoice (Linked)\", \"url\": \"/app/purchase-invoice?imogi_expense_request!=null\"}, \"col\": 4},\n  {\"id\": \"pe\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Payment Entries\", \"type\": \"URL\", \"label\": \"Payment Entry (Linked)\", \"url\": \"/app/payment-entry?imogi_expense_request!=null\"}, \"col\": 4},\n  {\"id\": \"asset\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Assets\", \"type\": \"URL\", \"label\": \"Assets (Linked)\", \"url\": \"/app/asset?imogi_expense_request!=null\"}, \"col\": 4},\n  {\"id\": \"je\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Journal Entries\", \"type\": \"URL\", \"label\": \"Journal Entry (Linked)\", \"url\": \"/app/journal-entry?imogi_expense_request!=null\"}, \"col\": 4}\n]",
+  "creation": "",
+  "docstatus": 0,
+  "doctype": "Workspace",
+  "extends": "",
+  "hide_custom": 0,
+  "icon": "briefcase",
+  "idx": 0,
+  "is_hidden": 0,
+  "label": "IMOGI FINANCE",
+  "links": [],
+  "module": "Imogi Finance",
+  "name": "IMOGI FINANCE",
+  "number_cards": [],
+  "parent_page": "",
+  "public": 1,
+  "quick_lists": [],
+  "roles": [
+    {"role": "System Manager"},
+    {"role": "Accounts Manager"},
+    {"role": "Accounts User"}
+  ],
+  "sequence_id": 0,
+  "shortcuts": [
+    {"shortcut_name": "Expense Request", "type": "DocType", "doc_view": "List", "link_to": "Expense Request", "idx": 1},
+    {"shortcut_name": "Expense Approval Setting", "type": "DocType", "doc_view": "List", "link_to": "Expense Approval Setting", "idx": 2},
+    {"shortcut_name": "Purchase Invoice (Linked)", "type": "URL", "url": "/app/purchase-invoice?imogi_expense_request!=null", "idx": 3},
+    {"shortcut_name": "Payment Entry (Linked)", "type": "URL", "url": "/app/payment-entry?imogi_expense_request!=null", "idx": 4},
+    {"shortcut_name": "Assets (Linked)", "type": "URL", "url": "/app/asset?imogi_expense_request!=null", "idx": 5},
+    {"shortcut_name": "Journal Entry (Linked)", "type": "URL", "url": "/app/journal-entry?imogi_expense_request!=null", "idx": 6}
+  ],
+  "title": "IMOGI FINANCE",
+  "type": "Workspace"
+}

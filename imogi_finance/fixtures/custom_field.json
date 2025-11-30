@@ -1,0 +1,62 @@
+[
+  {
+    "doctype": "Custom Field",
+    "dt": "Purchase Invoice",
+    "fieldname": "imogi_expense_request",
+    "fieldtype": "Link",
+    "insert_after": "naming_series",
+    "label": "Expense Request",
+    "options": "Expense Request",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Purchase Invoice",
+    "fieldname": "imogi_request_type",
+    "fieldtype": "Select",
+    "insert_after": "imogi_expense_request",
+    "label": "Request Type",
+    "options": "Expense\nAsset",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Purchase Invoice",
+    "fieldname": "imogi_pph_type",
+    "fieldtype": "Link",
+    "insert_after": "imogi_request_type",
+    "label": "PPh Type",
+    "options": "Tax Withholding Category",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Payment Entry",
+    "fieldname": "imogi_expense_request",
+    "fieldtype": "Link",
+    "insert_after": "party",
+    "label": "Expense Request",
+    "options": "Expense Request",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Asset",
+    "fieldname": "imogi_expense_request",
+    "fieldtype": "Link",
+    "insert_after": "location",
+    "label": "Expense Request",
+    "options": "Expense Request",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Journal Entry",
+    "fieldname": "imogi_expense_request",
+    "fieldtype": "Link",
+    "insert_after": "user_remark",
+    "label": "Expense Request",
+    "options": "Expense Request",
+    "allow_on_submit": 1
+  }
+]

@@ -1,0 +1,370 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "format:ER-{######}",
+  "creation": "",
+  "docstatus": 0,
+  "doctype": "DocType",
+  "editable_grid": 0,
+  "engine": "InnoDB",
+  "field_order": [
+    "request_date",
+    "requester_type",
+    "requester",
+    "supplier_section",
+    "supplier",
+    "supplier_invoice_no",
+    "supplier_invoice_date",
+    "request_type",
+    "asset_section",
+    "asset_category",
+    "asset_name",
+    "asset_description",
+    "asset_location",
+    "costing_section",
+    "expense_account",
+    "description",
+    "amount",
+    "currency",
+    "cost_center",
+    "project",
+    "attachment",
+    "taxes_section",
+    "is_ppn_applicable",
+    "ppn_template",
+    "is_pph_applicable",
+    "pph_type",
+    "pph_base_amount",
+    "status",
+    "approvers_section",
+    "level_1_role",
+    "level_1_user",
+    "level_2_role",
+    "level_2_user",
+    "level_3_role",
+    "level_3_user",
+    "integration_section",
+    "linked_purchase_invoice",
+    "linked_payment_entry",
+    "linked_journal_entry",
+    "linked_asset"
+  ],
+  "fields": [
+    {
+      "default": "Today",
+      "fieldname": "request_date",
+      "fieldtype": "Date",
+      "label": "Request Date",
+      "reqd": 1
+    },
+    {
+      "default": "User",
+      "fieldname": "requester_type",
+      "fieldtype": "Select",
+      "label": "Requester Type",
+      "options": "User\nEmployee",
+      "reqd": 1
+    },
+    {
+      "fieldname": "requester",
+      "fieldtype": "Dynamic Link",
+      "label": "Requester",
+      "options": "requester_type"
+    },
+    {
+      "collapsible": 1,
+      "fieldname": "supplier_section",
+      "fieldtype": "Section Break",
+      "label": "Supplier"
+    },
+    {
+      "fieldname": "supplier",
+      "fieldtype": "Link",
+      "label": "Supplier",
+      "options": "Supplier",
+      "reqd": 1
+    },
+    {
+      "fieldname": "supplier_invoice_no",
+      "fieldtype": "Data",
+      "label": "Supplier Invoice No"
+    },
+    {
+      "fieldname": "supplier_invoice_date",
+      "fieldtype": "Date",
+      "label": "Supplier Invoice Date"
+    },
+    {
+      "default": "Expense",
+      "fieldname": "request_type",
+      "fieldtype": "Select",
+      "label": "Request Type",
+      "options": "Expense\nAsset",
+      "reqd": 1
+    },
+    {
+      "collapsible": 1,
+      "depends_on": "eval:doc.request_type==\"Asset\"",
+      "fieldname": "asset_section",
+      "fieldtype": "Section Break",
+      "label": "Asset Details"
+    },
+    {
+      "depends_on": "eval:doc.request_type==\"Asset\"",
+      "fieldname": "asset_category",
+      "fieldtype": "Link",
+      "label": "Asset Category",
+      "options": "Asset Category"
+    },
+    {
+      "depends_on": "eval:doc.request_type==\"Asset\"",
+      "fieldname": "asset_name",
+      "fieldtype": "Data",
+      "label": "Asset Name"
+    },
+    {
+      "depends_on": "eval:doc.request_type==\"Asset\"",
+      "fieldname": "asset_description",
+      "fieldtype": "Small Text",
+      "label": "Asset Description"
+    },
+    {
+      "depends_on": "eval:doc.request_type==\"Asset\"",
+      "fieldname": "asset_location",
+      "fieldtype": "Link",
+      "label": "Asset Location",
+      "options": "Location"
+    },
+    {
+      "collapsible": 1,
+      "fieldname": "costing_section",
+      "fieldtype": "Section Break",
+      "label": "Costing"
+    },
+    {
+      "fieldname": "expense_account",
+      "fieldtype": "Link",
+      "label": "Expense Account",
+      "options": "Account",
+      "reqd": 1
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Small Text",
+      "label": "Description"
+    },
+    {
+      "fieldname": "amount",
+      "fieldtype": "Currency",
+      "label": "Amount",
+      "reqd": 1
+    },
+    {
+      "default": "IDR",
+      "fieldname": "currency",
+      "fieldtype": "Link",
+      "label": "Currency",
+      "options": "Currency"
+    },
+    {
+      "fieldname": "cost_center",
+      "fieldtype": "Link",
+      "label": "Cost Center",
+      "options": "Cost Center",
+      "reqd": 1
+    },
+    {
+      "fieldname": "project",
+      "fieldtype": "Link",
+      "label": "Project",
+      "options": "Project"
+    },
+    {
+      "fieldname": "attachment",
+      "fieldtype": "Attach",
+      "label": "Attachment"
+    },
+    {
+      "collapsible": 1,
+      "fieldname": "taxes_section",
+      "fieldtype": "Section Break",
+      "label": "Taxes"
+    },
+    {
+      "default": "0",
+      "fieldname": "is_ppn_applicable",
+      "fieldtype": "Check",
+      "label": "Apply PPN"
+    },
+    {
+      "depends_on": "eval:doc.is_ppn_applicable==1",
+      "fieldname": "ppn_template",
+      "fieldtype": "Link",
+      "label": "PPN Template",
+      "options": "Purchase Taxes and Charges Template"
+    },
+    {
+      "default": "0",
+      "fieldname": "is_pph_applicable",
+      "fieldtype": "Check",
+      "label": "Apply PPh"
+    },
+    {
+      "depends_on": "eval:doc.is_pph_applicable==1",
+      "fieldname": "pph_type",
+      "fieldtype": "Link",
+      "label": "PPh Type",
+      "options": "Tax Withholding Category"
+    },
+    {
+      "depends_on": "eval:doc.is_pph_applicable==1",
+      "fieldname": "pph_base_amount",
+      "fieldtype": "Currency",
+      "label": "PPh Base Amount"
+    },
+    {
+      "default": "Draft",
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Draft\nPending Level 1\nPending Level 2\nPending Level 3\nApproved\nRejected\nLinked\nClosed",
+      "read_only": 1
+    },
+    {
+      "collapsible": 1,
+      "fieldname": "approvers_section",
+      "fieldtype": "Section Break",
+      "label": "Approval Route"
+    },
+    {
+      "fieldname": "level_1_role",
+      "fieldtype": "Link",
+      "label": "Level 1 Role",
+      "options": "Role",
+      "read_only": 1
+    },
+    {
+      "fieldname": "level_1_user",
+      "fieldtype": "Link",
+      "label": "Level 1 User",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "level_2_role",
+      "fieldtype": "Link",
+      "label": "Level 2 Role",
+      "options": "Role",
+      "read_only": 1
+    },
+    {
+      "fieldname": "level_2_user",
+      "fieldtype": "Link",
+      "label": "Level 2 User",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "level_3_role",
+      "fieldtype": "Link",
+      "label": "Level 3 Role",
+      "options": "Role",
+      "read_only": 1
+    },
+    {
+      "fieldname": "level_3_user",
+      "fieldtype": "Link",
+      "label": "Level 3 User",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "collapsible": 1,
+      "fieldname": "integration_section",
+      "fieldtype": "Section Break",
+      "label": "Integrations"
+    },
+    {
+      "fieldname": "linked_purchase_invoice",
+      "fieldtype": "Link",
+      "label": "Linked Purchase Invoice",
+      "options": "Purchase Invoice",
+      "read_only": 1
+    },
+    {
+      "fieldname": "linked_payment_entry",
+      "fieldtype": "Link",
+      "label": "Linked Payment Entry",
+      "options": "Payment Entry",
+      "read_only": 1
+    },
+    {
+      "fieldname": "linked_journal_entry",
+      "fieldtype": "Link",
+      "label": "Linked Journal Entry",
+      "options": "Journal Entry",
+      "read_only": 1
+    },
+    {
+      "fieldname": "linked_asset",
+      "fieldtype": "Link",
+      "label": "Linked Asset",
+      "options": "Asset",
+      "read_only": 1
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "is_submittable": 1,
+  "istable": 0,
+  "links": [],
+  "module": "Imogi Finance",
+  "name": "Expense Request",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts User",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "cancel": 1,
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts Manager",
+      "share": 1,
+      "submit": 1,
+      "write": 1
+    },
+    {
+      "cancel": 1,
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "submit": 1,
+      "write": 1
+    }
+  ],
+  "quick_entry": 0,
+  "show_name_in_global_search": 1,
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "track_changes": 1,
+  "track_seen": 1
+}

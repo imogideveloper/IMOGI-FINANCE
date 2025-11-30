@@ -1,0 +1,57 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "format:EAS-{######}",
+  "creation": "",
+  "docstatus": 0,
+  "doctype": "DocType",
+  "editable_grid": 0,
+  "engine": "InnoDB",
+  "field_order": [
+    "cost_center",
+    "is_active",
+    "expense_approval_lines"
+  ],
+  "fields": [
+    {
+      "fieldname": "cost_center",
+      "fieldtype": "Link",
+      "label": "Cost Center",
+      "options": "Cost Center",
+      "reqd": 1
+    },
+    {
+      "default": "1",
+      "fieldname": "is_active",
+      "fieldtype": "Check",
+      "label": "Is Active"
+    },
+    {
+      "fieldname": "expense_approval_lines",
+      "fieldtype": "Table",
+      "label": "Expense Approval Lines",
+      "options": "Expense Approval Line"
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "istable": 0,
+  "links": [],
+  "module": "Imogi Finance",
+  "name": "Expense Approval Setting",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "quick_entry": 0,
+  "track_changes": 1
+}

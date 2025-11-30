@@ -1,0 +1,101 @@
+{
+  "actions": [
+    {"action": "Submit", "allowed": 1},
+    {"action": "Approve", "allowed": 1},
+    {"action": "Reject", "allowed": 1},
+    {"action": "Close", "allowed": 1}
+  ],
+  "creation": "",
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "Expense Request",
+  "is_active": 1,
+  "module": "Imogi Finance",
+  "name": "Expense Request Workflow",
+  "override_status": 1,
+  "states": [
+    {"state": "Draft", "doc_status": 0, "allow_edit": "Accounts User"},
+    {"state": "Pending Level 1", "doc_status": 1, "allow_edit": "Accounts Manager"},
+    {"state": "Pending Level 2", "doc_status": 1, "allow_edit": "Accounts Manager"},
+    {"state": "Pending Level 3", "doc_status": 1, "allow_edit": "Accounts Manager"},
+    {"state": "Approved", "doc_status": 1, "allow_edit": "Accounts Manager"},
+    {"state": "Rejected", "doc_status": 1, "allow_edit": "Accounts Manager"},
+    {"state": "Linked", "doc_status": 1, "allow_edit": "Accounts Manager"},
+    {"state": "Closed", "doc_status": 1, "allow_edit": "System Manager"}
+  ],
+  "states_field": "status",
+  "transitions": [
+    {
+      "action": "Submit",
+      "allow_self_approval": 1,
+      "allowed": "Accounts User",
+      "state": "Draft",
+      "next_state": "Pending Level 1",
+      "doc_status": 1
+    },
+    {
+      "action": "Approve",
+      "allowed": "Accounts Manager",
+      "state": "Pending Level 1",
+      "next_state": "Pending Level 2",
+      "doc_status": 1
+    },
+    {
+      "action": "Approve",
+      "allowed": "Accounts Manager",
+      "state": "Pending Level 2",
+      "next_state": "Pending Level 3",
+      "doc_status": 1
+    },
+    {
+      "action": "Approve",
+      "allowed": "Accounts Manager",
+      "state": "Pending Level 3",
+      "next_state": "Approved",
+      "doc_status": 1
+    },
+    {
+      "action": "Approve",
+      "allowed": "Accounts Manager",
+      "state": "Pending Level 1",
+      "next_state": "Approved",
+      "doc_status": 1
+    },
+    {
+      "action": "Approve",
+      "allowed": "Accounts Manager",
+      "state": "Pending Level 2",
+      "next_state": "Approved",
+      "doc_status": 1
+    },
+    {
+      "action": "Reject",
+      "allowed": "Accounts Manager",
+      "state": "Pending Level 1",
+      "next_state": "Rejected",
+      "doc_status": 1
+    },
+    {
+      "action": "Reject",
+      "allowed": "Accounts Manager",
+      "state": "Pending Level 2",
+      "next_state": "Rejected",
+      "doc_status": 1
+    },
+    {
+      "action": "Reject",
+      "allowed": "Accounts Manager",
+      "state": "Pending Level 3",
+      "next_state": "Rejected",
+      "doc_status": 1
+    },
+    {
+      "action": "Close",
+      "allowed": "System Manager",
+      "state": "Linked",
+      "next_state": "Closed",
+      "doc_status": 1
+    }
+  ],
+  "workflow_state_field": "status"
+}
