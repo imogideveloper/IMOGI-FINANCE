@@ -244,6 +244,7 @@ doc_events = {
 
 
 fixtures = [
+    "Workspace",
     {
         "dt": "Custom Field",
         "filters": [["name", "in", [
