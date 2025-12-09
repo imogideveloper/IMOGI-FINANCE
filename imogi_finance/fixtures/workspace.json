@@ -1,42 +1,50 @@
-{
-  "name": "IMOGI FINANCE",
-  "label": "IMOGI FINANCE",
-  "module": "IMOGI FINANCE",
-  "is_standard": 1,
-  "public": 1,
-  "content": "",
-  "shortcuts": [
-    {
-      "label": "Expense Request",
-      "type": "DocType",
-      "link_to":"Expense Request",
-      "doc_view": "List",
-      "col": 4
-    },
-    {
-      "label": "Approval Settings",
-      "type": "DocType",
-      "link_to":"Expense Approval Setting",
-      "doc_view": "List",
-      "col": 4
-    },
-    {
-      "label": "Purchase Invoice (Linked)",
-      "type": "URL",
-      "link_to": "/app/purchase-invoice?imogi_expense_request!=null",
-      "col": 4
-    },
-    {
-      "label": "Payment Entry (Linked)",
-      "type": "URL",
-      "link_to": "/app/payment-entry?imogi_expense_request!=null",
-      "col": 4
-    },
-    {
-      "label": "Asset (Linked)",
-      "type": "URL",
-      "link_to": "/app/asset?imogi_expense_request!=null",
-      "col": 4
-    }
-  ]
-}
+[
+  {
+    "doctype": "Workspace",
+    "name": "IMOGI FINANCE",
+    "label": "IMOGI FINANCE",
+    "module": "IMOGI FINANCE",
+    "is_standard": 1,
+    "public": 1,
+    "content": "",
+    "shortcuts": [
+      {
+        "doctype": "Workspace Shortcut",
+        "label": "Expense Request",
+        "type": "DocType",
+        "link_to": "Expense Request",
+        "doc_view": "List",
+        "col": 4
+      },
+      {
+        "doctype": "Workspace Shortcut",
+        "label": "Approval Settings",
+        "type": "DocType",
+        "link_to": "Expense Approval Setting",
+        "doc_view": "List",
+        "col": 4
+      },
+      {
+        "doctype": "Workspace Shortcut",
+        "label": "Purchase Invoice (Linked)",
+        "type": "URL",
+        "link_to": "/app/purchase-invoice?imogi_expense_request!=null",
+        "col": 4
+      },
+      {
+        "doctype": "Workspace Shortcut",
+        "label": "Payment Entry (Linked)",
+        "type": "URL",
+        "link_to": "/app/payment-entry?imogi_expense_request!=null",
+        "col": 4
+      },
+      {
+        "doctype": "Workspace Shortcut",
+        "label": "Asset (Linked)",
+        "type": "URL",
+        "link_to": "/app/asset?imogi_expense_request!=null",
+        "col": 4
+      }
+    ]
+  }
+]
