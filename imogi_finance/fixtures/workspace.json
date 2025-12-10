@@ -1,51 +1,52 @@
 [
   {
     "doctype": "Workspace",
-    "name": "IMOGI FINANCE",
-    "label": "IMOGI FINANCE",
-    "title": "IMOGI FINANCE",
-    "module": "IMOGI FINANCE",
-    "is_standard": 1,
+    "name": "FINANCE IMOGI",
+    "title": "FINANCE IMOGI",
+    "label": "FINANCE IMOGI",
+    "icon": "bank",
+    "module": "Imogi Finance",
     "public": 1,
-    "content": [],
+    "sequence": 10,
+    "is_hidden": 0,
+    "hide_custom": 0,
+    "content_type": "Blocks",
+
+    "content": "[{\"id\":\"hdr1\",\"type\":\"header\",\"data\":{\"text\":\"Expense & Approval\",\"col\":12}},{\"id\":\"s1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Expense Request\",\"col\":3}},{\"id\":\"s2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Approval Settings\",\"col\":3}},{\"id\":\"spacer1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"hdr2\",\"type\":\"header\",\"data\":{\"text\":\"Linked Documents\",\"col\":12}},{\"id\":\"c1\",\"type\":\"card\",\"data\":{\"col\":6,\"links\":[{\"label\":\"Purchase Invoice (Linked)\",\"link_to\":\"/app/purchase-invoice?imogi_expense_request!=null\",\"type\":\"URL\"},{\"label\":\"Payment Entry (Linked)\",\"link_to\":\"/app/payment-entry?imogi_expense_request!=null\",\"type\":\"URL\"},{\"label\":\"Asset (Linked)\",\"link_to\":\"/app/asset?imogi_expense_request!=null\",\"type\":\"URL\"}]}}]",
+
     "shortcuts": [
       {
-        "doctype": "Workspace Shortcut",
         "label": "Expense Request",
-        "type": "DocType",
         "link_to": "Expense Request",
-        "doc_view": "List",
-        "col": 4
+        "type": "DocType"
       },
       {
-        "doctype": "Workspace Shortcut",
         "label": "Approval Settings",
-        "type": "DocType",
         "link_to": "Expense Approval Setting",
-        "doc_view": "List",
-        "col": 4
+        "type": "DocType"
       },
       {
-        "doctype": "Workspace Shortcut",
         "label": "Purchase Invoice (Linked)",
-        "type": "URL",
         "link_to": "/app/purchase-invoice?imogi_expense_request!=null",
-        "col": 4
+        "type": "URL"
       },
       {
-        "doctype": "Workspace Shortcut",
         "label": "Payment Entry (Linked)",
-        "type": "URL",
         "link_to": "/app/payment-entry?imogi_expense_request!=null",
-        "col": 4
+        "type": "URL"
       },
       {
-        "doctype": "Workspace Shortcut",
         "label": "Asset (Linked)",
-        "type": "URL",
         "link_to": "/app/asset?imogi_expense_request!=null",
-        "col": 4
+        "type": "URL"
       }
-    ]
+    ],
+
+    "cards": [],
+    "custom_blocks": [],
+    "links": [],
+    "charts": [],
+    "quick_lists": [],
+    "number_cards": []
   }
 ]
