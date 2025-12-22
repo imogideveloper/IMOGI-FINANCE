@@ -189,11 +189,18 @@ def parse_row(row: dict, field_map: dict[str, str]) -> ParsedStatementRow:
     if not posting_date_raw:
         raise frappe.ValidationError(_("Posting Date is missing."))
 
+    normalized_posting_date = normalize_header(posting_date_raw)
+    skip_markers = ("pend", "pending", "saldo awal", "saldo akhir")
+
+    if any(
+        normalized_posting_date == marker or normalized_posting_date.startswith(marker)
+        for marker in skip_markers
+    ):
+        raise SkipRow
+
     try:
         posting_date = getdate(posting_date_raw)
     except Exception as exc:  # noqa: BLE001 - allow skipping pending markers
-        if normalize_header(posting_date_raw) in {"pend", "pending"}:
-            raise SkipRow from exc
         raise
     description = get_value("description")
     reference_number = get_value("reference_number") or None
