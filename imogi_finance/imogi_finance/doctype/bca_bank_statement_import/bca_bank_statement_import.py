@@ -246,14 +246,29 @@ def parse_row(row: dict, field_map: dict[str, str]) -> ParsedStatementRow:
         raise
     description = get_value("description")
     reference_number = get_value("reference_number") or None
-    debit = parse_amount(get_value("debit"))
-    credit = parse_amount(get_value("credit"))
-    amount = parse_amount(get_value("amount"))
+    debit, debit_type = parse_amount_with_marker(get_value("debit"), normalize_sign=True)
+    credit, credit_type = parse_amount_with_marker(get_value("credit"), normalize_sign=True)
+    amount, amount_type = parse_amount_with_marker(get_value("amount"), normalize_sign=True)
     balance = parse_amount(get_value("balance"))
     currency = get_value("currency") or "IDR"
 
+    debit = debit or 0
+    credit = credit or 0
+
+    if debit_type == "credit":
+        credit += debit
+        debit = 0
+
+    if credit_type == "debit":
+        debit += credit
+        credit = 0
+
     if not debit and not credit and amount is not None:
-        if amount > 0:
+        if amount_type == "credit":
+            credit = amount
+        elif amount_type == "debit":
+            debit = amount
+        elif amount > 0:
             credit = amount
         elif amount < 0:
             debit = abs(amount)
@@ -276,19 +291,48 @@ def parse_row(row: dict, field_map: dict[str, str]) -> ParsedStatementRow:
         currency=currency,
     )
 
-
-def parse_amount(value: str) -> float | None:
-    cleaned = (value or "").replace(",", "").strip()
-
-    if cleaned.lower().endswith(("cr", "dr")):
-        cleaned = cleaned[:-2].strip()
+def parse_amount_with_marker(value: str, *, normalize_sign: bool) -> tuple[float | None, str | None]:
+    cleaned = (value or "").strip()
 
     if not cleaned:
-        return None
+        return None, None
+
+    marker = None
+    for candidate in ("cr", "db", "dr"):
+        if cleaned.lower().endswith(candidate):
+            marker = candidate
+            cleaned = cleaned[: -len(candidate)].strip()
+            break
+
+    cleaned = cleaned.replace(",", "")
+
+    if not cleaned:
+        return None, _map_marker_to_type(marker)
+
     try:
-        return flt(cleaned)
+        amount = flt(cleaned)
     except ValueError as exc:
         raise frappe.ValidationError(_("Invalid amount: {0}").format(value)) from exc
+
+    marker_type = _map_marker_to_type(marker)
+
+    if normalize_sign and marker_type:
+        amount = abs(amount)
+
+    return amount, marker_type
+
+
+def parse_amount(value: str) -> float | None:
+    amount, _ = parse_amount_with_marker(value, normalize_sign=False)
+    return amount
+
+
+def _map_marker_to_type(marker: str | None) -> str | None:
+    if marker == "cr":
+        return "credit"
+    if marker in {"db", "dr"}:
+        return "debit"
+    return None
 
 
 def map_headers(fieldnames: Iterable[str]) -> dict[str, str]:
