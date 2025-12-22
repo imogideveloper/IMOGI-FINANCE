@@ -51,6 +51,7 @@ class BCABankStatementImport(Document):
             file_bytes, parsed_rows = parse_bca_csv(self.source_file)
             self._guard_against_duplicate_upload(file_bytes)
             self._replace_rows(parsed_rows)
+            self._update_summary_fields()
             self._mark_parsed()
             self.save(ignore_permissions=True)
         except Exception:
@@ -136,6 +137,30 @@ class BCABankStatementImport(Document):
                     "convert_status": "Not Converted",
                 },
             )
+
+    def _update_summary_fields(self) -> None:
+        rows = self.get("statement_rows", [])
+        if not rows:
+            self.starting_balance = None
+            self.total_debit = None
+            self.total_credit = None
+            self.ending_balance = None
+            return
+
+        self.total_debit = sum(flt(row.debit) for row in rows)
+        self.total_credit = sum(flt(row.credit) for row in rows)
+
+        first_with_balance = next((row for row in rows if row.balance is not None), None)
+        last_with_balance = next((row for row in reversed(rows) if row.balance is not None), None)
+
+        starting_balance = None
+        if first_with_balance:
+            starting_balance = flt(first_with_balance.balance)
+            starting_balance -= flt(first_with_balance.credit)
+            starting_balance += flt(first_with_balance.debit)
+
+        self.starting_balance = starting_balance
+        self.ending_balance = flt(last_with_balance.balance) if last_with_balance else None
 
     def _mark_parsed(self) -> None:
         self.import_status = "Parsed"
