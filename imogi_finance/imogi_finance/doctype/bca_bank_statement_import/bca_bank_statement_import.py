@@ -190,6 +190,7 @@ def parse_row(row: dict, field_map: dict[str, str]) -> ParsedStatementRow:
         raise frappe.ValidationError(_("Posting Date is missing."))
 
     normalized_posting_date = normalize_header(posting_date_raw)
+    normalized_description = normalize_header(get_value("description"))
     skip_markers = (
         "pend",
         "pending",
@@ -202,6 +203,12 @@ def parse_row(row: dict, field_map: dict[str, str]) -> ParsedStatementRow:
 
     if any(
         normalized_posting_date == marker or normalized_posting_date.startswith(marker)
+        for marker in skip_markers
+    ):
+        raise SkipRow
+
+    if any(
+        marker in normalized_description or normalized_description.startswith(marker)
         for marker in skip_markers
     ):
         raise SkipRow
@@ -228,6 +235,8 @@ def parse_row(row: dict, field_map: dict[str, str]) -> ParsedStatementRow:
         raise frappe.ValidationError(_("Debit and Credit cannot both be set in the same row."))
 
     if not debit and not credit:
+        if amount in (0, None) and balance is not None:
+            raise SkipRow
         raise frappe.ValidationError(_("Either Debit or Credit must be provided."))
 
     return ParsedStatementRow(
