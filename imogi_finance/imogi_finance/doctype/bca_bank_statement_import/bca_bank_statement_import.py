@@ -462,7 +462,7 @@ def create_bank_transaction_from_row(
     filters = {
         "company": company,
         "bank_account": bank_account,
-        "posting_date": row.posting_date,
+        "date": row.posting_date,
         "reference_number": row.reference_number,
     }
 
@@ -479,7 +479,7 @@ def create_bank_transaction_from_row(
     bank_transaction.company = company
     bank_transaction.bank_account = bank_account
     bank_transaction.bank = bank
-    bank_transaction.posting_date = row.posting_date
+    bank_transaction.date = row.posting_date
     bank_transaction.description = row.description
     bank_transaction.reference_number = row.reference_number
     bank_transaction.deposit = row.credit
