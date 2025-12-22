@@ -155,7 +155,8 @@ def parse_bca_csv(file_url: str) -> tuple[bytes, list[ParsedStatementRow]]:
         file_bytes = handle.read()
 
     decoded = file_bytes.decode("utf-8-sig")
-    reader = csv.DictReader(io.StringIO(decoded))
+    dialect = detect_csv_dialect(decoded)
+    reader = csv.DictReader(io.StringIO(decoded), dialect=dialect)
 
     if not reader.fieldnames:
         frappe.throw(_("The CSV file does not contain a header row."))
@@ -227,15 +228,19 @@ def map_headers(fieldnames: Iterable[str]) -> dict[str, str]:
     normalized = {normalize_header(header): header for header in fieldnames}
 
     header_map = {
-        "posting_date": find_header(normalized, {"tanggal transaksi", "tanggal"}),
-        "description": find_header(normalized, {"keterangan", "deskripsi", "description"}),
-        "reference_number": find_header(
-            normalized, {"no. referensi", "nomor referensi", "reference number", "no referensi"}
+        "posting_date": find_header(
+            normalized, ("tanggal transaksi", "tanggal", "tgl", "tgl transaksi", "tanggal mutasi")
         ),
-        "debit": find_header(normalized, {"debet", "debit"}),
-        "credit": find_header(normalized, {"kredit", "credit"}),
-        "balance": find_header(normalized, {"saldo", "balance"}),
-        "currency": find_header(normalized, {"currency", "mata uang"}),
+        "description": find_header(
+            normalized, ("keterangan", "keterangan transaksi", "uraian", "deskripsi", "description")
+        ),
+        "reference_number": find_header(
+            normalized, ("no. referensi", "nomor referensi", "reference number", "no referensi")
+        ),
+        "debit": find_header(normalized, ("mutasi debet", "mutasi debit", "debet", "debit")),
+        "credit": find_header(normalized, ("mutasi kredit", "kredit", "credit")),
+        "balance": find_header(normalized, ("saldo akhir", "saldo", "balance", "saldo mutasi")),
+        "currency": find_header(normalized, ("currency", "mata uang")),
     }
 
     required_keys = ["posting_date", "description", "debit", "credit", "balance"]
@@ -259,11 +264,20 @@ def normalize_header(header: str) -> str:
     return (header or "").strip().lower()
 
 
-def find_header(normalized_map: dict[str, str], candidates: set[str]) -> str | None:
+def find_header(normalized_map: dict[str, str], candidates: Iterable[str]) -> str | None:
     for candidate in candidates:
-        if candidate in normalized_map:
-            return normalized_map[candidate]
+        for normalized, original in normalized_map.items():
+            if normalized == candidate or candidate in normalized:
+                return original
     return None
+
+
+def detect_csv_dialect(decoded: str) -> csv.Dialect:
+    try:
+        sample = decoded[:2048]
+        return csv.Sniffer().sniff(sample, delimiters=",;\t")
+    except Exception:
+        return csv.get_dialect("excel")
 
 
 def create_bank_transaction_from_row(
