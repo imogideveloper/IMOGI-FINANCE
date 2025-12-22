@@ -229,17 +229,44 @@ def map_headers(fieldnames: Iterable[str]) -> dict[str, str]:
 
     header_map = {
         "posting_date": find_header(
-            normalized, ("tanggal transaksi", "tanggal", "tgl", "tgl transaksi", "tanggal mutasi")
+            normalized,
+            (
+                "tanggal transaksi",
+                "tanggal",
+                "tgl",
+                "tgl transaksi",
+                "tanggal mutasi",
+                "posting date",
+                "transaction date",
+                "date",
+            ),
         ),
         "description": find_header(
-            normalized, ("keterangan", "keterangan transaksi", "uraian", "deskripsi", "description")
+            normalized,
+            (
+                "keterangan",
+                "keterangan transaksi",
+                "uraian",
+                "deskripsi",
+                "description",
+                "transaction description",
+                "details",
+                "remarks",
+            ),
         ),
         "reference_number": find_header(
             normalized, ("no. referensi", "nomor referensi", "reference number", "no referensi")
         ),
-        "debit": find_header(normalized, ("mutasi debet", "mutasi debit", "debet", "debit")),
-        "credit": find_header(normalized, ("mutasi kredit", "kredit", "credit")),
-        "balance": find_header(normalized, ("saldo akhir", "saldo", "balance", "saldo mutasi")),
+        "debit": find_header(
+            normalized, ("mutasi debet", "mutasi debit", "debet", "debit", "withdrawal", "db")
+        ),
+        "credit": find_header(
+            normalized, ("mutasi kredit", "kredit", "credit", "deposit", "cr", "credit amount")
+        ),
+        "balance": find_header(
+            normalized,
+            ("saldo akhir", "saldo", "balance", "saldo mutasi", "ending balance", "closing balance"),
+        ),
         "currency": find_header(normalized, ("currency", "mata uang")),
     }
 
@@ -261,13 +288,18 @@ def map_headers(fieldnames: Iterable[str]) -> dict[str, str]:
 
 
 def normalize_header(header: str) -> str:
-    return (header or "").strip().lower()
+    cleaned = (header or "").strip().lower()
+    for char in ("_", "-", "/", "(", ")", "."):
+        cleaned = cleaned.replace(char, " ")
+    cleaned = " ".join(cleaned.split())
+    return cleaned
 
 
 def find_header(normalized_map: dict[str, str], candidates: Iterable[str]) -> str | None:
     for candidate in candidates:
+        candidate_normalized = normalize_header(candidate)
         for normalized, original in normalized_map.items():
-            if normalized == candidate or candidate in normalized:
+            if normalized == candidate_normalized or candidate_normalized in normalized:
                 return original
     return None
 
