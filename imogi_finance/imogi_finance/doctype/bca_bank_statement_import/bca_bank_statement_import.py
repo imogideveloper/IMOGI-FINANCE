@@ -25,6 +25,10 @@ class DuplicateTransactionError(frappe.ValidationError):
     """Raised when a matching Bank Transaction already exists."""
 
 
+class SkipRow(Exception):
+    """Internal control exception to skip non-transaction rows."""
+
+
 @dataclass
 class ParsedStatementRow:
     posting_date: str
@@ -164,6 +168,8 @@ def parse_bca_csv(file_url: str) -> tuple[bytes, list[ParsedStatementRow]]:
 
         try:
             parsed_rows.append(parse_row(raw_row, field_map))
+        except SkipRow:
+            continue
         except Exception as exc:
             error_detail = frappe.get_traceback() if frappe.conf.developer_mode else str(exc)
             raise frappe.ValidationError(_("Row {0}: {1}").format(index, error_detail)) from exc
@@ -183,7 +189,12 @@ def parse_row(row: dict, field_map: dict[str, str]) -> ParsedStatementRow:
     if not posting_date_raw:
         raise frappe.ValidationError(_("Posting Date is missing."))
 
-    posting_date = getdate(posting_date_raw)
+    try:
+        posting_date = getdate(posting_date_raw)
+    except Exception as exc:  # noqa: BLE001 - allow skipping pending markers
+        if normalize_header(posting_date_raw) in {"pend", "pending"}:
+            raise SkipRow from exc
+        raise
     description = get_value("description")
     reference_number = get_value("reference_number") or None
     debit = parse_amount(get_value("debit"))
