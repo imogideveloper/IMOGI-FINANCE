@@ -155,13 +155,7 @@ def parse_bca_csv(file_url: str) -> tuple[bytes, list[ParsedStatementRow]]:
         file_bytes = handle.read()
 
     decoded = file_bytes.decode("utf-8-sig")
-    dialect = detect_csv_dialect(decoded)
-    reader = csv.DictReader(io.StringIO(decoded), dialect=dialect)
-
-    if not reader.fieldnames:
-        frappe.throw(_("The CSV file does not contain a header row."))
-
-    field_map = map_headers(reader.fieldnames)
+    reader, field_map = get_csv_reader_and_headers(decoded)
     parsed_rows: list[ParsedStatementRow] = []
 
     for index, raw_row in enumerate(reader, start=1):
@@ -216,6 +210,10 @@ def parse_row(row: dict, field_map: dict[str, str]) -> ParsedStatementRow:
 
 def parse_amount(value: str) -> float | None:
     cleaned = (value or "").replace(",", "").strip()
+
+    if cleaned.lower().endswith(("cr", "dr")):
+        cleaned = cleaned[:-2].strip()
+
     if not cleaned:
         return None
     try:
@@ -310,6 +308,55 @@ def detect_csv_dialect(decoded: str) -> csv.Dialect:
         return csv.Sniffer().sniff(sample, delimiters=",;\t")
     except Exception:
         return csv.get_dialect("excel")
+
+
+def get_csv_reader_and_headers(decoded: str) -> tuple[csv.DictReader, dict[str, str]]:
+    def build_reader(delimiter: str | None = None) -> csv.DictReader:
+        if delimiter:
+            return csv.DictReader(io.StringIO(decoded), delimiter=delimiter)
+        return csv.DictReader(io.StringIO(decoded), dialect=detect_csv_dialect(decoded))
+
+    candidates: list[csv.DictReader] = [build_reader()]
+    candidates.extend(build_reader(delimiter) for delimiter in (",", ";", "\t"))
+
+    last_error: Exception | None = None
+
+    for candidate in candidates:
+        if not candidate.fieldnames:
+            last_error = frappe.ValidationError(_("The CSV file does not contain a header row."))
+            continue
+
+        try:
+            field_map = map_headers(candidate.fieldnames)
+        except Exception as exc:  # noqa: BLE001 - need to retry with alternate delimiters
+            last_error = exc
+            continue
+
+        if _has_collapsed_headers(candidate.fieldnames, field_map):
+            last_error = frappe.ValidationError(
+                _("The CSV headers could not be detected. Please ensure each column is separated correctly.")
+            )
+            continue
+
+        return candidate, field_map
+
+    if last_error:
+        raise last_error
+
+    frappe.throw(_("Unable to read the CSV file."))
+
+
+def _has_collapsed_headers(fieldnames: Iterable[str], field_map: dict[str, str]) -> bool:
+    if not fieldnames:
+        return True
+
+    if len(list(fieldnames)) == 1:
+        return True
+
+    required_headers = [field_map.get(key) for key in ("posting_date", "description", "debit", "credit", "balance")]
+    required_headers = [header for header in required_headers if header]
+
+    return len(set(required_headers)) != len(required_headers)
 
 
 def create_bank_transaction_from_row(
