@@ -2,6 +2,15 @@
 
 App for Manage Expense IMOGI
 
+### BCA Bank Statement Import (Native-First)
+
+This app now includes a native-first adapter for importing BCA bank CSV statements into ERPNext:
+
+- Use the **BCA Bank Statement Import** DocType to upload a CSV export from BCA internet banking.
+- Click **Parse CSV BCA** to validate headers, amounts, and detect duplicate uploads via file hash.
+- Click **Convert to Bank Transaction** to create native ERPNext `Bank Transaction` records (with duplicate detection).
+- Open the standard **Bank Reconciliation Tool** from the same form to continue the native reconciliation flow.
+
 ### Installation
 
 You can install this app using the [bench](https://github.com/frappe/bench) CLI:
