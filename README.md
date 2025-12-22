@@ -8,8 +8,9 @@ This app now includes a native-first adapter for importing BCA bank CSV statemen
 
 - Use the **BCA Bank Statement Import** DocType to upload a CSV export from BCA internet banking.
 - Click **Parse CSV BCA** to validate headers, amounts, and detect duplicate uploads via file hash.
-- Click **Convert to Bank Transaction** to create native ERPNext `Bank Transaction` records (with duplicate detection).
-- Open the standard **Bank Reconciliation Tool** from the same form to continue the native reconciliation flow.
+- Parsing now auto-converts rows into native ERPNext `Bank Transaction` records (with duplicate detection), and the **Convert to Bank Transaction** action remains available for retries.
+- Use the **Open Bank Reconciliation Tool** button to jump directly into reconciliation with the parsed date range and bank account.
+- Flow summary: **Upload BCA → Parse → Convert → buka Bank Reconciliation Tool (otomatis lewat tombol).**
 
 ### Installation
 

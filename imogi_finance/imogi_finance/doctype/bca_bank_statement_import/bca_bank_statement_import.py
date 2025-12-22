@@ -47,6 +47,8 @@ class BCABankStatementImport(Document):
     def parse_csv(self) -> dict:
         self._assert_source_file_present()
 
+        conversion_result: dict | None = None
+
         try:
             file_bytes, parsed_rows = parse_bca_csv(self.source_file)
             self._guard_against_duplicate_upload(file_bytes)
@@ -54,16 +56,23 @@ class BCABankStatementImport(Document):
             self._update_summary_fields()
             self._mark_parsed()
             self.save(ignore_permissions=True)
+            conversion_result = self.convert_to_bank_transaction()
         except Exception:
             self.import_status = "Failed"
             self.save(ignore_permissions=True)
             raise
 
-        return {"parsed_rows": len(parsed_rows), "hash_id": self.hash_id}
+        response = {"parsed_rows": len(parsed_rows), "hash_id": self.hash_id}
+
+        if conversion_result:
+            response["conversion"] = conversion_result
+
+        return response
 
     @frappe.whitelist()
     def convert_to_bank_transaction(self) -> dict:
         self._assert_parse_completed()
+        self._assert_bank_account_present()
 
         created = 0
         duplicates = 0
@@ -177,6 +186,10 @@ class BCABankStatementImport(Document):
             frappe.throw(_("Please parse the CSV file before converting transactions."))
         if not self.get("statement_rows"):
             frappe.throw(_("No parsed rows available to convert. Please parse again."))
+
+    def _assert_bank_account_present(self) -> None:
+        if not self.bank_account:
+            frappe.throw(_("Bank Account is required before converting transactions."))
 
 
 def parse_bca_csv(file_url: str) -> tuple[bytes, list[ParsedStatementRow]]:
