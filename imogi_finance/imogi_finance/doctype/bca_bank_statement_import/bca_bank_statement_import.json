@@ -1,0 +1,149 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "format:BCA-IMPORT-{######}",
+  "creation": "",
+  "docstatus": 0,
+  "doctype": "DocType",
+  "editable_grid": 0,
+  "engine": "InnoDB",
+  "field_order": [
+    "company",
+    "bank_account",
+    "bank",
+    "source_file",
+    "import_status",
+    "hash_id",
+    "imported_by",
+    "imported_on",
+    "section_break_1",
+    "statement_rows"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "fieldname": "bank_account",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Bank Account",
+      "options": "Bank Account",
+      "reqd": 1
+    },
+    {
+      "default": "BCA",
+      "fieldname": "bank",
+      "fieldtype": "Link",
+      "label": "Bank",
+      "options": "Bank",
+      "read_only": 1
+    },
+    {
+      "fieldname": "source_file",
+      "fieldtype": "Attach",
+      "label": "Source File",
+      "reqd": 1
+    },
+    {
+      "default": "Draft",
+      "fieldname": "import_status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Import Status",
+      "options": "Draft\nParsed\nConverted\nFailed",
+      "read_only": 1
+    },
+    {
+      "fieldname": "hash_id",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Hash ID",
+      "read_only": 1
+    },
+    {
+      "fieldname": "imported_by",
+      "fieldtype": "Link",
+      "label": "Imported By",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "imported_on",
+      "fieldtype": "Datetime",
+      "label": "Imported On",
+      "read_only": 1
+    },
+    {
+      "collapsible": 1,
+      "fieldname": "section_break_1",
+      "fieldtype": "Section Break",
+      "label": "Statement Rows"
+    },
+    {
+      "fieldname": "statement_rows",
+      "fieldtype": "Table",
+      "label": "BCA Bank Statement Rows",
+      "options": "BCA Bank Statement Row"
+    }
+  ],
+  "idx": 0,
+  "links": [],
+  "modified": "2024-09-28 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Imogi Finance",
+  "name": "BCA Bank Statement Import",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts User",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "cancel": 1,
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts Manager",
+      "share": 1,
+      "submit": 1,
+      "write": 1
+    },
+    {
+      "cancel": 1,
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "submit": 1,
+      "write": 1
+    }
+  ],
+  "quick_entry": 0,
+  "show_name_in_global_search": 1,
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "track_changes": 1
+}
