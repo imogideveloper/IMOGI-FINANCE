@@ -579,6 +579,10 @@ def create_bank_transaction_from_row(
     bank_transaction.withdrawal = row.debit
     bank_transaction.balance = row.balance
     bank_transaction.currency = row.currency
+    bank_transaction.status = "Unreconciled"
+    bank_transaction.flags.ignore_permissions = True
     bank_transaction.insert(ignore_permissions=True)
+    bank_transaction.submit()
+    bank_transaction.db_set("status", "Unreconciled")
 
     return bank_transaction
