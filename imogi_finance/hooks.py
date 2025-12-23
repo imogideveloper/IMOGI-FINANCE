@@ -43,7 +43,7 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {"Bank Transaction": "public/js/bank_transaction.js"}
 doctype_list_js = {
     "BCA Bank Statement Import": "imogi_finance/doctype/bca_bank_statement_import/bca_bank_statement_import_list.js",
 }
@@ -144,6 +144,7 @@ doc_events = {
 	"Journal Entry": {"on_submit": "imogi_finance.events.journal_entry.on_submit"},
 	"Payment Entry": {"on_submit": "imogi_finance.events.payment_entry.on_submit"},
 	"Asset": {"on_submit": "imogi_finance.events.asset.on_submit"},
+	"Bank Transaction": {"before_cancel": "imogi_finance.events.bank_transaction.before_cancel"},
 }
 
 # Scheduled Tasks
