@@ -94,6 +94,7 @@
     {
       "fieldname": "starting_balance",
       "fieldtype": "Currency",
+      "in_list_view": 1,
       "label": "Starting Balance",
       "read_only": 1
     },
@@ -112,6 +113,7 @@
     {
       "fieldname": "ending_balance",
       "fieldtype": "Currency",
+      "in_list_view": 1,
       "label": "Ending Balance",
       "read_only": 1
     },
