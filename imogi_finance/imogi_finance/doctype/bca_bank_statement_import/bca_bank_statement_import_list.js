@@ -89,8 +89,7 @@ const refreshColumns = (listview) => {
     statusColumn,
   ];
 
-  listview.datatable.setColumns(listview.columns);
-  listview.datatable.refresh(listview.get_data());
+  listview.datatable.refresh(listview.get_data(), listview.columns);
 };
 
 frappe.listview_settings['BCA Bank Statement Import'] = {
