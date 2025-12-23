@@ -1,7 +1,7 @@
 {
   "actions": [],
   "allow_rename": 0,
-  "autoname": "format:BCA-IMPORT-{######}",
+  "autoname": "format:BCA - Bank Statement Import on {creation}",
   "creation": "",
   "docstatus": 0,
   "doctype": "DocType",
