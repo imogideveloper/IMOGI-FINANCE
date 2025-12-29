@@ -140,11 +140,23 @@ doctype_list_js = {
 # Hook on document methods and events
 
 doc_events = {
-	"Purchase Invoice": {"on_submit": "imogi_finance.events.purchase_invoice.on_submit"},
-	"Journal Entry": {"on_submit": "imogi_finance.events.journal_entry.on_submit"},
-	"Payment Entry": {"on_submit": "imogi_finance.events.payment_entry.on_submit"},
-	"Asset": {"on_submit": "imogi_finance.events.asset.on_submit"},
-	"Bank Transaction": {"before_cancel": "imogi_finance.events.bank_transaction.before_cancel"},
+    "Purchase Invoice": {
+        "on_submit": "imogi_finance.events.purchase_invoice.on_submit",
+        "on_cancel": "imogi_finance.events.purchase_invoice.on_cancel",
+    },
+    "Journal Entry": {
+        "on_submit": "imogi_finance.events.journal_entry.on_submit",
+        "on_cancel": "imogi_finance.events.journal_entry.on_cancel",
+    },
+    "Payment Entry": {
+        "on_submit": "imogi_finance.events.payment_entry.on_submit",
+        "on_cancel": "imogi_finance.events.payment_entry.on_cancel",
+    },
+    "Asset": {
+        "on_submit": "imogi_finance.events.asset.on_submit",
+        "on_cancel": "imogi_finance.events.asset.on_cancel",
+    },
+    "Bank Transaction": {"before_cancel": "imogi_finance.events.bank_transaction.before_cancel"},
 }
 
 # Scheduled Tasks
