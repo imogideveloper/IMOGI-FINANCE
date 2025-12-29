@@ -24,9 +24,10 @@ class ExpenseRequest(Document):
         self.validate_final_state_immutability()
 
     def validate_amounts(self):
-        total, expense_account = accounting.summarize_request_items(self.get("items"))
+        total, expense_accounts = accounting.summarize_request_items(self.get("items"))
         self.amount = total
-        self.expense_account = expense_account
+        self.expense_accounts = expense_accounts
+        self.expense_account = expense_accounts[0] if len(expense_accounts) == 1 else None
 
     def validate_asset_details(self):
         if self.request_type != "Asset":
@@ -70,14 +71,15 @@ class ExpenseRequest(Document):
             return
 
         previous = self._get_previous_doc()
-
         if not previous:
             return
+
+        previous_accounts = self._get_expense_accounts_from_doc(previous)
+        current_accounts = self._get_expense_accounts_from_doc(self)
 
         key_fields = (
             "request_type",
             "supplier",
-            "expense_account",
             "amount",
             "currency",
             "cost_center",
@@ -91,6 +93,8 @@ class ExpenseRequest(Document):
         changed_fields = [
             field for field in key_fields if self._get_value(previous, field) != self.get(field)
         ]
+        if previous_accounts != current_accounts:
+            changed_fields.append("expense_accounts")
 
         if changed_fields:
             frappe.throw(
@@ -101,7 +105,7 @@ class ExpenseRequest(Document):
     def before_submit(self):
         """Resolve approval route and set initial workflow state."""
         self.validate_amounts()
-        route = get_approval_route(self.cost_center, self.expense_account, self.amount)
+        route = get_approval_route(self.cost_center, self._get_expense_accounts(), self.amount)
         self.apply_route(route)
         self.validate_initial_approver(route)
         self.status = "Pending Level 1"
@@ -177,7 +181,7 @@ class ExpenseRequest(Document):
         next_state = kwargs.get("next_state")
         self.clear_downstream_links()
         self.validate_amounts()
-        route = get_approval_route(self.cost_center, self.expense_account, self.amount)
+        route = get_approval_route(self.cost_center, self._get_expense_accounts(), self.amount)
         self.apply_route(route)
         self.status = next_state or "Pending Level 1"
 
@@ -330,10 +334,16 @@ class ExpenseRequest(Document):
         if not previous:
             return
 
-        key_fields = ("amount", "expense_account", "cost_center")
+        previous_accounts = self._get_expense_accounts_from_doc(previous)
+        current_accounts = self._get_expense_accounts_from_doc(self)
+
+        key_fields = ("amount", "cost_center")
         changed_fields = [
             field for field in key_fields if self._get_value(previous, field) != self.get(field)
         ]
+
+        if previous_accounts != current_accounts:
+            changed_fields.append("expense_accounts")
 
         if not changed_fields:
             return
@@ -344,7 +354,7 @@ class ExpenseRequest(Document):
                 title=_("Not Allowed"),
             )
 
-        route = get_approval_route(self.cost_center, self.expense_account, self.amount)
+        route = get_approval_route(self.cost_center, self._get_expense_accounts(), self.amount)
         self.apply_route(route)
         self.status = "Pending Level 1"
 
@@ -391,6 +401,22 @@ class ExpenseRequest(Document):
                 previous = None
 
         return previous
+
+    def _get_expense_accounts(self) -> tuple[str, ...]:
+        accounts = getattr(self, "expense_accounts", None)
+        if accounts:
+            return accounts
+
+        _, expense_accounts = accounting.summarize_request_items(self.get("items"))
+        self.expense_accounts = expense_accounts
+        self.expense_account = expense_accounts[0] if len(expense_accounts) == 1 else None
+        return expense_accounts
+
+    @staticmethod
+    def _get_expense_accounts_from_doc(doc) -> tuple[str, ...]:
+        items = doc.get("items") if hasattr(doc, "get") else getattr(doc, "items", None)
+        _, accounts = accounting.summarize_request_items(items)
+        return accounts
 
     def _log_denied_action(self, action, level, expected_role, expected_user):
         logger = getattr(frappe, "logger", None)

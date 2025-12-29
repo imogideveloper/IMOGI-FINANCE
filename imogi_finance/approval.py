@@ -2,26 +2,25 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 import frappe
 from frappe import _
 
 
-def get_approval_route(cost_center: str, account: str, amount: float) -> dict:
-    """Return approval route based on cost center, account and amount.
+def _normalize_accounts(accounts: str | Iterable[str]) -> tuple[str, ...]:
+    if isinstance(accounts, str):
+        return (accounts,)
 
-    Args:
-        cost_center: Target cost center for the request.
-        account: Expense account being charged.
-        amount: Total requested amount.
+    if isinstance(accounts, Iterable):
+        normalized = tuple(sorted({account for account in accounts if account}))
+        if normalized:
+            return normalized
 
-    Returns:
-        dict: Approval mapping per level, with ``role`` and ``user`` keys.
+    raise frappe.ValidationError(_("At least one expense account is required for approval routing."))
 
-    Raises:
-        frappe.DoesNotExistError: If no active rule exists for the cost center.
-        frappe.ValidationError: If no approval line matches the account and amount.
-    """
 
+def _get_route_for_account(cost_center: str, account: str, amount: float) -> dict:
     setting_name = frappe.db.get_value(
         "Expense Approval Setting", {"cost_center": cost_center, "is_active": 1}, "name"
     )
@@ -62,3 +61,37 @@ def get_approval_route(cost_center: str, account: str, amount: float) -> dict:
         "level_2": {"role": data.get("level_2_role"), "user": data.get("level_2_user")},
         "level_3": {"role": data.get("level_3_role"), "user": data.get("level_3_user")},
     }
+
+
+def get_approval_route(cost_center: str, accounts: str | Iterable[str], amount: float) -> dict:
+    """Return approval route based on cost center, account(s) and amount.
+
+    Args:
+        cost_center: Target cost center for the request.
+        accounts: Expense account(s) being charged.
+        amount: Total requested amount.
+
+    Returns:
+        dict: Approval mapping per level, with ``role`` and ``user`` keys.
+
+    Raises:
+        frappe.DoesNotExistError: If no active rule exists for the cost center.
+        frappe.ValidationError: If no approval line matches or routes differ per account.
+    """
+
+    normalized_accounts = _normalize_accounts(accounts)
+    resolved_route = None
+
+    for account in normalized_accounts:
+        route = _get_route_for_account(cost_center, account, amount)
+
+        if resolved_route is None:
+            resolved_route = route
+            continue
+
+        if resolved_route != route:
+            raise frappe.ValidationError(
+                _("All expense accounts on the request must share the same approval route.")
+            )
+
+    return resolved_route or {}

@@ -9,7 +9,9 @@ PURCHASE_INVOICE_REQUEST_TYPES = {"Expense", "Asset"}
 PURCHASE_INVOICE_ALLOWED_STATUSES = frozenset({"Approved"})
 
 
-def summarize_request_items(items: list[frappe.model.document.Document] | None) -> tuple[float, str]:
+def summarize_request_items(
+    items: list[frappe.model.document.Document] | None,
+) -> tuple[float, tuple[str, ...]]:
     if not items:
         frappe.throw(_("Please add at least one item."))
 
@@ -28,28 +30,27 @@ def summarize_request_items(items: list[frappe.model.document.Document] | None) 
         accounts.add(account)
         total += amount
 
-    if len(accounts) > 1:
-        frappe.throw(_("All items must use the same Expense Account to match the approval route."))
-
-    return total, accounts.pop()
+    return total, tuple(sorted(accounts))
 
 
 def _sync_request_amounts(
-    request: frappe.model.document.Document, total: float, expense_account: str
+    request: frappe.model.document.Document, total: float, expense_accounts: tuple[str, ...]
 ) -> None:
     updates = {}
+    primary_account = expense_accounts[0] if len(expense_accounts) == 1 else None
 
     if getattr(request, "amount", None) != total:
         updates["amount"] = total
 
-    if getattr(request, "expense_account", None) != expense_account:
-        updates["expense_account"] = expense_account
+    if getattr(request, "expense_account", None) != primary_account:
+        updates["expense_account"] = primary_account
 
     if updates and hasattr(request, "db_set"):
         request.db_set(updates)
 
     for field, value in updates.items():
         setattr(request, field, value)
+    setattr(request, "expense_accounts", expense_accounts)
 
 
 def _get_pph_base_amount(request: frappe.model.document.Document) -> float:
@@ -132,8 +133,8 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     if not request_items:
         frappe.throw(_("Expense Request must have at least one item to create a Purchase Invoice."))
 
-    total_amount, expense_account = summarize_request_items(request_items)
-    _sync_request_amounts(request, total_amount, expense_account)
+    total_amount, expense_accounts = summarize_request_items(request_items)
+    _sync_request_amounts(request, total_amount, expense_accounts)
 
     pi = frappe.new_doc("Purchase Invoice")
     pi.company = company
