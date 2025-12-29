@@ -12,13 +12,28 @@ def on_submit(doc, method=None):
     if not request:
         return
 
-    request = get_approved_expense_request(request, _("Payment Entry"))
+    request = get_approved_expense_request(
+        request, _("Payment Entry"), allowed_statuses=frozenset({"Linked", "Closed"})
+    )
 
     linked_payment_entry = getattr(request, "linked_payment_entry", None)
     if linked_payment_entry:
         frappe.throw(
             _("Expense Request already linked to Payment Entry {0}").format(
                 linked_payment_entry
+            )
+        )
+
+    has_purchase_invoice = getattr(request, "linked_purchase_invoice", None)
+    has_asset_link = request.request_type == "Asset" and getattr(
+        request, "linked_asset", None
+    )
+    if not has_purchase_invoice and not has_asset_link:
+        frappe.throw(
+            _(
+                "Expense Request must be linked to a Purchase Invoice{0} before submitting Payment Entry."
+            ).format(
+                _(" or Asset") if request.request_type == "Asset" else ""
             )
         )
 
