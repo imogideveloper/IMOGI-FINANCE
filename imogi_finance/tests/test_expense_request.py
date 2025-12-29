@@ -28,6 +28,9 @@ def _reset_frappe(monkeypatch):
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user=None), raising=False)
     monkeypatch.setattr(frappe, "get_roles", lambda: [], raising=False)
     monkeypatch.setattr(frappe, "conf", types.SimpleNamespace(), raising=False)
+    monkeypatch.setattr(frappe, "db", types.SimpleNamespace(), raising=False)
+    monkeypatch.setattr(frappe.db, "set_value", lambda *args, **kwargs: None, raising=False)
+    monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: None, raising=False)
 
 frappe_model = types.ModuleType("frappe.model")
 frappe_model_document = types.ModuleType("frappe.model.document")
@@ -290,6 +293,52 @@ def test_reopen_to_draft_tracks_next_state(monkeypatch):
     assert request.status == "Draft"
 
 
+def test_reopen_blocks_when_downstream_active(monkeypatch):
+    request = ExpenseRequest(
+        status="Closed",
+        cost_center="CC",
+        expense_account="5000",
+        amount=100,
+        linked_payment_entry="PE-1",
+    )
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
+    monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: 1)
+
+    with pytest.raises(NotAllowed):
+        request.before_workflow_action("Reopen")
+
+
+def test_reopen_clears_downstream_links(monkeypatch):
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
+    monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: 2)
+    monkeypatch.setattr(
+        "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
+        lambda cost_center, expense_account, amount: {
+            "level_1": {"role": "Expense Approver", "user": "approver@example.com"},
+            "level_2": {"role": None, "user": None},
+            "level_3": {"role": None, "user": None},
+        },
+    )
+
+    request = ExpenseRequest(
+        status="Closed",
+        cost_center="CC",
+        expense_account="5000",
+        amount=100,
+        linked_payment_entry="PE-1",
+        linked_purchase_invoice="PI-1",
+        linked_asset="AST-1",
+    )
+
+    request.before_workflow_action("Reopen")
+    request.on_workflow_action("Reopen", next_state="Pending Level 1")
+
+    assert request.linked_payment_entry is None
+    assert request.linked_purchase_invoice is None
+    assert request.linked_asset is None
+    assert request.status == "Pending Level 1"
+
+
 def test_validate_blocks_key_changes_after_final_status():
     previous = ExpenseRequest(
         docstatus=1,
@@ -415,3 +464,24 @@ def test_before_submit_requires_level_one_approver(monkeypatch):
 
     with pytest.raises(NotAllowed):
         request.before_submit()
+
+
+def test_submit_requires_creator(monkeypatch):
+    request = ExpenseRequest(owner="creator@example.com", status="Draft")
+
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="other@example.com"))
+    with pytest.raises(NotAllowed):
+        request.before_workflow_action("Submit")
+
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="creator@example.com"))
+    request.before_workflow_action("Submit")
+
+
+def test_approve_requires_route_on_current_level(monkeypatch):
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="approver@example.com"))
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Expense Approver"])
+
+    request = ExpenseRequest(status="Pending Level 2", level_2_role=None, level_2_user=None)
+
+    with pytest.raises(NotAllowed):
+        request.before_workflow_action("Approve")

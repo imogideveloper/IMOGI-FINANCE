@@ -108,6 +108,10 @@ class ExpenseRequest(Document):
         document so workflow maintainers don't need to manage static roles that
         could conflict with routed approvers.
         """
+        if action == "Submit":
+            self.validate_submit_permission()
+            return
+
         if action == "Reopen":
             self.validate_reopen_permission()
             return
@@ -129,6 +133,13 @@ class ExpenseRequest(Document):
         expected_user = self.get(user_field)
 
         if not expected_role and not expected_user:
+            if action == "Approve":
+                frappe.throw(
+                    _(
+                        "No approver is configured for level {0}. Please refresh the approval route before approving."
+                    ).format(current_level),
+                    title=_("Not Allowed"),
+                )
             return
 
         role_allowed = not expected_role or expected_role in frappe.get_roles()
@@ -158,6 +169,7 @@ class ExpenseRequest(Document):
             return
 
         next_state = kwargs.get("next_state")
+        self.clear_downstream_links()
         route = get_approval_route(self.cost_center, self.expense_account, self.amount)
         self.apply_route(route)
         self.status = next_state or "Pending Level 1"
@@ -167,11 +179,42 @@ class ExpenseRequest(Document):
         current_roles = set(frappe.get_roles())
 
         if current_roles & allowed:
+            self.validate_reopen_without_active_links()
             return
 
         frappe.throw(
             _("You do not have permission to reopen this request. Required: {roles}.").format(
                 roles=_(", ").join(sorted(allowed))
+            ),
+            title=_("Not Allowed"),
+        )
+
+    def validate_reopen_without_active_links(self):
+        active_links = []
+
+        def _is_active(doctype, name):
+            docstatus = frappe.db.get_value(doctype, name, "docstatus")
+            return docstatus != 2
+
+        payment_entry = getattr(self, "linked_payment_entry", None)
+        purchase_invoice = getattr(self, "linked_purchase_invoice", None)
+        asset = getattr(self, "linked_asset", None)
+
+        if payment_entry and _is_active("Payment Entry", payment_entry):
+            active_links.append(_("Payment Entry {0}").format(payment_entry))
+
+        if purchase_invoice and _is_active("Purchase Invoice", purchase_invoice):
+            active_links.append(_("Purchase Invoice {0}").format(purchase_invoice))
+
+        if asset and _is_active("Asset", asset):
+            active_links.append(_("Asset {0}").format(asset))
+
+        if not active_links:
+            return
+
+        frappe.throw(
+            _("Cannot reopen while the request is still linked to: {0}. Please cancel those documents first.").format(
+                _(", ").join(active_links)
             ),
             title=_("Not Allowed"),
         )
@@ -308,6 +351,23 @@ class ExpenseRequest(Document):
             _("Level 1 approver is required before submitting an Expense Request."),
             title=_("Not Allowed"),
         )
+
+    def validate_submit_permission(self):
+        """Restrict submission to the creator of the request."""
+        session_user = getattr(getattr(frappe, "session", None), "user", None)
+        if session_user == self.owner:
+            return
+
+        frappe.throw(
+            _("Only the creator of this Expense Request can submit it."),
+            title=_("Not Allowed"),
+        )
+
+    def clear_downstream_links(self):
+        """Remove downstream links when reopening to prevent duplicate approval loops."""
+        self.linked_payment_entry = None
+        self.linked_purchase_invoice = None
+        self.linked_asset = None
 
     @staticmethod
     def _get_value(source, field):
