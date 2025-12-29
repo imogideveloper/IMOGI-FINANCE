@@ -399,3 +399,19 @@ def test_validate_restarts_route_when_key_fields_change_after_submit(monkeypatch
     assert updated.status == "Pending Level 1"
     assert updated.level_1_role == "Level 1 User"
     assert updated.level_1_user == "approver@example.com"
+
+
+def test_before_submit_requires_level_one_approver(monkeypatch):
+    monkeypatch.setattr(
+        "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
+        lambda cost_center, expense_account, amount: {
+            "level_1": {"role": None, "user": None},
+            "level_2": {"role": None, "user": None},
+            "level_3": {"role": None, "user": None},
+        },
+    )
+
+    request = ExpenseRequest(cost_center="CC", expense_account="5000", amount=100)
+
+    with pytest.raises(NotAllowed):
+        request.before_submit()

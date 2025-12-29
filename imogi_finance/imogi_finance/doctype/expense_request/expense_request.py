@@ -97,6 +97,7 @@ class ExpenseRequest(Document):
         """Resolve approval route and set initial workflow state."""
         route = get_approval_route(self.cost_center, self.expense_account, self.amount)
         self.apply_route(route)
+        self.validate_initial_approver(route)
         self.status = "Pending Level 1"
 
     def before_workflow_action(self, action, **kwargs):
@@ -143,6 +144,7 @@ class ExpenseRequest(Document):
         if expected_role:
             requirements.append(_("role '{0}'").format(expected_role))
 
+        self._log_denied_action(action, current_level, expected_role, expected_user)
         frappe.throw(
             _("You must be {requirements} to perform this action for the current approval level.").format(
                 requirements=_(" and ").join(requirements)
@@ -296,6 +298,17 @@ class ExpenseRequest(Document):
         self.apply_route(route)
         self.status = "Pending Level 1"
 
+    def validate_initial_approver(self, route: dict):
+        """Ensure the first approval level has a configured user or role."""
+        first_level = route.get("level_1", {}) if route else {}
+        if first_level.get("role") or first_level.get("user"):
+            return
+
+        frappe.throw(
+            _("Level 1 approver is required before submitting an Expense Request."),
+            title=_("Not Allowed"),
+        )
+
     @staticmethod
     def _get_value(source, field):
         if hasattr(source, "get"):
@@ -311,6 +324,26 @@ class ExpenseRequest(Document):
                 previous = None
 
         return previous
+
+    def _log_denied_action(self, action, level, expected_role, expected_user):
+        logger = getattr(frappe, "logger", None)
+        if not logger:
+            return
+
+        try:
+            logger("imogi_finance").warning(
+                "Denied workflow action",
+                extra={
+                    "expense_request": getattr(self, "name", None),
+                    "action": action,
+                    "level": level,
+                    "expected_role": expected_role,
+                    "expected_user": expected_user,
+                    "session_user": getattr(getattr(frappe, "session", None), "user", None),
+                },
+            )
+        except Exception:
+            pass
 
 
 @frappe.whitelist()

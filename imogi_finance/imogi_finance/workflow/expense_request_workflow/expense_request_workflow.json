@@ -1,9 +1,9 @@
 {
   "actions": [
     {"action": "Submit", "allowed": "All"},
-    {"action": "Approve", "allowed": "All"},
-    {"action": "Reject", "allowed": "All"},
-    {"action": "Close", "allowed": "All"},
+    {"action": "Approve", "allowed": "Expense Approver"},
+    {"action": "Reject", "allowed": "Expense Approver"},
+    {"action": "Close", "allowed": "Expense Approver"},
     {"action": "Reopen", "allowed": "System Manager"}
   ],
   "creation": "",
@@ -29,7 +29,7 @@
   "transitions": [
     {
       "action": "Submit",
-      "allow_self_approval": 1,
+      "allow_self_approval": 0,
       "allowed": "All",
       "state": "Draft",
       "next_state": "Pending Level 1",
