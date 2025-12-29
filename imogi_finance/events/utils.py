@@ -6,8 +6,11 @@ from frappe import _
 
 def get_approved_expense_request(request_name: str, target_label: str):
     request = frappe.get_doc("Expense Request", request_name)
-    if request.docstatus != 1 or request.status != "Approved":
+    allowed_statuses = {"Approved", "Linked"}
+    if request.docstatus != 1 or request.status not in allowed_statuses:
         frappe.throw(
-            _("Expense Request must be Approved before linking to {0}").format(target_label)
+            _(
+                "Expense Request must have docstatus 1 and status {0} before linking to {1}"
+            ).format(", ".join(sorted(allowed_statuses)), target_label)
         )
     return request
