@@ -5,11 +5,41 @@ from __future__ import annotations
 import frappe
 from frappe import _
 
+PURCHASE_INVOICE_REQUEST_TYPES = {"Expense"}
+JOURNAL_ENTRY_REQUEST_TYPES = {"Asset"}
+
+
+def _validate_request_ready_for_link(request: frappe.model.document.Document) -> None:
+    if request.docstatus != 1 or request.status != "Approved":
+        frappe.throw(
+            _("Expense Request must be submitted and Approved before creating accounting entries.")
+        )
+
+
+def _validate_request_type(
+    request: frappe.model.document.Document, allowed_types: set[str], action: str
+) -> None:
+    if request.request_type not in allowed_types:
+        frappe.throw(
+            _("{0} can only be created for request type(s): {1}").format(
+                action, ", ".join(sorted(allowed_types))
+            )
+        )
+
 
 @frappe.whitelist()
 def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     """Create a Purchase Invoice from an Expense Request and return its name."""
     request = frappe.get_doc("Expense Request", expense_request_name)
+    _validate_request_ready_for_link(request)
+    _validate_request_type(request, PURCHASE_INVOICE_REQUEST_TYPES, _("Purchase Invoice"))
+    if request.linked_purchase_invoice:
+        frappe.throw(
+            _("Expense Request is already linked to Purchase Invoice {0}.").format(
+                request.linked_purchase_invoice
+            )
+        )
+
     company = frappe.db.get_value("Cost Center", request.cost_center, "company")
     if not company:
         frappe.throw(_("Unable to resolve company from the selected Cost Center."))
@@ -55,6 +85,15 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
 def create_journal_entry_from_request(expense_request_name: str) -> str:
     """Create a Journal Entry from an Expense Request and return its name."""
     request = frappe.get_doc("Expense Request", expense_request_name)
+    _validate_request_ready_for_link(request)
+    _validate_request_type(request, JOURNAL_ENTRY_REQUEST_TYPES, _("Journal Entry"))
+    if request.linked_journal_entry:
+        frappe.throw(
+            _("Expense Request is already linked to Journal Entry {0}.").format(
+                request.linked_journal_entry
+            )
+        )
+
     company = frappe.db.get_value("Cost Center", request.cost_center, "company")
     if not company:
         frappe.throw(_("Unable to resolve company from the selected Cost Center."))

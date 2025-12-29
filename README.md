@@ -38,6 +38,24 @@ Pre-commit is configured to use the following tools for checking and formatting 
 - prettier
 - pyupgrade
 
+### Bench console checks
+
+Gunakan contoh snippet berikut di bench console untuk memastikan validasi baru bekerja (mis. status belum Approved atau sudah terhubung ke dokumen lain):
+
+```python
+request = frappe.get_doc("Expense Request", "<NAMA_REQUEST>")
+# Harus melempar error bila status belum Approved atau docstatus bukan 1
+frappe.call("imogi_finance.accounting.create_purchase_invoice_from_request", expense_request_name=request.name)
+
+# Tandai request sudah terhubung agar memicu error duplikasi
+request.db_set("linked_purchase_invoice", "PI-TEST")
+frappe.call("imogi_finance.accounting.create_purchase_invoice_from_request", expense_request_name=request.name)
+
+# Untuk request tipe Asset, gunakan JE dan pastikan validasi serupa berjalan
+request.db_set({"linked_purchase_invoice": None, "request_type": "Asset"})
+frappe.call("imogi_finance.accounting.create_journal_entry_from_request", expense_request_name=request.name)
+```
+
 ### License
 
 mit
