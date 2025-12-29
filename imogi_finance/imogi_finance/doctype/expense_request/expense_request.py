@@ -14,6 +14,8 @@ from imogi_finance import accounting
 class ExpenseRequest(Document):
     """Main expense request document, integrating approval and accounting flows."""
 
+    REOPEN_ALLOWED_ROLES = {"System Manager"}
+
     def validate(self):
         self.validate_amounts()
         self.validate_asset_details()
@@ -105,6 +107,10 @@ class ExpenseRequest(Document):
         document so workflow maintainers don't need to manage static roles that
         could conflict with routed approvers.
         """
+        if action == "Reopen":
+            self.validate_reopen_permission()
+            return
+
         if action == "Close" and self.status in {"Linked", "Closed"}:
             self.validate_close_permission()
             return
@@ -140,6 +146,30 @@ class ExpenseRequest(Document):
         frappe.throw(
             _("You must be {requirements} to perform this action for the current approval level.").format(
                 requirements=_(" and ").join(requirements)
+            ),
+            title=_("Not Allowed"),
+        )
+
+    def on_workflow_action(self, action, **kwargs):
+        """Reset approval routing when a request is reopened."""
+        if action != "Reopen":
+            return
+
+        next_state = kwargs.get("next_state")
+        route = get_approval_route(self.cost_center, self.expense_account, self.amount)
+        self.apply_route(route)
+        self.status = next_state or "Pending Level 1"
+
+    def validate_reopen_permission(self):
+        allowed = self.REOPEN_ALLOWED_ROLES
+        current_roles = set(frappe.get_roles())
+
+        if current_roles & allowed:
+            return
+
+        frappe.throw(
+            _("You do not have permission to reopen this request. Required: {roles}.").format(
+                roles=_(", ").join(sorted(allowed))
             ),
             title=_("Not Allowed"),
         )

@@ -4,7 +4,8 @@
       {"action": "Submit", "allowed": "All"},
       {"action": "Approve", "allowed": "All"},
       {"action": "Reject", "allowed": "All"},
-      {"action": "Close", "allowed": "All"}
+      {"action": "Close", "allowed": "All"},
+      {"action": "Reopen", "allowed": "System Manager"}
     ],
     "docstatus": 0,
     "doctype": "Workflow",
@@ -98,6 +99,20 @@
         "allowed": "All",
         "state": "Linked",
         "next_state": "Closed",
+        "doc_status": 1
+      },
+      {
+        "action": "Reopen",
+        "allowed": "System Manager",
+        "state": "Rejected",
+        "next_state": "Draft",
+        "doc_status": 0
+      },
+      {
+        "action": "Reopen",
+        "allowed": "System Manager",
+        "state": "Closed",
+        "next_state": "Pending Level 1",
         "doc_status": 1
       }
     ],

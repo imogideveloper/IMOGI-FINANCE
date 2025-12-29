@@ -230,6 +230,66 @@ def test_close_allows_configuration_override(monkeypatch):
     request.before_workflow_action("Close")
 
 
+def test_reopen_requires_system_manager_role(monkeypatch):
+    request = ExpenseRequest(status="Rejected", cost_center="CC", expense_account="5000", amount=100)
+
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Viewer"])
+    with pytest.raises(NotAllowed):
+        request.before_workflow_action("Reopen")
+
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
+    request.before_workflow_action("Reopen")
+
+
+def test_reopen_refreshes_route_and_status(monkeypatch):
+    captured = {}
+
+    def _route(cost_center, expense_account, amount):
+        captured["args"] = (cost_center, expense_account, amount)
+        return {
+            "level_1": {"role": "Expense Approver", "user": "approver@example.com"},
+            "level_2": {"role": None, "user": None},
+            "level_3": {"role": None, "user": None},
+        }
+
+    monkeypatch.setattr(
+        "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
+        _route,
+    )
+
+    request = ExpenseRequest(
+        status="Closed",
+        cost_center="CC",
+        expense_account="5000",
+        amount=250,
+        level_1_role="Old Role",
+        level_1_user="old@example.com",
+    )
+
+    request.on_workflow_action("Reopen", next_state="Pending Level 1")
+
+    assert captured["args"] == ("CC", "5000", 250)
+    assert request.status == "Pending Level 1"
+    assert request.level_1_role == "Expense Approver"
+    assert request.level_1_user == "approver@example.com"
+
+
+def test_reopen_to_draft_tracks_next_state(monkeypatch):
+    monkeypatch.setattr(
+        "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
+        lambda cost_center, expense_account, amount: {
+            "level_1": {"role": "Expense Approver", "user": None},
+            "level_2": {"role": None, "user": None},
+            "level_3": {"role": None, "user": None},
+        },
+    )
+    request = ExpenseRequest(status="Rejected", cost_center="CC", expense_account="5000", amount=50)
+
+    request.on_workflow_action("Reopen", next_state="Draft")
+
+    assert request.status == "Draft"
+
+
 def test_validate_blocks_key_changes_after_final_status():
     previous = ExpenseRequest(
         docstatus=1,
