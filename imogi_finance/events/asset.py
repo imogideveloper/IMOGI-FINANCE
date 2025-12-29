@@ -24,12 +24,18 @@ def on_cancel(doc, method=None):
         return
 
     request_info = frappe.db.get_value(
-        "Expense Request", request, ["linked_payment_entry"], as_dict=True
+        "Expense Request",
+        request,
+        ["linked_payment_entry", "linked_purchase_invoice"],
+        as_dict=True,
     )
-    updates = {"linked_asset": None}
-
-    if not request_info or not request_info.linked_payment_entry:
-        updates["status"] = "Approved"
+    has_active_links = request_info and (
+        request_info.linked_payment_entry or request_info.linked_purchase_invoice
+    )
+    updates = {
+        "linked_asset": None,
+        "status": "Linked" if has_active_links else "Approved",
+    }
 
     frappe.db.set_value(
         "Expense Request",
