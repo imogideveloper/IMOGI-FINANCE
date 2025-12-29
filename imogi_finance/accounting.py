@@ -83,5 +83,4 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
 
     pi.insert(ignore_permissions=True)
 
-    request.db_set({"linked_purchase_invoice": pi.name, "status": "Linked"})
     return pi.name

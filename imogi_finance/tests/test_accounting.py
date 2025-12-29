@@ -153,3 +153,47 @@ def test_asset_request_creates_purchase_invoice(monkeypatch):
     assert pi_name == "PI-002"
     assert created_pi.withholding_tax_base_amount == 700
     assert created_pi.items[0]["item_name"] == "New Laptop"
+
+
+def test_purchase_invoice_creation_does_not_update_request(monkeypatch):
+    request = _make_expense_request(name="ER-003")
+
+    created_pi = _doc_with_defaults(frappe._dict(), linked_purchase_invoice=None)
+    db_set_calls = []
+
+    def fake_new_doc(doctype):
+        assert doctype == "Purchase Invoice"
+        return created_pi
+
+    def fake_get_doc(doctype, name):
+        assert doctype == "Expense Request"
+        return request
+
+    def fake_get_value(doctype, name, fieldname, *args, **kwargs):
+        if doctype == "Cost Center":
+            return "Test Company"
+        return None
+
+    request.db_set = lambda values: db_set_calls.append(values)
+    request.linked_purchase_invoice = None
+
+    monkeypatch.setattr(frappe, "get_doc", fake_get_doc)
+    monkeypatch.setattr(frappe, "new_doc", fake_new_doc)
+    monkeypatch.setattr(frappe.db, "get_value", fake_get_value)
+
+    def fake_insert(ignore_permissions=False):
+        created_pi.name = "PI-003"
+
+    def fake_append(table, row):
+        if not hasattr(created_pi, table):
+            setattr(created_pi, table, [])
+        getattr(created_pi, table).append(row)
+
+    created_pi.insert = fake_insert
+    created_pi.append = fake_append
+
+    pi_name = accounting.create_purchase_invoice_from_request("ER-003")
+
+    assert pi_name == "PI-003"
+    assert db_set_calls == []
+    assert request.status == "Approved"

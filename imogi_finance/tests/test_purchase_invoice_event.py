@@ -94,3 +94,28 @@ def test_purchase_invoice_cancel_no_request_skips_updates(monkeypatch):
 
     assert set_value_calls == []
     assert get_value_calls == []
+
+
+def test_purchase_invoice_submit_links_request(monkeypatch):
+    captured_set_value = {}
+
+    def fake_get_approved_expense_request(request_name, target_label):
+        assert request_name == "ER-PI-004"
+        return types.SimpleNamespace(
+            name=request_name, linked_purchase_invoice=None, request_type="Expense"
+        )
+
+    def fake_set_value(doctype, name, values):
+        captured_set_value["doctype"] = doctype
+        captured_set_value["name"] = name
+        captured_set_value["values"] = values
+
+    monkeypatch.setattr(purchase_invoice, "get_approved_expense_request", fake_get_approved_expense_request)
+    monkeypatch.setattr(frappe.db, "set_value", fake_set_value)
+
+    doc = _purchase_invoice_doc("ER-PI-004")
+    purchase_invoice.on_submit(doc)
+
+    assert captured_set_value["doctype"] == "Expense Request"
+    assert captured_set_value["name"] == "ER-PI-004"
+    assert captured_set_value["values"] == {"linked_purchase_invoice": "PI-001", "status": "Linked"}
