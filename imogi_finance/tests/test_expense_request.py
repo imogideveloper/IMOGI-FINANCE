@@ -448,6 +448,62 @@ def test_reopen_blocks_when_downstream_active(monkeypatch):
         request.before_workflow_action("Reopen")
 
 
+def test_reopen_allows_site_override_with_audit(monkeypatch):
+    captured = {}
+
+    def _audit(self, active_links, site_override, request_override):
+        captured["active_links"] = active_links
+        captured["site_override"] = site_override
+        captured["request_override"] = request_override
+
+    request = ExpenseRequest(
+        status="Closed",
+        cost_center="CC",
+        expense_account="5000",
+        items=[_item(amount=100)],
+        linked_payment_entry="PE-1",
+        request_type="Expense",
+    )
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
+    monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: 1)
+    monkeypatch.setattr(frappe, "conf", types.SimpleNamespace(imogi_finance_allow_reopen_with_active_links=True))
+    monkeypatch.setattr(ExpenseRequest, "_add_reopen_override_audit", _audit)
+
+    request.before_workflow_action("Reopen")
+
+    assert captured["active_links"] == ["Payment Entry PE-1"]
+    assert captured["site_override"] is True
+    assert captured["request_override"] is False
+
+
+def test_reopen_allows_request_override_with_audit(monkeypatch):
+    captured = {}
+
+    def _audit(self, active_links, site_override, request_override):
+        captured["active_links"] = active_links
+        captured["site_override"] = site_override
+        captured["request_override"] = request_override
+
+    request = ExpenseRequest(
+        status="Closed",
+        cost_center="CC",
+        expense_account="5000",
+        items=[_item(amount=100)],
+        linked_purchase_invoice="PI-1",
+        allow_reopen_with_active_links=True,
+        request_type="Expense",
+    )
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
+    monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: 1)
+    monkeypatch.setattr(ExpenseRequest, "_add_reopen_override_audit", _audit)
+
+    request.before_workflow_action("Reopen")
+
+    assert captured["active_links"] == ["Purchase Invoice PI-1"]
+    assert captured["site_override"] is False
+    assert captured["request_override"] is True
+
+
 def test_reopen_clears_downstream_links(monkeypatch):
     monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
     monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: 2)

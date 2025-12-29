@@ -249,6 +249,15 @@ class ExpenseRequest(Document):
         if not active_links:
             return
 
+        allow_site_override = getattr(
+            getattr(frappe, "conf", None), "imogi_finance_allow_reopen_with_active_links", False
+        )
+        allow_request_override = getattr(self, "allow_reopen_with_active_links", False)
+
+        if allow_site_override or allow_request_override:
+            self._add_reopen_override_audit(active_links, allow_site_override, allow_request_override)
+            return
+
         frappe.throw(
             _("Cannot reopen while the request is still linked to: {0}. Please cancel those documents first.").format(
                 _(", ").join(active_links)
@@ -487,6 +496,45 @@ class ExpenseRequest(Document):
                     user=getattr(getattr(frappe, "session", None), "user", None),
                 ),
             )
+        except Exception:
+            pass
+
+    def _add_reopen_override_audit(self, active_links: list[str], site_override: bool, request_override: bool):
+        """Record an audit trail when reopening is forced with active downstream links."""
+        try:
+            source = []
+            if site_override:
+                source.append(_("site config"))
+            if request_override:
+                source.append(_("request override"))
+
+            source_text = _(" and ").join(source) if source else _("unknown override")
+            message = _(
+                "Reopened with active links: {links}. Override source: {source}. User: {user}."
+            ).format(
+                links=_(", ").join(active_links),
+                source=source_text,
+                user=getattr(getattr(frappe, "session", None), "user", None),
+            )
+
+            if getattr(self, "name", None) and hasattr(self, "add_comment"):
+                self.add_comment("Comment", message)
+
+            logger = getattr(frappe, "logger", None)
+            if logger:
+                try:
+                    logger("imogi_finance").warning(
+                        "Reopen override used with active links",
+                        extra={
+                            "expense_request": getattr(self, "name", None),
+                            "active_links": active_links,
+                            "site_override": site_override,
+                            "request_override": request_override,
+                            "session_user": getattr(getattr(frappe, "session", None), "user", None),
+                        },
+                    )
+                except Exception:
+                    pass
         except Exception:
             pass
 
