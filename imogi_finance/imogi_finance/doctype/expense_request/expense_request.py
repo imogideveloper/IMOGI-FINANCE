@@ -54,7 +54,13 @@ class ExpenseRequest(Document):
         self.status = "Pending Level 1"
 
     def before_workflow_action(self, action, **kwargs):
-        """Gate workflow transitions by the resolved approver route."""
+        """Gate workflow transitions by the resolved approver route.
+
+        The workflow definition intentionally uses broad role access (\"All\").
+        Permission is enforced here by matching the dynamic route stored on the
+        document so workflow maintainers don't need to manage static roles that
+        could conflict with routed approvers.
+        """
         if self.status not in {"Pending Level 1", "Pending Level 2", "Pending Level 3"}:
             return
 

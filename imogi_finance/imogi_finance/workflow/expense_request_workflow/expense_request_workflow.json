@@ -1,9 +1,9 @@
 {
   "actions": [
-    {"action": "Submit", "allowed": 1},
-    {"action": "Approve", "allowed": 1},
-    {"action": "Reject", "allowed": 1},
-    {"action": "Close", "allowed": 1}
+    {"action": "Submit", "allowed": "All"},
+    {"action": "Approve", "allowed": "All"},
+    {"action": "Reject", "allowed": "All"},
+    {"action": "Close", "allowed": "All"}
   ],
   "creation": "",
   "docstatus": 0,
@@ -12,51 +12,54 @@
   "is_active": 1,
   "module": "Imogi Finance",
   "name": "Expense Request Workflow",
+  "notes": "Roles are intentionally broad; approval enforcement happens in ExpenseRequest.before_workflow_action based on the dynamically resolved route.",
   "override_status": 1,
   "states": [
-    {"state": "Draft", "doc_status": 0, "allow_edit": "Accounts User"},
-    {"state": "Pending Level 1", "doc_status": 1, "allow_edit": "Level 1 User"},
-    {"state": "Pending Level 2", "doc_status": 1, "allow_edit": "Level 2 User"},
-    {"state": "Pending Level 3", "doc_status": 1, "allow_edit": "Level 3 User"},
-    {"state": "Approved", "doc_status": 1, "allow_edit": "Accounts Manager"},
-    {"state": "Rejected", "doc_status": 1, "allow_edit": "Accounts Manager"},
-    {"state": "Linked", "doc_status": 1, "allow_edit": "Accounts Manager"},
-    {"state": "Closed", "doc_status": 1, "allow_edit": "System Manager"}
+    {"state": "Draft", "doc_status": 0, "allow_edit": "All"},
+    {"state": "Pending Level 1", "doc_status": 1, "allow_edit": "All"},
+    {"state": "Pending Level 2", "doc_status": 1, "allow_edit": "All"},
+    {"state": "Pending Level 3", "doc_status": 1, "allow_edit": "All"},
+    {"state": "Approved", "doc_status": 1, "allow_edit": "All"},
+    {"state": "Rejected", "doc_status": 1, "allow_edit": "All"},
+    {"state": "Linked", "doc_status": 1, "allow_edit": "All"},
+    {"state": "Closed", "doc_status": 1, "allow_edit": "All"}
   ],
   "states_field": "status",
   "transitions": [
     {
       "action": "Submit",
       "allow_self_approval": 1,
-      "allowed": "Accounts User",
+      "allowed": "All",
       "state": "Draft",
       "next_state": "Pending Level 1",
       "doc_status": 1
     },
     {
       "action": "Approve",
-      "allowed": "Level 1 User",
+      "allowed": "All",
       "state": "Pending Level 1",
       "next_state": "Pending Level 2",
+      "condition": "doc.level_2_role or doc.level_2_user or doc.level_3_role or doc.level_3_user",
       "doc_status": 1
     },
     {
       "action": "Approve",
-      "allowed": "Level 2 User",
+      "allowed": "All",
       "state": "Pending Level 2",
       "next_state": "Pending Level 3",
+      "condition": "doc.level_3_role or doc.level_3_user",
       "doc_status": 1
     },
     {
       "action": "Approve",
-      "allowed": "Level 3 User",
+      "allowed": "All",
       "state": "Pending Level 3",
       "next_state": "Approved",
       "doc_status": 1
     },
     {
       "action": "Approve",
-      "allowed": "Level 1 User",
+      "allowed": "All",
       "state": "Pending Level 1",
       "next_state": "Approved",
       "condition": "not doc.level_2_role and not doc.level_2_user and not doc.level_3_role and not doc.level_3_user",
@@ -64,7 +67,7 @@
     },
     {
       "action": "Approve",
-      "allowed": "Level 2 User",
+      "allowed": "All",
       "state": "Pending Level 2",
       "next_state": "Approved",
       "condition": "not doc.level_3_role and not doc.level_3_user",
@@ -72,28 +75,28 @@
     },
     {
       "action": "Reject",
-      "allowed": "Level 1 User",
+      "allowed": "All",
       "state": "Pending Level 1",
       "next_state": "Rejected",
       "doc_status": 1
     },
     {
       "action": "Reject",
-      "allowed": "Level 2 User",
+      "allowed": "All",
       "state": "Pending Level 2",
       "next_state": "Rejected",
       "doc_status": 1
     },
     {
       "action": "Reject",
-      "allowed": "Level 3 User",
+      "allowed": "All",
       "state": "Pending Level 3",
       "next_state": "Rejected",
       "doc_status": 1
     },
     {
       "action": "Close",
-      "allowed": "System Manager",
+      "allowed": "All",
       "state": "Linked",
       "next_state": "Closed",
       "doc_status": 1

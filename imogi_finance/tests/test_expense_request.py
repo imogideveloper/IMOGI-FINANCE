@@ -143,3 +143,26 @@ def test_before_workflow_action_allows_final_approval_when_no_next_level(monkeyp
     request = _make_request(role="Level 1 User", user="approver@example.com")
 
     request.before_workflow_action("Approve", next_state="Approved")
+
+
+def test_before_workflow_action_allows_routed_user_without_generic_role(monkeypatch):
+    """Workflow-level roles are broad; routing still enforces the actual approver."""
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="routed@example.com"))
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Viewer"])
+
+    request = _make_request(user="routed@example.com")
+
+    request.before_workflow_action("Approve")
+
+
+def test_before_workflow_action_blocks_generic_role_without_route(monkeypatch):
+    """Having a generic workflow role is insufficient when the route expects a specific user."""
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="other@example.com"))
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Level 1 User"])
+
+    request = _make_request(user="owner@example.com")
+
+    with pytest.raises(NotAllowed) as excinfo:
+        request.before_workflow_action("Approve")
+
+    assert "user 'owner@example.com'" in str(excinfo.value)
