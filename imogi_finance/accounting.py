@@ -53,12 +53,18 @@ def _validate_no_existing_purchase_invoice(request: frappe.model.document.Docume
 
 
 def _update_request_purchase_invoice_links(
-    request: frappe.model.document.Document, purchase_invoice: frappe.model.document.Document
+    request: frappe.model.document.Document,
+    purchase_invoice: frappe.model.document.Document,
+    mark_pending: bool = True,
 ) -> None:
-    updates = {"linked_purchase_invoice": purchase_invoice.name}
+    pending_invoice = None
+    if mark_pending and getattr(purchase_invoice, "docstatus", 0) == 0:
+        pending_invoice = purchase_invoice.name
 
-    if getattr(purchase_invoice, "docstatus", 0) == 0:
-        updates["pending_purchase_invoice"] = purchase_invoice.name
+    updates = {
+        "linked_purchase_invoice": purchase_invoice.name,
+        "pending_purchase_invoice": pending_invoice,
+    }
 
     if hasattr(request, "db_set"):
         request.db_set(updates)

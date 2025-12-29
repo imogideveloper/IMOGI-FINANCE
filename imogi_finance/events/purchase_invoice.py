@@ -34,8 +34,9 @@ def on_submit(doc, method=None):
     frappe.db.set_value(
         "Expense Request",
         request.name,
-        {"linked_purchase_invoice": doc.name, "status": "Linked"},
+        {"linked_purchase_invoice": doc.name, "pending_purchase_invoice": None, "status": "Linked"},
     )
+    request.pending_purchase_invoice = None
 
 
 def on_cancel(doc, method=None):
@@ -44,5 +45,6 @@ def on_cancel(doc, method=None):
         return
 
     updates = get_cancel_updates(request, "linked_purchase_invoice")
+    updates["pending_purchase_invoice"] = None
 
     frappe.db.set_value("Expense Request", request, updates)

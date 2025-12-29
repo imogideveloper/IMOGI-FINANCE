@@ -219,6 +219,36 @@ def test_purchase_invoice_creation_does_not_update_request(monkeypatch):
     assert request.linked_purchase_invoice == "PI-003"
 
 
+def test_update_links_clears_pending_for_submitted_invoice():
+    request = _make_expense_request(name="ER-005", pending_purchase_invoice="PI-DRAFT")
+    purchase_invoice = _doc_with_defaults(frappe._dict(), name="PI-005", docstatus=1)
+    db_set_calls = []
+    request.db_set = lambda values: db_set_calls.append(values)
+
+    accounting._update_request_purchase_invoice_links(request, purchase_invoice)
+
+    assert db_set_calls == [
+        {"linked_purchase_invoice": "PI-005", "pending_purchase_invoice": None}
+    ]
+    assert request.pending_purchase_invoice is None
+    assert request.linked_purchase_invoice == "PI-005"
+
+
+def test_update_links_respects_mark_pending_flag_for_draft():
+    request = _make_expense_request(name="ER-006")
+    purchase_invoice = _doc_with_defaults(frappe._dict(), name="PI-006", docstatus=0)
+    db_set_calls = []
+    request.db_set = lambda values: db_set_calls.append(values)
+
+    accounting._update_request_purchase_invoice_links(request, purchase_invoice, mark_pending=False)
+
+    assert db_set_calls == [
+        {"linked_purchase_invoice": "PI-006", "pending_purchase_invoice": None}
+    ]
+    assert request.pending_purchase_invoice is None
+    assert request.linked_purchase_invoice == "PI-006"
+
+
 def test_validate_request_ready_for_link_disallows_linked_status():
     request = _make_expense_request(status="Linked")
     previous_throw = frappe.throw
@@ -240,5 +270,10 @@ def test_create_purchase_invoice_rejects_when_draft_exists(monkeypatch):
 
     monkeypatch.setattr(frappe, "get_doc", fake_get_doc)
 
-    with pytest.raises(_Throw):
-        accounting.create_purchase_invoice_from_request("ER-004")
+    previous_throw = frappe.throw
+    frappe.throw = _throw
+    try:
+        with pytest.raises(_Throw):
+            accounting.create_purchase_invoice_from_request("ER-004")
+    finally:
+        frappe.throw = previous_throw

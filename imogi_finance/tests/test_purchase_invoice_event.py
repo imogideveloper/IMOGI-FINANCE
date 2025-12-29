@@ -50,6 +50,7 @@ def test_purchase_invoice_cancel_sets_status_linked_when_asset_remains(monkeypat
     assert captured_set_value["name"] == "ER-PI-002"
     assert captured_set_value["values"] == {
         "linked_purchase_invoice": None,
+        "pending_purchase_invoice": None,
         "status": "Linked",
     }
 
@@ -79,6 +80,7 @@ def test_purchase_invoice_cancel_resets_status_when_no_other_links(monkeypatch):
     assert captured_set_value["name"] == "ER-PI-003"
     assert captured_set_value["values"] == {
         "linked_purchase_invoice": None,
+        "pending_purchase_invoice": None,
         "status": "Approved",
     }
 
@@ -104,7 +106,10 @@ def test_purchase_invoice_submit_links_request(monkeypatch):
         assert request_name == "ER-PI-004"
         assert allowed_statuses == accounting.PURCHASE_INVOICE_ALLOWED_STATUSES
         return types.SimpleNamespace(
-            name=request_name, linked_purchase_invoice=None, request_type="Expense"
+            name=request_name,
+            linked_purchase_invoice=None,
+            request_type="Expense",
+            pending_purchase_invoice="PI-DRAFT",
         )
 
     def fake_set_value(doctype, name, values):
@@ -120,4 +125,8 @@ def test_purchase_invoice_submit_links_request(monkeypatch):
 
     assert captured_set_value["doctype"] == "Expense Request"
     assert captured_set_value["name"] == "ER-PI-004"
-    assert captured_set_value["values"] == {"linked_purchase_invoice": "PI-001", "status": "Linked"}
+    assert captured_set_value["values"] == {
+        "linked_purchase_invoice": "PI-001",
+        "pending_purchase_invoice": None,
+        "status": "Linked",
+    }
