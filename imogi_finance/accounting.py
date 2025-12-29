@@ -9,6 +9,12 @@ PURCHASE_INVOICE_REQUEST_TYPES = {"Expense"}
 JOURNAL_ENTRY_REQUEST_TYPES = {"Asset"}
 
 
+def _get_pph_base_amount(request: frappe.model.document.Document) -> float:
+    if request.is_pph_applicable and request.pph_base_amount:
+        return request.pph_base_amount
+    return request.amount
+
+
 def _validate_request_ready_for_link(request: frappe.model.document.Document) -> None:
     if request.docstatus != 1 or request.status != "Approved":
         frappe.throw(
@@ -56,6 +62,7 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     pi.tax_withholding_category = request.pph_type if request.is_pph_applicable else None
     pi.imogi_pph_type = request.pph_type
     pi.apply_tds = 1 if request.is_pph_applicable else 0
+    pi.withholding_tax_base_amount = _get_pph_base_amount(request) if request.is_pph_applicable else None
 
     pi.append(
         "items",
@@ -111,15 +118,39 @@ def create_journal_entry_from_request(expense_request_name: str) -> str:
     je.user_remark = request.description
     je.imogi_expense_request = request.name
 
+    expense_amount = _get_pph_base_amount(request) if request.is_pph_applicable else request.amount
+
     je.append(
         "accounts",
         {
             "account": request.expense_account,
             "cost_center": request.cost_center,
             "project": request.project,
-            "debit_in_account_currency": request.amount,
+            "debit_in_account_currency": expense_amount,
         },
     )
+
+    if request.is_pph_applicable and expense_amount != request.amount:
+        withholding_account = frappe.get_cached_value(
+            "Tax Withholding Category", request.pph_type, "account"
+        )
+
+        if not withholding_account:
+            frappe.throw(_("PPh account is missing for the selected category."))
+
+        withholding_difference = request.amount - expense_amount
+        withholding_entry: dict[str, str | float | None] = {
+            "account": withholding_account,
+            "cost_center": request.cost_center,
+            "project": request.project,
+        }
+
+        if withholding_difference > 0:
+            withholding_entry["debit_in_account_currency"] = withholding_difference
+        else:
+            withholding_entry["credit_in_account_currency"] = abs(withholding_difference)
+
+        je.append("accounts", withholding_entry)
 
     je.append(
         "accounts",
