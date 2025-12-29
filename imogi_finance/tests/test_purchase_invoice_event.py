@@ -28,7 +28,11 @@ def test_purchase_invoice_cancel_sets_status_linked_when_asset_remains(monkeypat
     captured_set_value = {}
 
     def fake_get_value(doctype, name, fields, as_dict=True):
-        return types.SimpleNamespace(linked_payment_entry=None, linked_asset="AST-123")
+        return {
+            "linked_payment_entry": None,
+            "linked_asset": "AST-123",
+            "linked_purchase_invoice": "PI-123",
+        }
 
     def fake_set_value(doctype, name, values):
         captured_set_value["doctype"] = doctype
@@ -53,7 +57,11 @@ def test_purchase_invoice_cancel_resets_status_when_no_other_links(monkeypatch):
     captured_set_value = {}
 
     def fake_get_value(doctype, name, fields, as_dict=True):
-        return types.SimpleNamespace(linked_payment_entry=None, linked_asset=None)
+        return {
+            "linked_payment_entry": None,
+            "linked_asset": None,
+            "linked_purchase_invoice": "PI-003",
+        }
 
     def fake_set_value(doctype, name, values):
         captured_set_value["doctype"] = doctype

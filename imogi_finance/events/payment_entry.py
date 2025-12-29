@@ -1,7 +1,10 @@
 import frappe
 from frappe import _
 
-from imogi_finance.events.utils import get_approved_expense_request
+from imogi_finance.events.utils import (
+    get_approved_expense_request,
+    get_cancel_updates,
+)
 
 
 def on_submit(doc, method=None):
@@ -31,22 +34,6 @@ def on_cancel(doc, method=None):
     if not request:
         return
 
-    request_links = frappe.db.get_value(
-        "Expense Request",
-        request,
-        ["linked_purchase_invoice", "linked_asset"],
-        as_dict=True,
-    )
+    updates = get_cancel_updates(request, "linked_payment_entry")
 
-    new_status = "Approved"
-    if request_links and (
-        request_links.linked_purchase_invoice
-        or request_links.linked_asset
-    ):
-        new_status = "Linked"
-
-    frappe.db.set_value(
-        "Expense Request",
-        request,
-        {"linked_payment_entry": None, "status": new_status},
-    )
+    frappe.db.set_value("Expense Request", request, updates)
