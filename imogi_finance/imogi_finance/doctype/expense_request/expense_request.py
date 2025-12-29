@@ -66,10 +66,11 @@ class ExpenseRequest(Document):
             if not self.pph_type:
                 frappe.throw(_("Please select a PPh Type when PPh is applicable."))
 
-            if getattr(self, "is_pph_applicable", 0) and (
-                not self.pph_base_amount or self.pph_base_amount <= 0
-            ):
-                frappe.throw(_("Please enter a PPh Base Amount greater than zero when PPh is applicable."))
+            if getattr(self, "is_pph_applicable", 0) and not item_pph_applicable:
+                if not self.pph_base_amount or self.pph_base_amount <= 0:
+                    frappe.throw(
+                        _("Please enter a PPh Base Amount greater than zero when PPh is applicable.")
+                    )
 
             for item in item_pph_applicable:
                 base_amount = getattr(item, "pph_base_amount", None)

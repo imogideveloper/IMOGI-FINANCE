@@ -179,6 +179,37 @@ def test_validate_requires_pph_base_amount_on_item_when_applicable():
     assert "PPh Base Amount" in str(excinfo.value)
 
 
+def test_validate_requires_pph_type_when_item_has_pph(monkeypatch):
+    request = ExpenseRequest(
+        is_pph_applicable=0,
+        request_type="Expense",
+        ppn_template=None,
+        pph_type=None,
+        pph_base_amount=None,
+        items=[_item(amount=100, is_pph_applicable=1, pph_base_amount=50)],
+        cost_center="CC",
+    )
+
+    with pytest.raises(NotAllowed) as excinfo:
+        request.validate()
+
+    assert "PPh Type" in str(excinfo.value)
+
+
+def test_validate_does_not_require_base_for_non_pph_items():
+    request = ExpenseRequest(
+        is_pph_applicable=0,
+        request_type="Expense",
+        ppn_template=None,
+        pph_type="PPh 23",
+        pph_base_amount=None,
+        items=[_item(amount=100, is_pph_applicable=0, pph_base_amount=None)],
+        cost_center="CC",
+    )
+
+    request.validate()
+
+
 def test_before_workflow_action_requires_both_user_and_role(monkeypatch):
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="owner@example.com"))
     monkeypatch.setattr(frappe, "get_roles", lambda: ["Expense Approver"])

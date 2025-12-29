@@ -156,6 +156,15 @@ def test_pph_base_amount_uses_item_flags(monkeypatch):
                     "expense_account": "5130 - Meals and Entertainment - _TC",
                     "amount": 200,
                     "is_pph_applicable": 0,
+                    "pph_base_amount": None,
+                }
+            ),
+            frappe._dict(
+                {
+                    "expense_account": "5130 - Meals and Entertainment - _TC",
+                    "amount": 300,
+                    "is_pph_applicable": 1,
+                    "pph_base_amount": None,
                 }
             ),
         ],
@@ -191,6 +200,70 @@ def test_pph_base_amount_uses_item_flags(monkeypatch):
     assert created_pi.apply_tds == 1
     assert created_pi.withholding_tax_base_amount == 60
     assert created_pi.tax_withholding_category == "PPh 23"
+
+
+def test_pph_item_wise_detail_includes_only_flagged_rows(monkeypatch):
+    request = _make_expense_request(
+        name="ER-001B",
+        is_pph_applicable=0,
+        pph_base_amount=999,
+        items=[
+            frappe._dict(
+                {
+                    "expense_account": "5130 - Meals and Entertainment - _TC",
+                    "amount": 100,
+                    "is_pph_applicable": 1,
+                    "pph_base_amount": 80,
+                }
+            ),
+            frappe._dict(
+                {
+                    "expense_account": "5140 - Travel - _TC",
+                    "amount": 200,
+                    "is_pph_applicable": 0,
+                }
+            ),
+            frappe._dict(
+                {
+                    "expense_account": "5150 - Supplies - _TC",
+                    "amount": 300,
+                    "is_pph_applicable": 1,
+                    "pph_base_amount": None,
+                }
+            ),
+        ],
+    )
+
+    created_pi = _doc_with_defaults(frappe._dict(), linked_purchase_invoice=None, docstatus=0)
+
+    def fake_new_doc(doctype):
+        assert doctype == "Purchase Invoice"
+        return created_pi
+
+    def fake_get_doc(doctype, name):
+        assert doctype == "Expense Request"
+        return request
+
+    def fake_get_value(doctype, name, fieldname, *args, **kwargs):
+        if doctype == "Cost Center":
+            return "Test Company"
+        return None
+
+    request.db_set = lambda values: setattr(created_pi, "db_set_called_with", values)
+    monkeypatch.setattr(frappe, "get_doc", fake_get_doc)
+    monkeypatch.setattr(frappe, "new_doc", fake_new_doc)
+    monkeypatch.setattr(frappe.db, "get_value", fake_get_value)
+
+    created_pi.insert = lambda ignore_permissions=False: setattr(created_pi, "name", "PI-001B")
+    created_pi.append = lambda *args, **kwargs: None
+
+    pi_name = accounting.create_purchase_invoice_from_request("ER-001B")
+
+    assert pi_name == "PI-001B"
+    assert created_pi.apply_tds == 1
+    assert created_pi.tax_withholding_category == "PPh 23"
+    assert created_pi.withholding_tax_base_amount == 80
+    assert created_pi.item_wise_tax_detail == {"1": 80.0}
 
 
 def test_asset_request_creates_purchase_invoice(monkeypatch):

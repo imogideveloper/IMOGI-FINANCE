@@ -56,9 +56,9 @@ def _sync_request_amounts(
 def _get_pph_base_amount(request: frappe.model.document.Document) -> float:
     items = getattr(request, "items", []) or []
     item_bases = [
-        getattr(item, "pph_base_amount", None) or getattr(item, "amount", 0)
+        getattr(item, "pph_base_amount", None)
         for item in items
-        if getattr(item, "is_pph_applicable", 0)
+        if getattr(item, "is_pph_applicable", 0) and getattr(item, "pph_base_amount", None)
     ]
 
     if item_bases:
@@ -164,7 +164,9 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     pi.apply_tds = 1 if is_pph_applicable else 0
     pi.withholding_tax_base_amount = _get_pph_base_amount(request) if is_pph_applicable else None
 
-    for item in request_items:
+    item_wise_pph_detail = {}
+
+    for idx, item in enumerate(request_items, start=1):
         pi.append(
             "items",
             {
@@ -181,6 +183,14 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
                 "amount": getattr(item, "amount", None),
             },
         )
+
+        if getattr(item, "is_pph_applicable", 0):
+            base_amount = getattr(item, "pph_base_amount", None)
+            if base_amount is not None:
+                item_wise_pph_detail[str(idx)] = float(base_amount)
+
+    if item_wise_pph_detail:
+        pi.item_wise_tax_detail = item_wise_pph_detail
 
     if is_ppn_applicable and request.ppn_template:
         pi.taxes_and_charges = request.ppn_template
