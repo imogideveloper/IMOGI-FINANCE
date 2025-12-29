@@ -177,15 +177,19 @@ class ExpenseRequest(Document):
             return
 
         requirements = []
+        requirement_details = []
         if expected_user:
             requirements.append(_("user '{0}'").format(expected_user))
+            requirement_details.append(_("user '{0}'").format(expected_user))
         if expected_role:
             requirements.append(_("role '{0}'").format(expected_role))
+            requirement_details.append(_("role '{0}'").format(expected_role))
 
+        self._add_denied_workflow_comment(action, current_level, requirement_details)
         self._log_denied_action(action, current_level, expected_role, expected_user)
         frappe.throw(
-            _("You must be {requirements} to perform this action for the current approval level.").format(
-                requirements=_(" and ").join(requirements)
+            _("You must be {requirements} to perform this action for approval level {level}.").format(
+                requirements=_(" and ").join(requirements), level=current_level
             ),
             title=_("Not Allowed"),
         )
@@ -278,7 +282,12 @@ class ExpenseRequest(Document):
         ]
 
         if not allowed_roles and not allowed_users:
-            return
+            frappe.throw(
+                _(
+                    "No routed approver is defined to close this request. Refresh the approval route or enable unrestricted close via site config."
+                ),
+                title=_("Not Allowed"),
+            )
 
         user_allowed = getattr(getattr(frappe, "session", None), "user", None) in allowed_users
         role_allowed = bool(set(frappe.get_roles()) & set(allowed_roles))
@@ -451,6 +460,27 @@ class ExpenseRequest(Document):
                     "expected_user": expected_user,
                     "session_user": getattr(getattr(frappe, "session", None), "user", None),
                 },
+            )
+        except Exception:
+            pass
+
+    def _add_denied_workflow_comment(self, action, level, requirements: list[str]):
+        """Add timeline comment when workflow action is denied for transparency."""
+        if not getattr(self, "name", None):
+            return
+
+        try:
+            requirement_text = _(", ").join(requirements) if requirements else _("No approver configured")
+            self.add_comment(
+                "Comment",
+                _(
+                    "Workflow action {action} denied at level {level}. Required: {requirements}. User: {user}."
+                ).format(
+                    action=action,
+                    level=level,
+                    requirements=requirement_text,
+                    user=getattr(getattr(frappe, "session", None), "user", None),
+                ),
             )
         except Exception:
             pass
