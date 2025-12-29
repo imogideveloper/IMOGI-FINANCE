@@ -44,11 +44,16 @@ class ExpenseRequest(Document):
             )
 
     def validate_tax_fields(self):
-        if self.is_ppn_applicable and not self.ppn_template:
+        is_ppn_applicable = getattr(self, "is_ppn_applicable", 0)
+        if is_ppn_applicable and not self.ppn_template:
             frappe.throw(_("Please select a PPN Template when PPN is applicable."))
 
-        if self.is_pph_applicable and not self.pph_type:
-            frappe.throw(_("Please select a PPh Type when PPh is applicable."))
+        is_pph_applicable = getattr(self, "is_pph_applicable", 0)
+        if is_pph_applicable:
+            if not self.pph_type:
+                frappe.throw(_("Please select a PPh Type when PPh is applicable."))
+            if not self.pph_base_amount or self.pph_base_amount <= 0:
+                frappe.throw(_("Please enter a PPh Base Amount greater than zero when PPh is applicable."))
 
     def before_submit(self):
         """Resolve approval route and set initial workflow state."""

@@ -47,6 +47,7 @@ def get_approval_route(cost_center: str, account: str, amount: float) -> dict:
             "level_3_role",
             "level_3_user",
         ],
+        order_by="min_amount desc, max_amount asc",
         limit=1,
     )
 

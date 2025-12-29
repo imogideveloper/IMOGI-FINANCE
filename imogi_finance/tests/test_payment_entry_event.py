@@ -26,6 +26,17 @@ def _payment_entry_doc(request_name="ER-TEST"):
     return doc
 
 
+@pytest.fixture(autouse=True)
+def _ensure_db(monkeypatch):
+    """Guarantee frappe.db has the attributes tests expect."""
+    db = getattr(frappe, "db", types.SimpleNamespace())
+    if not hasattr(db, "get_value"):
+        db.get_value = lambda *args, **kwargs: None
+    if not hasattr(db, "set_value"):
+        db.set_value = lambda *args, **kwargs: None
+    monkeypatch.setattr(frappe, "db", db, raising=False)
+
+
 @pytest.mark.parametrize("docstatus,status", [(0, "Approved"), (1, "Pending")])
 def test_payment_entry_linking_requires_approved_request(monkeypatch, docstatus, status):
     request = types.SimpleNamespace(name="ER-001", docstatus=docstatus, status=status, request_type="Expense")
@@ -62,6 +73,7 @@ def test_payment_entry_links_request_when_approved(monkeypatch):
 
     monkeypatch.setattr(frappe, "throw", _throw)
     monkeypatch.setattr(frappe, "get_doc", lambda *args, **kwargs: request)
+    monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: 1)
 
     def fake_set_value(doctype, name, values):
         captured_set_value["doctype"] = doctype
@@ -125,3 +137,47 @@ def test_payment_entry_requires_purchase_invoice_or_asset(monkeypatch):
 
     assert "must be linked to a Purchase Invoice or Asset" in str(excinfo.value)
     assert set_value_calls == []
+
+
+def test_payment_entry_requires_submitted_purchase_invoice(monkeypatch):
+    request = types.SimpleNamespace(
+        name="ER-005", docstatus=1, status="Linked", linked_payment_entry=None, linked_purchase_invoice="PI-DRAFT",
+        linked_asset=None, request_type="Expense"
+    )
+
+    class LinkError(Exception):
+        pass
+
+    def _throw(msg=None, title=None):
+        raise LinkError(msg or title)
+
+    monkeypatch.setattr(frappe, "throw", _throw)
+    monkeypatch.setattr(frappe, "get_doc", lambda *args, **kwargs: request)
+    monkeypatch.setattr(frappe.db, "get_value", lambda doctype, name, field: 0 if doctype == "Purchase Invoice" else None)
+
+    with pytest.raises(LinkError) as excinfo:
+        payment_entry.on_submit(_payment_entry_doc("ER-005"))
+
+    assert "must be submitted before creating Payment Entry" in str(excinfo.value)
+
+
+def test_payment_entry_requires_submitted_asset(monkeypatch):
+    request = types.SimpleNamespace(
+        name="ER-006", docstatus=1, status="Linked", linked_payment_entry=None, linked_purchase_invoice=None,
+        linked_asset="AST-DRAFT", request_type="Asset"
+    )
+
+    class LinkError(Exception):
+        pass
+
+    def _throw(msg=None, title=None):
+        raise LinkError(msg or title)
+
+    monkeypatch.setattr(frappe, "throw", _throw)
+    monkeypatch.setattr(frappe, "get_doc", lambda *args, **kwargs: request)
+    monkeypatch.setattr(frappe.db, "get_value", lambda doctype, name, field: 0 if doctype == "Asset" else None)
+
+    with pytest.raises(LinkError) as excinfo:
+        payment_entry.on_submit(_payment_entry_doc("ER-006"))
+
+    assert "Linked Asset AST-DRAFT must be submitted before creating Payment Entry." in str(excinfo.value)

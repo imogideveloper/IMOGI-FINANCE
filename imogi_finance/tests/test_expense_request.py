@@ -21,6 +21,13 @@ def _throw(msg=None, title=None):
 
 frappe.throw = _throw
 
+
+@pytest.fixture(autouse=True)
+def _reset_frappe(monkeypatch):
+    monkeypatch.setattr(frappe, "throw", _throw, raising=False)
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user=None), raising=False)
+    monkeypatch.setattr(frappe, "get_roles", lambda: [], raising=False)
+
 frappe_model = types.ModuleType("frappe.model")
 frappe_model_document = types.ModuleType("frappe.model.document")
 
@@ -90,6 +97,22 @@ def test_validate_requires_ppn_template_when_applicable():
         request.validate()
 
     assert "PPN Template" in str(excinfo.value)
+
+
+def test_validate_requires_pph_base_amount_when_applicable():
+    request = ExpenseRequest(
+        is_pph_applicable=1,
+        amount=100,
+        request_type="Expense",
+        ppn_template=None,
+        pph_type="PPh 23",
+        pph_base_amount=None,
+    )
+
+    with pytest.raises(NotAllowed) as excinfo:
+        request.validate()
+
+    assert "PPh Base Amount" in str(excinfo.value)
 
 
 def test_before_workflow_action_requires_both_user_and_role(monkeypatch):

@@ -28,6 +28,22 @@ def on_submit(doc, method=None):
     has_asset_link = request.request_type == "Asset" and getattr(
         request, "linked_asset", None
     )
+    if has_purchase_invoice:
+        pi_docstatus = frappe.db.get_value("Purchase Invoice", has_purchase_invoice, "docstatus")
+        if pi_docstatus != 1:
+            frappe.throw(
+                _("Linked Purchase Invoice {0} must be submitted before creating Payment Entry.").format(
+                    has_purchase_invoice
+                )
+            )
+    if has_asset_link:
+        asset_docstatus = frappe.db.get_value("Asset", has_asset_link, "docstatus")
+        if asset_docstatus != 1:
+            frappe.throw(
+                _("Linked Asset {0} must be submitted before creating Payment Entry.").format(
+                    has_asset_link
+                )
+            )
     if not has_purchase_invoice and not has_asset_link:
         frappe.throw(
             _(

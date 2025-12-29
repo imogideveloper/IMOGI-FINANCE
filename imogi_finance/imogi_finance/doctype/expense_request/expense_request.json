@@ -45,6 +45,7 @@
     "level_3_user",
     "integration_section",
     "linked_purchase_invoice",
+    "pending_purchase_invoice",
     "linked_payment_entry",
     "linked_asset"
   ],
@@ -288,6 +289,13 @@
       "fieldname": "linked_purchase_invoice",
       "fieldtype": "Link",
       "label": "Linked Purchase Invoice",
+      "options": "Purchase Invoice",
+      "read_only": 1
+    },
+    {
+      "fieldname": "pending_purchase_invoice",
+      "fieldtype": "Link",
+      "label": "Pending Purchase Invoice",
       "options": "Purchase Invoice",
       "read_only": 1
     },
