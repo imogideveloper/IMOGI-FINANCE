@@ -1,6 +1,8 @@
 import sys
 import types
 
+import pytest
+
 
 frappe = sys.modules.setdefault("frappe", types.ModuleType("frappe"))
 frappe.db = types.SimpleNamespace()
@@ -197,3 +199,15 @@ def test_purchase_invoice_creation_does_not_update_request(monkeypatch):
     assert pi_name == "PI-003"
     assert db_set_calls == []
     assert request.status == "Approved"
+
+
+def test_validate_request_ready_for_link_disallows_linked_status():
+    request = _make_expense_request(status="Linked")
+    previous_throw = frappe.throw
+    frappe.throw = _throw
+
+    try:
+        with pytest.raises(_Throw):
+            accounting._validate_request_ready_for_link(request)
+    finally:
+        frappe.throw = previous_throw

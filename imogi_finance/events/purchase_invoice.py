@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 
-from imogi_finance.accounting import PURCHASE_INVOICE_REQUEST_TYPES
+from imogi_finance.accounting import PURCHASE_INVOICE_ALLOWED_STATUSES, PURCHASE_INVOICE_REQUEST_TYPES
 from imogi_finance.events.utils import (
     get_approved_expense_request,
     get_cancel_updates,
@@ -13,7 +13,9 @@ def on_submit(doc, method=None):
     if not request:
         return
 
-    request = get_approved_expense_request(request, _("Purchase Invoice"))
+    request = get_approved_expense_request(
+        request, _("Purchase Invoice"), allowed_statuses=PURCHASE_INVOICE_ALLOWED_STATUSES
+    )
 
     if request.linked_purchase_invoice:
         frappe.throw(

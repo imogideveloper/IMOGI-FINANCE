@@ -11,9 +11,11 @@ EXPENSE_REQUEST_LINK_FIELDS = (
 )
 
 
-def get_approved_expense_request(request_name: str, target_label: str):
+def get_approved_expense_request(
+    request_name: str, target_label: str, allowed_statuses: frozenset[str] | set[str] | None = None
+):
     request = frappe.get_doc("Expense Request", request_name)
-    allowed_statuses = {"Approved", "Linked"}
+    allowed_statuses = allowed_statuses or {"Approved", "Linked"}
     if request.docstatus != 1 or request.status not in allowed_statuses:
         frappe.throw(
             _(

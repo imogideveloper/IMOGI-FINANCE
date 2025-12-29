@@ -15,6 +15,7 @@ if not hasattr(frappe.db, "get_value"):
     frappe.db.get_value = lambda *args, **kwargs: None
 
 
+from imogi_finance import accounting  # noqa: E402
 from imogi_finance.events import purchase_invoice  # noqa: E402
 
 
@@ -99,8 +100,9 @@ def test_purchase_invoice_cancel_no_request_skips_updates(monkeypatch):
 def test_purchase_invoice_submit_links_request(monkeypatch):
     captured_set_value = {}
 
-    def fake_get_approved_expense_request(request_name, target_label):
+    def fake_get_approved_expense_request(request_name, target_label, allowed_statuses=None):
         assert request_name == "ER-PI-004"
+        assert allowed_statuses == accounting.PURCHASE_INVOICE_ALLOWED_STATUSES
         return types.SimpleNamespace(
             name=request_name, linked_purchase_invoice=None, request_type="Expense"
         )

@@ -6,6 +6,7 @@ import frappe
 from frappe import _
 
 PURCHASE_INVOICE_REQUEST_TYPES = {"Expense", "Asset"}
+PURCHASE_INVOICE_ALLOWED_STATUSES = frozenset({"Approved"})
 
 
 def _get_pph_base_amount(request: frappe.model.document.Document) -> float:
@@ -15,9 +16,11 @@ def _get_pph_base_amount(request: frappe.model.document.Document) -> float:
 
 
 def _validate_request_ready_for_link(request: frappe.model.document.Document) -> None:
-    if request.docstatus != 1 or request.status != "Approved":
+    if request.docstatus != 1 or request.status not in PURCHASE_INVOICE_ALLOWED_STATUSES:
         frappe.throw(
-            _("Expense Request must be submitted and Approved before creating accounting entries.")
+            _("Expense Request must be submitted and have status {0} before creating accounting entries.").format(
+                ", ".join(sorted(PURCHASE_INVOICE_ALLOWED_STATUSES))
+            )
         )
 
 

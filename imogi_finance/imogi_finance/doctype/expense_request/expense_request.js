@@ -7,7 +7,8 @@ frappe.ui.form.on('Expense Request', {
     }
 
     const isSubmitted = frm.doc.docstatus === 1;
-    const isApproved = frm.doc.status === 'Approved';
+    const allowedStatuses = ['Approved'];
+    const isAllowedStatus = allowedStatuses.includes(frm.doc.status);
     const isLinked = frm.doc.status === 'Linked';
     const hasLinkedPurchaseInvoice = Boolean(frm.doc.linked_purchase_invoice);
 
@@ -17,7 +18,9 @@ frappe.ui.form.on('Expense Request', {
       ]));
     }
 
-    if (isSubmitted && (isApproved || (isLinked && !hasLinkedPurchaseInvoice))) {
+    const canCreatePurchaseInvoice = isSubmitted && isAllowedStatus && !hasLinkedPurchaseInvoice;
+
+    if (canCreatePurchaseInvoice) {
       frm.add_custom_button(__('Create Purchase Invoice'), () => {
         frm.call('create_purchase_invoice', {
           expense_request: frm.doc.name,
