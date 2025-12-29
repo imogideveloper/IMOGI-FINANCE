@@ -1,4 +1,7 @@
 import frappe
+from frappe import _
+
+from imogi_finance.events.utils import get_approved_expense_request
 
 
 def on_submit(doc, method=None):
@@ -6,9 +9,11 @@ def on_submit(doc, method=None):
     if not request:
         return
 
+    request = get_approved_expense_request(request, _("Purchase Invoice"))
+
     frappe.db.set_value(
         "Expense Request",
-        request,
+        request.name,
         {"linked_purchase_invoice": doc.name, "status": "Linked"},
     )
 
