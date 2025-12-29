@@ -54,9 +54,19 @@ from imogi_finance.imogi_finance.doctype.expense_request.expense_request import 
 )
 
 
-def _make_request(role=None, user=None):
-    request = ExpenseRequest()
-    request.status = "Pending Level 1"
+def _item(amount=100, expense_account="5000", **overrides):
+    return Document(amount=amount, expense_account=expense_account, **overrides)
+
+
+def _make_request(role=None, user=None, **overrides):
+    defaults = {
+        "status": "Pending Level 1",
+        "items": [(_item())],
+        "cost_center": "CC",
+        "request_type": "Expense",
+    }
+    defaults.update(overrides)
+    request = ExpenseRequest(**defaults)
     request.level_1_role = role
     request.level_1_user = user
     return request
@@ -95,7 +105,13 @@ def test_before_workflow_action_requires_exact_user_when_only_user(monkeypatch):
 
 
 def test_validate_requires_ppn_template_when_applicable():
-    request = ExpenseRequest(is_ppn_applicable=1, amount=1, request_type="Expense", ppn_template=None)
+    request = ExpenseRequest(
+        is_ppn_applicable=1,
+        request_type="Expense",
+        ppn_template=None,
+        items=[_item(amount=1)],
+        cost_center="CC",
+    )
 
     with pytest.raises(NotAllowed) as excinfo:
         request.validate()
@@ -106,11 +122,12 @@ def test_validate_requires_ppn_template_when_applicable():
 def test_validate_requires_pph_base_amount_when_applicable():
     request = ExpenseRequest(
         is_pph_applicable=1,
-        amount=100,
         request_type="Expense",
         ppn_template=None,
         pph_type="PPh 23",
         pph_base_amount=None,
+        items=[_item(amount=100)],
+        cost_center="CC",
     )
 
     with pytest.raises(NotAllowed) as excinfo:
@@ -162,11 +179,15 @@ def test_before_workflow_action_blocks_skipping_level_three(monkeypatch):
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="level2@example.com"))
     monkeypatch.setattr(frappe, "get_roles", lambda: ["Level 2 User"])
 
-    request = ExpenseRequest()
-    request.status = "Pending Level 2"
-    request.level_2_role = "Level 2 User"
-    request.level_2_user = "level2@example.com"
-    request.level_3_user = "level3@example.com"
+    request = ExpenseRequest(
+        status="Pending Level 2",
+        level_2_role="Level 2 User",
+        level_2_user="level2@example.com",
+        level_3_user="level3@example.com",
+        items=[_item()],
+        cost_center="CC",
+        request_type="Expense",
+    )
 
     with pytest.raises(NotAllowed):
         request.before_workflow_action("Approve", next_state="Approved")
@@ -205,7 +226,14 @@ def test_before_workflow_action_blocks_generic_role_without_route(monkeypatch):
 
 
 def test_close_requires_any_routed_user_or_role(monkeypatch):
-    request = ExpenseRequest(status="Linked", level_1_role="Expense Approver", level_2_user="closer@example.com")
+    request = ExpenseRequest(
+        status="Linked",
+        level_1_role="Expense Approver",
+        level_2_user="closer@example.com",
+        items=[_item()],
+        cost_center="CC",
+        request_type="Expense",
+    )
 
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="viewer@example.com"))
     monkeypatch.setattr(frappe, "get_roles", lambda: ["Viewer"])
@@ -215,26 +243,44 @@ def test_close_requires_any_routed_user_or_role(monkeypatch):
 
 
 def test_close_allows_routed_user_or_role(monkeypatch):
-    role_request = ExpenseRequest(status="Linked", level_3_role="Finance Manager")
+    role_request = ExpenseRequest(
+        status="Linked",
+        level_3_role="Finance Manager",
+        items=[_item()],
+        cost_center="CC",
+        request_type="Expense",
+    )
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="manager@example.com"))
     monkeypatch.setattr(frappe, "get_roles", lambda: ["Finance Manager"])
     role_request.before_workflow_action("Close")
 
-    user_request = ExpenseRequest(status="Linked", level_1_user="closer@example.com")
+    user_request = ExpenseRequest(
+        status="Linked",
+        level_1_user="closer@example.com",
+        items=[_item()],
+        cost_center="CC",
+        request_type="Expense",
+    )
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="closer@example.com"))
     monkeypatch.setattr(frappe, "get_roles", lambda: ["Viewer"])
     user_request.before_workflow_action("Close")
 
 
 def test_close_allows_configuration_override(monkeypatch):
-    request = ExpenseRequest(status="Linked")
+    request = ExpenseRequest(status="Linked", items=[_item()], cost_center="CC", request_type="Expense")
     monkeypatch.setattr(frappe, "conf", types.SimpleNamespace(imogi_finance_allow_unrestricted_close=True))
 
     request.before_workflow_action("Close")
 
 
 def test_reopen_requires_system_manager_role(monkeypatch):
-    request = ExpenseRequest(status="Rejected", cost_center="CC", expense_account="5000", amount=100)
+    request = ExpenseRequest(
+        status="Rejected",
+        cost_center="CC",
+        expense_account="5000",
+        items=[_item(amount=100)],
+        request_type="Expense",
+    )
 
     monkeypatch.setattr(frappe, "get_roles", lambda: ["Viewer"])
     with pytest.raises(NotAllowed):
@@ -267,6 +313,8 @@ def test_reopen_refreshes_route_and_status(monkeypatch):
         amount=250,
         level_1_role="Old Role",
         level_1_user="old@example.com",
+        items=[_item(amount=250)],
+        request_type="Expense",
     )
 
     request.on_workflow_action("Reopen", next_state="Pending Level 1")
@@ -286,7 +334,13 @@ def test_reopen_to_draft_tracks_next_state(monkeypatch):
             "level_3": {"role": None, "user": None},
         },
     )
-    request = ExpenseRequest(status="Rejected", cost_center="CC", expense_account="5000", amount=50)
+    request = ExpenseRequest(
+        status="Rejected",
+        cost_center="CC",
+        expense_account="5000",
+        items=[_item(amount=50)],
+        request_type="Expense",
+    )
 
     request.on_workflow_action("Reopen", next_state="Draft")
 
@@ -298,8 +352,9 @@ def test_reopen_blocks_when_downstream_active(monkeypatch):
         status="Closed",
         cost_center="CC",
         expense_account="5000",
-        amount=100,
+        items=[_item(amount=100)],
         linked_payment_entry="PE-1",
+        request_type="Expense",
     )
     monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
     monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: 1)
@@ -324,10 +379,11 @@ def test_reopen_clears_downstream_links(monkeypatch):
         status="Closed",
         cost_center="CC",
         expense_account="5000",
-        amount=100,
+        items=[_item(amount=100)],
         linked_payment_entry="PE-1",
         linked_purchase_invoice="PI-1",
         linked_asset="AST-1",
+        request_type="Expense",
     )
 
     request.before_workflow_action("Reopen")
@@ -349,6 +405,7 @@ def test_validate_blocks_key_changes_after_final_status():
         amount=100,
         currency="IDR",
         cost_center="CC",
+        items=[_item(amount=100)],
     )
     updated = ExpenseRequest(
         docstatus=1,
@@ -359,10 +416,11 @@ def test_validate_blocks_key_changes_after_final_status():
         amount=100,
         currency="IDR",
         cost_center="CC",
+        items=[_item(amount=100)],
     )
     updated._doc_before_save = previous
 
-    updated.amount = 200
+    updated.items[0].amount = 200
 
     with pytest.raises(NotAllowed):
         updated.validate()
@@ -386,6 +444,7 @@ def test_validate_allows_changes_outside_final_status(monkeypatch):
         amount=100,
         currency="IDR",
         cost_center="CC",
+        items=[_item(amount=100)],
     )
     updated = ExpenseRequest(
         docstatus=1,
@@ -396,6 +455,7 @@ def test_validate_allows_changes_outside_final_status(monkeypatch):
         amount=150,
         currency="IDR",
         cost_center="CC",
+        items=[_item(amount=150)],
     )
     updated._doc_before_save = previous
 
@@ -428,6 +488,7 @@ def test_validate_restarts_route_when_key_fields_change_after_submit(monkeypatch
         currency="IDR",
         cost_center="CC",
         level_2_user="second@example.com",
+        items=[_item(amount=100)],
     )
     updated = ExpenseRequest(
         docstatus=1,
@@ -439,6 +500,7 @@ def test_validate_restarts_route_when_key_fields_change_after_submit(monkeypatch
         currency="IDR",
         cost_center="CC",
         level_2_user="second@example.com",
+        items=[_item(amount=200)],
     )
     updated._doc_before_save = previous
 
@@ -460,14 +522,14 @@ def test_before_submit_requires_level_one_approver(monkeypatch):
         },
     )
 
-    request = ExpenseRequest(cost_center="CC", expense_account="5000", amount=100)
+    request = ExpenseRequest(cost_center="CC", expense_account="5000", items=[_item(amount=100)], request_type="Expense")
 
     with pytest.raises(NotAllowed):
         request.before_submit()
 
 
 def test_submit_requires_creator(monkeypatch):
-    request = ExpenseRequest(owner="creator@example.com", status="Draft")
+    request = ExpenseRequest(owner="creator@example.com", status="Draft", items=[_item()], cost_center="CC", request_type="Expense")
 
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="other@example.com"))
     with pytest.raises(NotAllowed):
@@ -481,7 +543,14 @@ def test_approve_requires_route_on_current_level(monkeypatch):
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="approver@example.com"))
     monkeypatch.setattr(frappe, "get_roles", lambda: ["Expense Approver"])
 
-    request = ExpenseRequest(status="Pending Level 2", level_2_role=None, level_2_user=None)
+    request = ExpenseRequest(
+        status="Pending Level 2",
+        level_2_role=None,
+        level_2_user=None,
+        items=[_item()],
+        cost_center="CC",
+        request_type="Expense",
+    )
 
     with pytest.raises(NotAllowed):
         request.before_workflow_action("Approve")

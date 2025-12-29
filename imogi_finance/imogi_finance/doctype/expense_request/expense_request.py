@@ -7,8 +7,8 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
-from imogi_finance.approval import get_approval_route
 from imogi_finance import accounting
+from imogi_finance.approval import get_approval_route
 
 
 class ExpenseRequest(Document):
@@ -24,28 +24,54 @@ class ExpenseRequest(Document):
         self.validate_final_state_immutability()
 
     def validate_amounts(self):
-        if self.amount is None or self.amount <= 0:
-            frappe.throw(_("Amount must be greater than zero."))
+        items = self.get("items") or []
+        if not items:
+            frappe.throw(_("Please add at least one item."))
+
+        total = 0
+        accounts = set()
+
+        for item in items:
+            amount = getattr(item, "amount", None)
+            if amount is None or amount <= 0:
+                frappe.throw(_("Each item must have an Amount greater than zero."))
+
+            account = getattr(item, "expense_account", None)
+            if not account:
+                frappe.throw(_("Each item must have an Expense Account."))
+
+            accounts.add(account)
+            total += amount
+
+        if len(accounts) > 1:
+            frappe.throw(_("All items must use the same Expense Account to match the approval route."))
+
+        self.amount = total
+        self.expense_account = accounts.pop()
 
     def validate_asset_details(self):
         if self.request_type != "Asset":
             return
 
-        missing_fields = []
+        items = self.get("items") or []
+        if not items:
+            return
 
-        if not self.asset_category:
-            missing_fields.append(_("Asset Category"))
-        if not self.asset_name:
-            missing_fields.append(_("Asset Name"))
-        if not self.asset_description:
-            missing_fields.append(_("Asset Description"))
+        for item in items:
+            missing_fields = []
+            if not getattr(item, "asset_category", None):
+                missing_fields.append(_("Asset Category"))
+            if not getattr(item, "asset_name", None):
+                missing_fields.append(_("Asset Name"))
+            if not getattr(item, "asset_description", None):
+                missing_fields.append(_("Asset Description"))
 
-        if missing_fields:
-            frappe.throw(
-                _("Asset requests require the following fields: {0}.").format(
-                    _(", ").join(missing_fields)
+            if missing_fields:
+                frappe.throw(
+                    _("Asset items require the following fields: {0}.").format(
+                        _(", ").join(missing_fields)
+                    )
                 )
-            )
 
     def validate_tax_fields(self):
         is_ppn_applicable = getattr(self, "is_ppn_applicable", 0)
@@ -95,6 +121,7 @@ class ExpenseRequest(Document):
 
     def before_submit(self):
         """Resolve approval route and set initial workflow state."""
+        self.validate_amounts()
         route = get_approval_route(self.cost_center, self.expense_account, self.amount)
         self.apply_route(route)
         self.validate_initial_approver(route)
@@ -170,6 +197,7 @@ class ExpenseRequest(Document):
 
         next_state = kwargs.get("next_state")
         self.clear_downstream_links()
+        self.validate_amounts()
         route = get_approval_route(self.cost_center, self.expense_account, self.amount)
         self.apply_route(route)
         self.status = next_state or "Pending Level 1"

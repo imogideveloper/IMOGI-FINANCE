@@ -99,19 +99,27 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     pi.apply_tds = 1 if request.is_pph_applicable else 0
     pi.withholding_tax_base_amount = _get_pph_base_amount(request) if request.is_pph_applicable else None
 
-    pi.append(
-        "items",
-        {
-            "item_name": request.asset_name or request.description or request.expense_account,
-            "description": request.description,
-            "expense_account": request.expense_account,
-            "cost_center": request.cost_center,
-            "project": request.project,
-            "qty": 1,
-            "rate": request.amount,
-            "amount": request.amount,
-        },
-    )
+    request_items = getattr(request, "items", []) or []
+    if not request_items:
+        frappe.throw(_("Expense Request must have at least one item to create a Purchase Invoice."))
+
+    for item in request_items:
+        pi.append(
+            "items",
+            {
+                "item_name": getattr(item, "asset_name", None)
+                or getattr(item, "description", None)
+                or getattr(item, "expense_account", None),
+                "description": getattr(item, "asset_description", None)
+                or getattr(item, "description", None),
+                "expense_account": getattr(item, "expense_account", None),
+                "cost_center": request.cost_center,
+                "project": request.project,
+                "qty": 1,
+                "rate": getattr(item, "amount", None),
+                "amount": getattr(item, "amount", None),
+            },
+        )
 
     if request.is_ppn_applicable and request.ppn_template:
         pi.taxes_and_charges = request.ppn_template

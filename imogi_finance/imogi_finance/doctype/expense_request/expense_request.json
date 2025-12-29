@@ -16,6 +16,8 @@
     "supplier_invoice_no",
     "supplier_invoice_date",
     "request_type",
+    "items_section",
+    "items",
     "asset_section",
     "asset_category",
     "asset_name",
@@ -104,6 +106,19 @@
     },
     {
       "collapsible": 1,
+      "fieldname": "items_section",
+      "fieldtype": "Section Break",
+      "label": "Items"
+    },
+    {
+      "fieldname": "items",
+      "fieldtype": "Table",
+      "label": "Items",
+      "options": "Expense Request Item",
+      "reqd": 1
+    },
+    {
+      "collapsible": 1,
       "depends_on": "eval:doc.request_type==\"Asset\"",
       "fieldname": "asset_section",
       "fieldtype": "Section Break",
@@ -146,7 +161,7 @@
       "fieldtype": "Link",
       "label": "Expense Account",
       "options": "Account",
-      "reqd": 1
+      "read_only": 1
     },
     {
       "fieldname": "description",
@@ -157,7 +172,7 @@
       "fieldname": "amount",
       "fieldtype": "Currency",
       "label": "Amount",
-      "reqd": 1
+      "read_only": 1
     },
     {
       "default": "IDR",
