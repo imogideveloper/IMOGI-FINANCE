@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 
+from imogi_finance.accounting import PURCHASE_INVOICE_REQUEST_TYPES
 from imogi_finance.events.utils import (
     get_approved_expense_request,
     get_cancel_updates,
@@ -13,6 +14,20 @@ def on_submit(doc, method=None):
         return
 
     request = get_approved_expense_request(request, _("Purchase Invoice"))
+
+    if request.linked_purchase_invoice:
+        frappe.throw(
+            _("Expense Request is already linked to Purchase Invoice {0}.").format(
+                request.linked_purchase_invoice
+            )
+        )
+
+    if request.request_type not in PURCHASE_INVOICE_REQUEST_TYPES:
+        frappe.throw(
+            _("Purchase Invoice can only be linked for request type(s): {0}").format(
+                ", ".join(sorted(PURCHASE_INVOICE_REQUEST_TYPES))
+            )
+        )
 
     frappe.db.set_value(
         "Expense Request",
