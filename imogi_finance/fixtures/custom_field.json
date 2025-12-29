@@ -53,16 +53,5 @@
     "label": "Expense Request",
     "options": "Expense Request",
     "allow_on_submit": 1
-  },
-  {
-    "doctype": "Custom Field",
-    "name": "Journal Entry-imogi_expense_request",
-    "dt": "Journal Entry",
-    "fieldname": "imogi_expense_request",
-    "fieldtype": "Link",
-    "insert_after": "user_remark",
-    "label": "Expense Request",
-    "options": "Expense Request",
-    "allow_on_submit": 1
   }
 ]
