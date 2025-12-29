@@ -259,7 +259,15 @@ def test_validate_blocks_key_changes_after_final_status():
         updated.validate()
 
 
-def test_validate_allows_changes_outside_final_status():
+def test_validate_allows_changes_outside_final_status(monkeypatch):
+    monkeypatch.setattr(
+        "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
+        lambda cost_center, expense_account, amount: {
+            "level_1": {"role": None, "user": None},
+            "level_2": {"role": None, "user": None},
+            "level_3": {"role": None, "user": None},
+        },
+    )
     previous = ExpenseRequest(
         docstatus=1,
         status="Pending Level 1",
@@ -283,3 +291,51 @@ def test_validate_allows_changes_outside_final_status():
     updated._doc_before_save = previous
 
     updated.validate()
+
+
+def test_validate_restarts_route_when_key_fields_change_after_submit(monkeypatch):
+    captured = {}
+
+    def _route(cost_center, expense_account, amount):
+        captured["args"] = (cost_center, expense_account, amount)
+        return {
+            "level_1": {"role": "Level 1 User", "user": "approver@example.com"},
+            "level_2": {"role": None, "user": None},
+            "level_3": {"role": None, "user": None},
+        }
+
+    monkeypatch.setattr(
+        "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
+        _route,
+    )
+
+    previous = ExpenseRequest(
+        docstatus=1,
+        status="Pending Level 2",
+        request_type="Expense",
+        supplier="Supplier A",
+        expense_account="5000",
+        amount=100,
+        currency="IDR",
+        cost_center="CC",
+        level_2_user="second@example.com",
+    )
+    updated = ExpenseRequest(
+        docstatus=1,
+        status="Pending Level 2",
+        request_type="Expense",
+        supplier="Supplier A",
+        expense_account="5000",
+        amount=200,
+        currency="IDR",
+        cost_center="CC",
+        level_2_user="second@example.com",
+    )
+    updated._doc_before_save = previous
+
+    updated.validate()
+
+    assert captured["args"] == ("CC", "5000", 200)
+    assert updated.status == "Pending Level 1"
+    assert updated.level_1_role == "Level 1 User"
+    assert updated.level_1_user == "approver@example.com"

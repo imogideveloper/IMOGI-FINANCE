@@ -18,6 +18,7 @@ class ExpenseRequest(Document):
         self.validate_amounts()
         self.validate_asset_details()
         self.validate_tax_fields()
+        self.handle_key_field_changes_after_submit()
         self.validate_final_state_immutability()
 
     def validate_amounts(self):
@@ -61,20 +62,10 @@ class ExpenseRequest(Document):
         if self.docstatus != 1 or self.status not in {"Approved", "Linked", "Closed"}:
             return
 
-        previous = getattr(self, "_doc_before_save", None)
-        if not previous and hasattr(self, "get_doc_before_save"):
-            try:
-                previous = self.get_doc_before_save()
-            except Exception:
-                previous = None
+        previous = self._get_previous_doc()
 
         if not previous:
             return
-
-        def _get_value(source, field):
-            if hasattr(source, "get"):
-                return source.get(field)
-            return getattr(source, field, None)
 
         key_fields = (
             "request_type",
@@ -91,7 +82,7 @@ class ExpenseRequest(Document):
         )
 
         changed_fields = [
-            field for field in key_fields if _get_value(previous, field) != self.get(field)
+            field for field in key_fields if self._get_value(previous, field) != self.get(field)
         ]
 
         if changed_fields:
@@ -242,6 +233,54 @@ class ExpenseRequest(Document):
         if self.status == "Pending Level 3":
             return "3"
         return None
+
+    def handle_key_field_changes_after_submit(self):
+        """React to key field changes on submitted documents.
+
+        When key fields change post-submit, approval must restart from level 1 with
+        a recomputed route. Final states remain immutable and will raise a validation
+        error instead.
+        """
+        if self.docstatus != 1:
+            return
+
+        previous = self._get_previous_doc()
+        if not previous:
+            return
+
+        key_fields = ("amount", "expense_account", "cost_center")
+        changed_fields = [
+            field for field in key_fields if self._get_value(previous, field) != self.get(field)
+        ]
+
+        if not changed_fields:
+            return
+
+        if self.status in {"Approved", "Linked", "Closed"}:
+            frappe.throw(
+                _("Cannot modify key fields after approval: {0}.").format(_(", ").join(changed_fields)),
+                title=_("Not Allowed"),
+            )
+
+        route = get_approval_route(self.cost_center, self.expense_account, self.amount)
+        self.apply_route(route)
+        self.status = "Pending Level 1"
+
+    @staticmethod
+    def _get_value(source, field):
+        if hasattr(source, "get"):
+            return source.get(field)
+        return getattr(source, field, None)
+
+    def _get_previous_doc(self):
+        previous = getattr(self, "_doc_before_save", None)
+        if not previous and hasattr(self, "get_doc_before_save"):
+            try:
+                previous = self.get_doc_before_save()
+            except Exception:
+                previous = None
+
+        return previous
 
 
 @frappe.whitelist()
