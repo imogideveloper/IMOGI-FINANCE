@@ -15,11 +15,21 @@ class NotAllowed(Exception):
     pass
 
 
+class DoesNotExistError(Exception):
+    pass
+
+
+class ValidationError(Exception):
+    pass
+
+
 def _throw(msg=None, title=None):
     raise NotAllowed(msg or title)
 
 
 frappe.throw = _throw
+frappe.DoesNotExistError = DoesNotExistError
+frappe.ValidationError = ValidationError
 
 
 @pytest.fixture(autouse=True)
@@ -31,6 +41,7 @@ def _reset_frappe(monkeypatch):
     monkeypatch.setattr(frappe, "db", types.SimpleNamespace(), raising=False)
     monkeypatch.setattr(frappe.db, "set_value", lambda *args, **kwargs: None, raising=False)
     monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: None, raising=False)
+    monkeypatch.setattr(frappe, "log_error", lambda *args, **kwargs: None, raising=False)
 
 frappe_model = types.ModuleType("frappe.model")
 frappe_model_document = types.ModuleType("frappe.model.document")
@@ -478,6 +489,71 @@ def test_reopen_clears_downstream_links(monkeypatch):
     assert request.linked_purchase_invoice is None
     assert request.linked_asset is None
     assert request.status == "Pending Level 1"
+
+
+def test_before_submit_handles_missing_route(monkeypatch):
+    captured = {}
+
+    def _raise_missing(*args, **kwargs):
+        raise DoesNotExistError("missing")
+
+    monkeypatch.setattr(
+        "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
+        _raise_missing,
+    )
+    monkeypatch.setattr(
+        "imogi_finance.imogi_finance.doctype.expense_request.expense_request.log_route_resolution_error",
+        lambda *args, **kwargs: captured.setdefault("called", True),
+    )
+
+    request = ExpenseRequest(
+        cost_center="CC",
+        expense_account="5000",
+        amount=100,
+        items=[_item(amount=100)],
+        request_type="Expense",
+    )
+
+    with pytest.raises(NotAllowed) as excinfo:
+        request.before_submit()
+
+    assert "Approval route could not be determined" in str(excinfo.value)
+    assert captured.get("called")
+    assert getattr(request, "status", None) != "Pending Level 1"
+
+
+def test_reopen_handles_validation_error(monkeypatch):
+    captured = {}
+
+    def _raise_validation(*args, **kwargs):
+        raise ValidationError("range mismatch")
+
+    monkeypatch.setattr(
+        "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
+        _raise_validation,
+    )
+    monkeypatch.setattr(
+        "imogi_finance.imogi_finance.doctype.expense_request.expense_request.log_route_resolution_error",
+        lambda *args, **kwargs: captured.setdefault("called", True),
+    )
+
+    request = ExpenseRequest(
+        status="Closed",
+        cost_center="CC",
+        expense_account="5000",
+        amount=150,
+        linked_payment_entry="PE-1",
+        request_type="Expense",
+        items=[_item(amount=150)],
+    )
+
+    with pytest.raises(NotAllowed) as excinfo:
+        request.on_workflow_action("Reopen", next_state="Pending Level 1")
+
+    assert "Approval route could not be determined" in str(excinfo.value)
+    assert captured.get("called")
+    assert request.status == "Closed"
+    assert request.linked_payment_entry == "PE-1"
 
 
 def test_validate_blocks_key_changes_after_final_status():

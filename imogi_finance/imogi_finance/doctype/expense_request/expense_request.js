@@ -2,6 +2,84 @@ frappe.ui.form.on('Expense Request', {
   refresh(frm) {
     frm.dashboard.clear_headline();
 
+    const addCheckRouteButton = () => {
+      if (!frm.doc.cost_center) {
+        return;
+      }
+
+      const routeBtn = frm.add_custom_button(__('Check Approval Route'), async () => {
+        const stringify = (value) => JSON.stringify(value || []);
+
+        try {
+          routeBtn?.prop?.('disabled', true);
+        } catch (error) {
+          // ignore if prop is not available
+        }
+
+        try {
+          const { message } = await frappe.call({
+            method: 'imogi_finance.approval.check_expense_request_route',
+            args: {
+              cost_center: frm.doc.cost_center,
+              items: stringify(frm.doc.items),
+              expense_accounts: stringify(frm.doc.expense_accounts),
+              amount: frm.doc.amount,
+            },
+          });
+
+          if (message?.ok) {
+            const route = message.route || {};
+            const rows = ['1', '2', '3']
+              .map((level) => {
+                const info = route[`level_${level}`] || {};
+                if (!info.role && !info.user) {
+                  return null;
+                }
+                const role = info.role ? __('Role: {0}', [info.role]) : '';
+                const user = info.user ? __('User: {0}', [info.user]) : '';
+                const details = [role, user].filter(Boolean).join(' | ');
+                return `<li>${__('Level {0}', [level])}: ${details}</li>`;
+              })
+              .filter(Boolean)
+              .join('');
+
+            frappe.msgprint({
+              title: __('Approval Route'),
+              message: rows
+                ? `<ul>${rows}</ul>`
+                : __('No approver configured for the current route.'),
+              indicator: 'green',
+            });
+            return;
+          }
+
+          frappe.msgprint({
+            title: __('Approval Route'),
+            message: message?.message
+              ? message.message
+              : __('Approval route could not be determined. Please ask your System Manager to configure an Expense Approval Setting.'),
+            indicator: 'orange',
+          });
+        } catch (error) {
+          frappe.msgprint({
+            title: __('Approval Route'),
+            message: error?.message
+              ? error.message
+              : __('Unable to check approval route right now. Please try again.'),
+            indicator: 'red',
+          });
+        } finally {
+          try {
+            routeBtn?.prop?.('disabled', false);
+          } catch (error) {
+            // ignore if prop is not available
+          }
+        }
+      }, __('Actions'));
+    };
+
+    addCheckRouteButton();
+
     if (!frm.doc.docstatus) {
       return;
     }

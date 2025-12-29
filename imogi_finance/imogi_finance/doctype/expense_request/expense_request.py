@@ -8,7 +8,11 @@ from frappe import _
 from frappe.model.document import Document
 
 from imogi_finance import accounting
-from imogi_finance.approval import get_approval_route
+from imogi_finance.approval import (
+    approval_setting_required_message,
+    get_approval_route,
+    log_route_resolution_error,
+)
 
 
 class ExpenseRequest(Document):
@@ -121,7 +125,17 @@ class ExpenseRequest(Document):
     def before_submit(self):
         """Resolve approval route and set initial workflow state."""
         self.validate_amounts()
-        route = get_approval_route(self.cost_center, self._get_expense_accounts(), self.amount)
+        try:
+            route = get_approval_route(self.cost_center, self._get_expense_accounts(), self.amount)
+        except (frappe.DoesNotExistError, frappe.ValidationError) as exc:
+            log_route_resolution_error(
+                exc,
+                cost_center=self.cost_center,
+                accounts=self._get_expense_accounts(),
+                amount=self.amount,
+            )
+            frappe.throw(approval_setting_required_message(self.cost_center))
+
         self.apply_route(route)
         self.validate_initial_approver(route)
         self.status = "Pending Level 1"
@@ -205,11 +219,20 @@ class ExpenseRequest(Document):
             return
 
         next_state = kwargs.get("next_state")
-        self.clear_downstream_links()
-        self.validate_amounts()
-        route = get_approval_route(self.cost_center, self._get_expense_accounts(), self.amount)
-        self.apply_route(route)
-        self.status = next_state or "Pending Level 1"
+        try:
+            self.validate_amounts()
+            route = get_approval_route(self.cost_center, self._get_expense_accounts(), self.amount)
+            self.clear_downstream_links()
+            self.apply_route(route)
+            self.status = next_state or "Pending Level 1"
+        except (frappe.DoesNotExistError, frappe.ValidationError) as exc:
+            log_route_resolution_error(
+                exc,
+                cost_center=self.cost_center,
+                accounts=self._get_expense_accounts(),
+                amount=self.amount,
+            )
+            frappe.throw(approval_setting_required_message(self.cost_center))
 
     def validate_reopen_permission(self):
         allowed = self.REOPEN_ALLOWED_ROLES

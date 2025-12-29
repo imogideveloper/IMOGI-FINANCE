@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterable
 
 import frappe
@@ -95,3 +96,65 @@ def get_approval_route(cost_center: str, accounts: str | Iterable[str], amount: 
             )
 
     return resolved_route or {}
+
+
+def approval_setting_required_message(cost_center: str | None = None) -> str:
+    if cost_center:
+        return _(
+            "Approval route could not be determined. Please ask your System Manager to configure an Expense Approval Setting for Cost Center {0}."
+        ).format(cost_center)
+
+    return _(
+        "Approval route could not be determined. Please ask your System Manager to configure an Expense Approval Setting."
+    )
+
+
+def log_route_resolution_error(exc: Exception, *, cost_center: str | None = None, accounts=None, amount=None):
+    logger = getattr(frappe, "log_error", None)
+    if logger:
+        try:
+            logger(
+                title=_("Expense Request Approval Route Resolution Failed"),
+                message={
+                    "cost_center": cost_center,
+                    "accounts": accounts,
+                    "amount": amount,
+                    "error": repr(exc),
+                },
+            )
+        except Exception:
+            pass
+
+    frappe_logger = getattr(frappe, "logger", None)
+    if frappe_logger:
+        try:
+            frappe_logger("imogi_finance").warning(
+                "Approval route resolution failed",
+                extra={
+                    "cost_center": cost_center,
+                    "accounts": accounts,
+                    "amount": amount,
+                    "error": repr(exc),
+                },
+            )
+        except Exception:
+            pass
+
+
+@frappe.whitelist()
+def check_expense_request_route(cost_center: str, items=None, expense_accounts=None, amount: float | None = None):
+    parsed_items = json.loads(items) if isinstance(items, str) else items
+    parsed_accounts = json.loads(expense_accounts) if isinstance(expense_accounts, str) else expense_accounts
+
+    total = amount
+    if parsed_items and not parsed_accounts:
+        total, parsed_accounts = frappe.get_module("imogi_finance.accounting").summarize_request_items(parsed_items)
+
+    target_amount = amount if amount is not None else total
+
+    try:
+        route = get_approval_route(cost_center, parsed_accounts or [], target_amount or 0)
+        return {"ok": True, "route": route}
+    except (frappe.DoesNotExistError, frappe.ValidationError) as exc:
+        log_route_resolution_error(exc, cost_center=cost_center, accounts=parsed_accounts, amount=target_amount)
+        return {"ok": False, "message": approval_setting_required_message(cost_center)}
