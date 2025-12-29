@@ -1,10 +1,23 @@
 frappe.ui.form.on('Expense Request', {
   refresh(frm) {
+    frm.dashboard.clear_headline();
+
     if (!frm.doc.docstatus) {
       return;
     }
 
-    if (frm.doc.docstatus === 1 && frm.doc.status === 'Approved') {
+    const isSubmitted = frm.doc.docstatus === 1;
+    const isApproved = frm.doc.status === 'Approved';
+    const isLinked = frm.doc.status === 'Linked';
+    const hasLinkedPurchaseInvoice = Boolean(frm.doc.linked_purchase_invoice);
+
+    if (isSubmitted && isLinked && hasLinkedPurchaseInvoice) {
+      frm.dashboard.set_headline(__('Purchase Invoice {0} already linked to this request.', [
+        frm.doc.linked_purchase_invoice,
+      ]));
+    }
+
+    if (isSubmitted && (isApproved || (isLinked && !hasLinkedPurchaseInvoice))) {
       frm.add_custom_button(__('Create Purchase Invoice'), () => {
         frm.call('create_purchase_invoice', {
           expense_request: frm.doc.name,
