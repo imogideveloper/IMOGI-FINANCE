@@ -51,6 +51,8 @@ def _make_expense_request(**overrides):
         "description": "Team lunch",
         "docstatus": 1,
         "status": "Approved",
+        "linked_purchase_invoice": None,
+        "pending_purchase_invoice": None,
     }
     defaults.update(overrides)
     request = frappe._dict(defaults)
@@ -67,7 +69,7 @@ def _doc_with_defaults(doc, **fields):
 def test_pph_base_amount_used_for_invoice(monkeypatch):
     request = _make_expense_request(name="ER-001")
 
-    created_pi = _doc_with_defaults(frappe._dict(), linked_purchase_invoice=None)
+    created_pi = _doc_with_defaults(frappe._dict(), linked_purchase_invoice=None, docstatus=0)
 
     def fake_new_doc(doctype):
         assert doctype == "Purchase Invoice"
@@ -107,6 +109,12 @@ def test_pph_base_amount_used_for_invoice(monkeypatch):
 
     assert pi_name == "PI-001"
     assert created_pi.withholding_tax_base_amount == 700
+    assert created_pi.db_set_called_with == {
+        "linked_purchase_invoice": "PI-001",
+        "pending_purchase_invoice": "PI-001",
+    }
+    assert request.pending_purchase_invoice == "PI-001"
+    assert request.linked_purchase_invoice == "PI-001"
 
 
 def test_asset_request_creates_purchase_invoice(monkeypatch):
@@ -114,7 +122,7 @@ def test_asset_request_creates_purchase_invoice(monkeypatch):
         request_type="Asset", name="ER-002", asset_name="New Laptop", description="Laptop"
     )
 
-    created_pi = _doc_with_defaults(frappe._dict(), linked_purchase_invoice=None)
+    created_pi = _doc_with_defaults(frappe._dict(), linked_purchase_invoice=None, docstatus=0)
 
     def fake_new_doc(doctype):
         assert doctype == "Purchase Invoice"
@@ -155,12 +163,18 @@ def test_asset_request_creates_purchase_invoice(monkeypatch):
     assert pi_name == "PI-002"
     assert created_pi.withholding_tax_base_amount == 700
     assert created_pi.items[0]["item_name"] == "New Laptop"
+    assert created_pi.db_set_called_with == {
+        "linked_purchase_invoice": "PI-002",
+        "pending_purchase_invoice": "PI-002",
+    }
+    assert request.pending_purchase_invoice == "PI-002"
+    assert request.linked_purchase_invoice == "PI-002"
 
 
 def test_purchase_invoice_creation_does_not_update_request(monkeypatch):
     request = _make_expense_request(name="ER-003")
 
-    created_pi = _doc_with_defaults(frappe._dict(), linked_purchase_invoice=None)
+    created_pi = _doc_with_defaults(frappe._dict(), linked_purchase_invoice=None, docstatus=0)
     db_set_calls = []
 
     def fake_new_doc(doctype):
@@ -197,8 +211,12 @@ def test_purchase_invoice_creation_does_not_update_request(monkeypatch):
     pi_name = accounting.create_purchase_invoice_from_request("ER-003")
 
     assert pi_name == "PI-003"
-    assert db_set_calls == []
+    assert db_set_calls == [
+        {"linked_purchase_invoice": "PI-003", "pending_purchase_invoice": "PI-003"}
+    ]
     assert request.status == "Approved"
+    assert request.pending_purchase_invoice == "PI-003"
+    assert request.linked_purchase_invoice == "PI-003"
 
 
 def test_validate_request_ready_for_link_disallows_linked_status():
@@ -211,3 +229,16 @@ def test_validate_request_ready_for_link_disallows_linked_status():
             accounting._validate_request_ready_for_link(request)
     finally:
         frappe.throw = previous_throw
+
+
+def test_create_purchase_invoice_rejects_when_draft_exists(monkeypatch):
+    request = _make_expense_request(name="ER-004", pending_purchase_invoice="PI-DRAFT-1")
+
+    def fake_get_doc(doctype, name):
+        assert doctype == "Expense Request"
+        return request
+
+    monkeypatch.setattr(frappe, "get_doc", fake_get_doc)
+
+    with pytest.raises(_Throw):
+        accounting.create_purchase_invoice_from_request("ER-004")

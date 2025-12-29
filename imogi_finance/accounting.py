@@ -35,18 +35,45 @@ def _validate_request_type(
         )
 
 
-@frappe.whitelist()
-def create_purchase_invoice_from_request(expense_request_name: str) -> str:
-    """Create a Purchase Invoice from an Expense Request and return its name."""
-    request = frappe.get_doc("Expense Request", expense_request_name)
-    _validate_request_ready_for_link(request)
-    _validate_request_type(request, PURCHASE_INVOICE_REQUEST_TYPES, _("Purchase Invoice"))
+def _validate_no_existing_purchase_invoice(request: frappe.model.document.Document) -> None:
     if request.linked_purchase_invoice:
         frappe.throw(
             _("Expense Request is already linked to Purchase Invoice {0}.").format(
                 request.linked_purchase_invoice
             )
         )
+
+    pending_pi = getattr(request, "pending_purchase_invoice", None)
+    if pending_pi:
+        frappe.throw(
+            _("Expense Request already has draft Purchase Invoice {0}. Submit or cancel it before creating another.").format(
+                pending_pi
+            )
+        )
+
+
+def _update_request_purchase_invoice_links(
+    request: frappe.model.document.Document, purchase_invoice: frappe.model.document.Document
+) -> None:
+    updates = {"linked_purchase_invoice": purchase_invoice.name}
+
+    if getattr(purchase_invoice, "docstatus", 0) == 0:
+        updates["pending_purchase_invoice"] = purchase_invoice.name
+
+    if hasattr(request, "db_set"):
+        request.db_set(updates)
+
+    for field, value in updates.items():
+        setattr(request, field, value)
+
+
+@frappe.whitelist()
+def create_purchase_invoice_from_request(expense_request_name: str) -> str:
+    """Create a Purchase Invoice from an Expense Request and return its name."""
+    request = frappe.get_doc("Expense Request", expense_request_name)
+    _validate_request_ready_for_link(request)
+    _validate_request_type(request, PURCHASE_INVOICE_REQUEST_TYPES, _("Purchase Invoice"))
+    _validate_no_existing_purchase_invoice(request)
 
     company = frappe.db.get_value("Cost Center", request.cost_center, "company")
     if not company:
@@ -85,5 +112,7 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
         pi.set_taxes()
 
     pi.insert(ignore_permissions=True)
+
+    _update_request_purchase_invoice_links(request, pi)
 
     return pi.name
