@@ -19,10 +19,10 @@
     {"state": "Pending Level 1", "doc_status": 1, "allow_edit": "All"},
     {"state": "Pending Level 2", "doc_status": 1, "allow_edit": "All"},
     {"state": "Pending Level 3", "doc_status": 1, "allow_edit": "All"},
-    {"state": "Approved", "doc_status": 1, "allow_edit": "All"},
-    {"state": "Rejected", "doc_status": 1, "allow_edit": "All"},
-    {"state": "Linked", "doc_status": 1, "allow_edit": "All"},
-    {"state": "Closed", "doc_status": 1, "allow_edit": "All"}
+    {"state": "Approved", "doc_status": 1, "allow_edit": ""},
+    {"state": "Rejected", "doc_status": 1, "allow_edit": ""},
+    {"state": "Linked", "doc_status": 1, "allow_edit": ""},
+    {"state": "Closed", "doc_status": 1, "allow_edit": ""}
   ],
   "states_field": "status",
   "transitions": [

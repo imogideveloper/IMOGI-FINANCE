@@ -18,6 +18,7 @@ class ExpenseRequest(Document):
         self.validate_amounts()
         self.validate_asset_details()
         self.validate_tax_fields()
+        self.validate_final_state_immutability()
 
     def validate_amounts(self):
         if self.amount is None or self.amount <= 0:
@@ -54,6 +55,50 @@ class ExpenseRequest(Document):
                 frappe.throw(_("Please select a PPh Type when PPh is applicable."))
             if not self.pph_base_amount or self.pph_base_amount <= 0:
                 frappe.throw(_("Please enter a PPh Base Amount greater than zero when PPh is applicable."))
+
+    def validate_final_state_immutability(self):
+        """Prevent edits to key fields after approval or downstream linkage."""
+        if self.docstatus != 1 or self.status not in {"Approved", "Linked", "Closed"}:
+            return
+
+        previous = getattr(self, "_doc_before_save", None)
+        if not previous and hasattr(self, "get_doc_before_save"):
+            try:
+                previous = self.get_doc_before_save()
+            except Exception:
+                previous = None
+
+        if not previous:
+            return
+
+        def _get_value(source, field):
+            if hasattr(source, "get"):
+                return source.get(field)
+            return getattr(source, field, None)
+
+        key_fields = (
+            "request_type",
+            "supplier",
+            "expense_account",
+            "amount",
+            "currency",
+            "cost_center",
+            "project",
+            "asset_category",
+            "asset_name",
+            "asset_description",
+            "asset_location",
+        )
+
+        changed_fields = [
+            field for field in key_fields if _get_value(previous, field) != self.get(field)
+        ]
+
+        if changed_fields:
+            frappe.throw(
+                _("Cannot modify key fields after approval: {0}.").format(_(", ").join(changed_fields)),
+                title=_("Not Allowed"),
+            )
 
     def before_submit(self):
         """Resolve approval route and set initial workflow state."""

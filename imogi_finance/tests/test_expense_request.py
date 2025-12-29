@@ -228,3 +228,58 @@ def test_close_allows_configuration_override(monkeypatch):
     monkeypatch.setattr(frappe, "conf", types.SimpleNamespace(imogi_finance_allow_unrestricted_close=True))
 
     request.before_workflow_action("Close")
+
+
+def test_validate_blocks_key_changes_after_final_status():
+    previous = ExpenseRequest(
+        docstatus=1,
+        status="Approved",
+        request_type="Expense",
+        supplier="Supplier A",
+        expense_account="5000",
+        amount=100,
+        currency="IDR",
+        cost_center="CC",
+    )
+    updated = ExpenseRequest(
+        docstatus=1,
+        status="Approved",
+        request_type="Expense",
+        supplier="Supplier A",
+        expense_account="5000",
+        amount=100,
+        currency="IDR",
+        cost_center="CC",
+    )
+    updated._doc_before_save = previous
+
+    updated.amount = 200
+
+    with pytest.raises(NotAllowed):
+        updated.validate()
+
+
+def test_validate_allows_changes_outside_final_status():
+    previous = ExpenseRequest(
+        docstatus=1,
+        status="Pending Level 1",
+        request_type="Expense",
+        supplier="Supplier A",
+        expense_account="5000",
+        amount=100,
+        currency="IDR",
+        cost_center="CC",
+    )
+    updated = ExpenseRequest(
+        docstatus=1,
+        status="Pending Level 1",
+        request_type="Expense",
+        supplier="Supplier A",
+        expense_account="5000",
+        amount=150,
+        currency="IDR",
+        cost_center="CC",
+    )
+    updated._doc_before_save = previous
+
+    updated.validate()
