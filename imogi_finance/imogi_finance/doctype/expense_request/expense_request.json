@@ -160,6 +160,7 @@
       "fieldname": "expense_account",
       "fieldtype": "Link",
       "label": "Expense Account",
+      "description": "Diisi otomatis dari detail Item. Nilai hanya muncul jika semua baris menggunakan akun yang sama.",
       "options": "Account",
       "read_only": 1
     },
@@ -172,6 +173,7 @@
       "fieldname": "amount",
       "fieldtype": "Currency",
       "label": "Amount",
+      "description": "Total dari semua Item (read-only).",
       "read_only": 1
     },
     {
