@@ -19,21 +19,6 @@ frappe.ui.form.on('Expense Request', {
           }
         });
       }, __('Create'));
-
-      frm.add_custom_button(__('Create Journal Entry'), () => {
-        frm.call('create_journal_entry', {
-          expense_request: frm.doc.name,
-        }).then((r) => {
-          if (r && r.message) {
-            frappe.msgprint({
-              title: __('Journal Entry Created'),
-              message: __('Journal Entry {0} created from this request.', [r.message]),
-              indicator: 'green',
-            });
-            frm.reload_doc();
-          }
-        });
-      }, __('Create'));
     }
   },
 });

@@ -6,7 +6,7 @@ import frappe
 from frappe import _
 
 PURCHASE_INVOICE_REQUEST_TYPES = {"Expense"}
-JOURNAL_ENTRY_REQUEST_TYPES = {"Asset"}
+JOURNAL_ENTRY_REQUEST_TYPES: set[str] = set()
 
 
 def _get_pph_base_amount(request: frappe.model.document.Document) -> float:
@@ -90,78 +90,7 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
 
 @frappe.whitelist()
 def create_journal_entry_from_request(expense_request_name: str) -> str:
-    """Create a Journal Entry from an Expense Request and return its name."""
-    request = frappe.get_doc("Expense Request", expense_request_name)
-    _validate_request_ready_for_link(request)
-    _validate_request_type(request, JOURNAL_ENTRY_REQUEST_TYPES, _("Journal Entry"))
-    if request.linked_journal_entry:
-        frappe.throw(
-            _("Expense Request is already linked to Journal Entry {0}.").format(
-                request.linked_journal_entry
-            )
-        )
-
-    company = frappe.db.get_value("Cost Center", request.cost_center, "company")
-    if not company:
-        frappe.throw(_("Unable to resolve company from the selected Cost Center."))
-
-    payable_account = frappe.db.get_value(
-        "Supplier", request.supplier, "default_payable_account", cache=True
-    ) or frappe.get_cached_value("Company", company, "default_payable_account")
-
-    if not payable_account:
-        frappe.throw(_("Default payable account is missing for this company."))
-
-    je = frappe.new_doc("Journal Entry")
-    je.company = company
-    je.posting_date = request.request_date
-    je.user_remark = request.description
-    je.imogi_expense_request = request.name
-
-    expense_amount = _get_pph_base_amount(request) if request.is_pph_applicable else request.amount
-
-    je.append(
-        "accounts",
-        {
-            "account": request.expense_account,
-            "cost_center": request.cost_center,
-            "project": request.project,
-            "debit_in_account_currency": expense_amount,
-        },
+    """Journal Entry creation is disabled; use Purchase Invoice instead."""
+    frappe.throw(
+        _("Creating Journal Entry from Expense Request is disabled. Please create a Purchase Invoice.")
     )
-
-    if request.is_pph_applicable and expense_amount != request.amount:
-        withholding_account = frappe.get_cached_value(
-            "Tax Withholding Category", request.pph_type, "account"
-        )
-
-        if not withholding_account:
-            frappe.throw(_("PPh account is missing for the selected category."))
-
-        withholding_difference = request.amount - expense_amount
-        withholding_entry: dict[str, str | float | None] = {
-            "account": withholding_account,
-            "cost_center": request.cost_center,
-            "project": request.project,
-        }
-
-        if withholding_difference > 0:
-            withholding_entry["debit_in_account_currency"] = withholding_difference
-        else:
-            withholding_entry["credit_in_account_currency"] = abs(withholding_difference)
-
-        je.append("accounts", withholding_entry)
-
-    je.append(
-        "accounts",
-        {
-            "account": payable_account,
-            "credit_in_account_currency": request.amount,
-            "party_type": "Supplier",
-            "party": request.supplier,
-        },
-    )
-
-    je.insert(ignore_permissions=True)
-    request.db_set({"linked_journal_entry": je.name, "status": "Linked"})
-    return je.name
