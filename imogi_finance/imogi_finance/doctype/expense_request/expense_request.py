@@ -54,14 +54,22 @@ class ExpenseRequest(Document):
         if not expected_role and not expected_user:
             return
 
-        if expected_user and expected_user == frappe.session.user:
+        role_allowed = not expected_role or expected_role in frappe.get_roles()
+        user_allowed = not expected_user or expected_user == frappe.session.user
+
+        if role_allowed and user_allowed:
             return
 
-        if expected_role and expected_role in frappe.get_roles():
-            return
+        requirements = []
+        if expected_user:
+            requirements.append(_("user '{0}'").format(expected_user))
+        if expected_role:
+            requirements.append(_("role '{0}'").format(expected_role))
 
         frappe.throw(
-            _("You are not allowed to perform this action for the current approval level."),
+            _("You must be {requirements} to perform this action for the current approval level.").format(
+                requirements=_(" and ").join(requirements)
+            ),
             title=_("Not Allowed"),
         )
 
