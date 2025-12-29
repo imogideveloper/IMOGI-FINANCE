@@ -54,20 +54,37 @@ class ExpenseRequest(Document):
                 )
 
     def validate_tax_fields(self):
-        is_ppn_applicable = getattr(self, "is_ppn_applicable", 0)
+        items = self.get("items") or []
+
+        is_ppn_applicable = getattr(self, "is_ppn_applicable", 0) or any(
+            getattr(item, "is_ppn_applicable", 0) for item in items
+        )
         if is_ppn_applicable and not self.ppn_template:
             frappe.throw(_("Please select a PPN Template when PPN is applicable."))
 
-        is_pph_applicable = getattr(self, "is_pph_applicable", 0)
+        item_pph_applicable = [item for item in items if getattr(item, "is_pph_applicable", 0)]
+        is_pph_applicable = getattr(self, "is_pph_applicable", 0) or bool(item_pph_applicable)
         if is_pph_applicable:
             if not self.pph_type:
                 frappe.throw(_("Please select a PPh Type when PPh is applicable."))
-            if not self.pph_base_amount or self.pph_base_amount <= 0:
+
+            if getattr(self, "is_pph_applicable", 0) and (
+                not self.pph_base_amount or self.pph_base_amount <= 0
+            ):
                 frappe.throw(_("Please enter a PPh Base Amount greater than zero when PPh is applicable."))
+
+            for item in item_pph_applicable:
+                base_amount = getattr(item, "pph_base_amount", None)
+                if not base_amount or base_amount <= 0:
+                    frappe.throw(
+                        _("Please enter a PPh Base Amount greater than zero for item {0}.").format(
+                            getattr(item, "description", None) or getattr(item, "expense_account", None) or item.idx
+                        )
+                    )
 
     def validate_final_state_immutability(self):
         """Prevent edits to key fields after approval or downstream linkage."""
-        if self.docstatus != 1 or self.status not in {"Approved", "Linked", "Closed"}:
+        if getattr(self, "docstatus", 0) != 1 or self.status not in {"Approved", "Linked", "Closed"}:
             return
 
         previous = self._get_previous_doc()
@@ -327,7 +344,7 @@ class ExpenseRequest(Document):
         a recomputed route. Final states remain immutable and will raise a validation
         error instead.
         """
-        if self.docstatus != 1:
+        if getattr(self, "docstatus", 0) != 1:
             return
 
         previous = self._get_previous_doc()

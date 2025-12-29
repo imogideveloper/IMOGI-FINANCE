@@ -54,8 +54,22 @@ from imogi_finance.imogi_finance.doctype.expense_request.expense_request import 
 )
 
 
-def _item(amount=100, expense_account="5000", **overrides):
-    return Document(amount=amount, expense_account=expense_account, **overrides)
+def _item(
+    amount=100,
+    expense_account="5000",
+    is_ppn_applicable=0,
+    is_pph_applicable=0,
+    pph_base_amount=None,
+    **overrides,
+):
+    return Document(
+        amount=amount,
+        expense_account=expense_account,
+        is_ppn_applicable=is_ppn_applicable,
+        is_pph_applicable=is_pph_applicable,
+        pph_base_amount=pph_base_amount,
+        **overrides,
+    )
 
 
 def _make_request(role=None, user=None, **overrides):
@@ -119,6 +133,21 @@ def test_validate_requires_ppn_template_when_applicable():
     assert "PPN Template" in str(excinfo.value)
 
 
+def test_validate_requires_ppn_template_when_item_applicable():
+    request = ExpenseRequest(
+        is_ppn_applicable=0,
+        request_type="Expense",
+        ppn_template=None,
+        items=[_item(amount=1, is_ppn_applicable=1)],
+        cost_center="CC",
+    )
+
+    with pytest.raises(NotAllowed) as excinfo:
+        request.validate()
+
+    assert "PPN Template" in str(excinfo.value)
+
+
 def test_validate_requires_pph_base_amount_when_applicable():
     request = ExpenseRequest(
         is_pph_applicable=1,
@@ -127,6 +156,23 @@ def test_validate_requires_pph_base_amount_when_applicable():
         pph_type="PPh 23",
         pph_base_amount=None,
         items=[_item(amount=100)],
+        cost_center="CC",
+    )
+
+    with pytest.raises(NotAllowed) as excinfo:
+        request.validate()
+
+    assert "PPh Base Amount" in str(excinfo.value)
+
+
+def test_validate_requires_pph_base_amount_on_item_when_applicable():
+    request = ExpenseRequest(
+        is_pph_applicable=0,
+        request_type="Expense",
+        ppn_template=None,
+        pph_type="PPh 23",
+        pph_base_amount=None,
+        items=[_item(amount=100, is_pph_applicable=1, pph_base_amount=None)],
         cost_center="CC",
     )
 

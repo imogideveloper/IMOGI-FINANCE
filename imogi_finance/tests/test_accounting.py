@@ -31,8 +31,24 @@ from imogi_finance import accounting
 
 
 def _make_expense_request(**overrides):
-    def _item(amount=1000, expense_account="5130 - Meals and Entertainment - _TC", **kw):
-        return frappe._dict({"expense_account": expense_account, "amount": amount, **kw})
+    def _item(
+        amount=1000,
+        expense_account="5130 - Meals and Entertainment - _TC",
+        is_ppn_applicable=0,
+        is_pph_applicable=0,
+        pph_base_amount=None,
+        **kw,
+    ):
+        return frappe._dict(
+            {
+                "expense_account": expense_account,
+                "amount": amount,
+                "is_ppn_applicable": is_ppn_applicable,
+                "is_pph_applicable": is_pph_applicable,
+                "pph_base_amount": pph_base_amount,
+                **kw,
+            }
+        )
 
     defaults = {
         "doctype": "Expense Request",
@@ -119,6 +135,62 @@ def test_pph_base_amount_used_for_invoice(monkeypatch):
     }
     assert request.pending_purchase_invoice == "PI-001"
     assert request.linked_purchase_invoice == "PI-001"
+
+
+def test_pph_base_amount_uses_item_flags(monkeypatch):
+    request = _make_expense_request(
+        name="ER-001A",
+        is_pph_applicable=0,
+        pph_base_amount=None,
+        items=[
+            frappe._dict(
+                {
+                    "expense_account": "5130 - Meals and Entertainment - _TC",
+                    "amount": 100,
+                    "is_pph_applicable": 1,
+                    "pph_base_amount": 60,
+                }
+            ),
+            frappe._dict(
+                {
+                    "expense_account": "5130 - Meals and Entertainment - _TC",
+                    "amount": 200,
+                    "is_pph_applicable": 0,
+                }
+            ),
+        ],
+    )
+
+    created_pi = _doc_with_defaults(frappe._dict(), linked_purchase_invoice=None, docstatus=0)
+
+    def fake_new_doc(doctype):
+        assert doctype == "Purchase Invoice"
+        return created_pi
+
+    def fake_get_doc(doctype, name):
+        assert doctype == "Expense Request"
+        return request
+
+    def fake_get_value(doctype, name, fieldname, *args, **kwargs):
+        if doctype == "Cost Center":
+            return "Test Company"
+        return None
+
+    request.db_set = lambda values: setattr(created_pi, "db_set_called_with", values)
+
+    monkeypatch.setattr(frappe, "get_doc", fake_get_doc)
+    monkeypatch.setattr(frappe, "new_doc", fake_new_doc)
+    monkeypatch.setattr(frappe.db, "get_value", fake_get_value)
+
+    created_pi.insert = lambda ignore_permissions=False: setattr(created_pi, "name", "PI-001A")
+    created_pi.append = lambda *args, **kwargs: None
+
+    pi_name = accounting.create_purchase_invoice_from_request("ER-001A")
+
+    assert pi_name == "PI-001A"
+    assert created_pi.apply_tds == 1
+    assert created_pi.withholding_tax_base_amount == 60
+    assert created_pi.tax_withholding_category == "PPh 23"
 
 
 def test_asset_request_creates_purchase_invoice(monkeypatch):
@@ -376,6 +448,47 @@ def test_create_purchase_invoice_allows_mixed_expense_accounts(monkeypatch):
         "5130 - Meals and Entertainment - _TC",
         "5140 - Travel - _TC",
     ]
+
+
+def test_create_purchase_invoice_sets_ppn_when_any_item_applies(monkeypatch):
+    request = _make_expense_request(
+        name="ER-010",
+        is_ppn_applicable=0,
+        ppn_template="PPN-TEMPLATE",
+    )
+    request.items[0].is_ppn_applicable = 1
+
+    created_pi = _doc_with_defaults(frappe._dict(), linked_purchase_invoice=None, docstatus=0)
+
+    def fake_get_doc(doctype, name):
+        assert doctype == "Expense Request"
+        return request
+
+    def fake_get_value(doctype, name, fieldname, *args, **kwargs):
+        if doctype == "Cost Center":
+            return "Test Company"
+        return None
+
+    request.db_set = lambda values: setattr(created_pi, "db_set_called_with", values)
+    monkeypatch.setattr(frappe, "get_doc", fake_get_doc)
+    monkeypatch.setattr(frappe, "new_doc", lambda doctype: created_pi)
+    monkeypatch.setattr(frappe.db, "get_value", fake_get_value)
+
+    def fake_insert(ignore_permissions=False):
+        created_pi.name = "PI-010"
+
+    def fake_set_taxes():
+        created_pi.set_taxes_called = True
+
+    created_pi.insert = fake_insert
+    created_pi.append = lambda *args, **kwargs: None
+    created_pi.set_taxes = fake_set_taxes
+
+    pi_name = accounting.create_purchase_invoice_from_request("ER-010")
+
+    assert pi_name == "PI-010"
+    assert created_pi.taxes_and_charges == "PPN-TEMPLATE"
+    assert getattr(created_pi, "set_taxes_called", False) is True
 
 
 def test_update_links_clears_pending_for_submitted_invoice():

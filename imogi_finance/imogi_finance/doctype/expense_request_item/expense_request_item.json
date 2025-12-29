@@ -9,6 +9,9 @@
   "field_order": [
     "expense_account",
     "amount",
+    "is_ppn_applicable",
+    "is_pph_applicable",
+    "pph_base_amount",
     "description",
     "section_break_1",
     "asset_category",
@@ -29,6 +32,23 @@
       "fieldtype": "Currency",
       "label": "Amount",
       "reqd": 1
+    },
+    {
+      "default": "0",
+      "fieldname": "is_ppn_applicable",
+      "fieldtype": "Check",
+      "label": "Apply PPN"
+    },
+    {
+      "default": "0",
+      "fieldname": "is_pph_applicable",
+      "fieldtype": "Check",
+      "label": "Apply PPh"
+    },
+    {
+      "fieldname": "pph_base_amount",
+      "fieldtype": "Currency",
+      "label": "PPh Base Amount"
     },
     {
       "fieldname": "description",
