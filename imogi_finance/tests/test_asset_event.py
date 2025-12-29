@@ -26,10 +26,11 @@ def test_asset_cancel_keeps_linked_status_when_purchase_invoice_remains(monkeypa
     captured_set_value = {}
 
     def fake_get_value(doctype, name, fields, as_dict=True):
-        return types.SimpleNamespace(
-            linked_payment_entry=None,
-            linked_purchase_invoice="PI-123",
-        )
+        return {
+            "linked_payment_entry": None,
+            "linked_purchase_invoice": "PI-123",
+            "linked_asset": "AST-123",
+        }
 
     def fake_set_value(doctype, name, values):
         captured_set_value["doctype"] = doctype
