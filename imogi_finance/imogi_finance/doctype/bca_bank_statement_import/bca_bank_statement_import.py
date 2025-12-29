@@ -54,6 +54,7 @@ class BCABankStatementImport(Document):
             self._guard_against_duplicate_upload(file_bytes)
             self._replace_rows(parsed_rows)
             self._update_summary_fields()
+            self._validate_balances_match()
             self._mark_parsed()
             self.save(ignore_permissions=True)
             conversion_result = self.convert_to_bank_transaction()
@@ -180,6 +181,18 @@ class BCABankStatementImport(Document):
         self.bank = self.bank or "BCA"
         if not self.name:
             self.insert(ignore_permissions=True)
+
+    def _validate_balances_match(self) -> None:
+        if self.starting_balance is None or self.ending_balance is None:
+            return
+
+        expected_ending = flt(self.starting_balance) + flt(self.total_credit) - flt(self.total_debit)
+        if abs(expected_ending - flt(self.ending_balance)) > 0.0001:
+            frappe.throw(
+                _(
+                    "Saldo akhir tidak konsisten. Awal + Kredit - Debit = {0}, tetapi saldo akhir = {1}."
+                ).format(flt(expected_ending), flt(self.ending_balance))
+            )
 
     def _assert_parse_completed(self) -> None:
         if self.import_status not in {"Parsed", "Converted", "Failed"}:
@@ -564,6 +577,9 @@ def create_bank_transaction_from_row(
     else:
         filters["withdrawal"] = amount
 
+    if not row.reference_number:
+        filters["description"] = row.description
+
     existing = frappe.db.get_value("Bank Transaction", filters, "name")
     if existing:
         raise DuplicateTransactionError(existing)
@@ -584,5 +600,9 @@ def create_bank_transaction_from_row(
     bank_transaction.insert(ignore_permissions=True)
     bank_transaction.submit()
     bank_transaction.db_set("status", "Unreconciled")
+    bank_transaction.add_comment(
+        "Info",
+        _("Imported from BCA Bank Statement Import {0}, row {1}").format(row.parent or "", row.idx),
+    )
 
     return bank_transaction
