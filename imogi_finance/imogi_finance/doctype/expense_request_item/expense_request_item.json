@@ -37,29 +37,34 @@
     },
     {
       "fieldname": "section_break_1",
-      "fieldtype": "Section Break"
+      "fieldtype": "Section Break",
+      "depends_on": "eval:parent.request_type==\"Asset\""
     },
     {
       "fieldname": "asset_category",
       "fieldtype": "Link",
       "label": "Asset Category",
-      "options": "Asset Category"
+      "options": "Asset Category",
+      "depends_on": "eval:parent.request_type==\"Asset\""
     },
     {
       "fieldname": "asset_name",
       "fieldtype": "Data",
-      "label": "Asset Name"
+      "label": "Asset Name",
+      "depends_on": "eval:parent.request_type==\"Asset\""
     },
     {
       "fieldname": "asset_description",
       "fieldtype": "Small Text",
-      "label": "Asset Description"
+      "label": "Asset Description",
+      "depends_on": "eval:parent.request_type==\"Asset\""
     },
     {
       "fieldname": "asset_location",
       "fieldtype": "Link",
       "label": "Asset Location",
-      "options": "Location"
+      "options": "Location",
+      "depends_on": "eval:parent.request_type==\"Asset\""
     }
   ],
   "index_web_pages_for_search": 1,

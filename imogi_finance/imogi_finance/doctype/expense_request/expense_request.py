@@ -24,30 +24,9 @@ class ExpenseRequest(Document):
         self.validate_final_state_immutability()
 
     def validate_amounts(self):
-        items = self.get("items") or []
-        if not items:
-            frappe.throw(_("Please add at least one item."))
-
-        total = 0
-        accounts = set()
-
-        for item in items:
-            amount = getattr(item, "amount", None)
-            if amount is None or amount <= 0:
-                frappe.throw(_("Each item must have an Amount greater than zero."))
-
-            account = getattr(item, "expense_account", None)
-            if not account:
-                frappe.throw(_("Each item must have an Expense Account."))
-
-            accounts.add(account)
-            total += amount
-
-        if len(accounts) > 1:
-            frappe.throw(_("All items must use the same Expense Account to match the approval route."))
-
+        total, expense_account = accounting.summarize_request_items(self.get("items"))
         self.amount = total
-        self.expense_account = accounts.pop()
+        self.expense_account = expense_account
 
     def validate_asset_details(self):
         if self.request_type != "Asset":

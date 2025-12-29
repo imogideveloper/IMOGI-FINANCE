@@ -9,6 +9,49 @@ PURCHASE_INVOICE_REQUEST_TYPES = {"Expense", "Asset"}
 PURCHASE_INVOICE_ALLOWED_STATUSES = frozenset({"Approved"})
 
 
+def summarize_request_items(items: list[frappe.model.document.Document] | None) -> tuple[float, str]:
+    if not items:
+        frappe.throw(_("Please add at least one item."))
+
+    total = 0.0
+    accounts = set()
+
+    for item in items:
+        amount = getattr(item, "amount", None)
+        if amount is None or amount <= 0:
+            frappe.throw(_("Each item must have an Amount greater than zero."))
+
+        account = getattr(item, "expense_account", None)
+        if not account:
+            frappe.throw(_("Each item must have an Expense Account."))
+
+        accounts.add(account)
+        total += amount
+
+    if len(accounts) > 1:
+        frappe.throw(_("All items must use the same Expense Account to match the approval route."))
+
+    return total, accounts.pop()
+
+
+def _sync_request_amounts(
+    request: frappe.model.document.Document, total: float, expense_account: str
+) -> None:
+    updates = {}
+
+    if getattr(request, "amount", None) != total:
+        updates["amount"] = total
+
+    if getattr(request, "expense_account", None) != expense_account:
+        updates["expense_account"] = expense_account
+
+    if updates and hasattr(request, "db_set"):
+        request.db_set(updates)
+
+    for field, value in updates.items():
+        setattr(request, field, value)
+
+
 def _get_pph_base_amount(request: frappe.model.document.Document) -> float:
     if request.is_pph_applicable and request.pph_base_amount:
         return request.pph_base_amount
@@ -85,6 +128,13 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     if not company:
         frappe.throw(_("Unable to resolve company from the selected Cost Center."))
 
+    request_items = getattr(request, "items", []) or []
+    if not request_items:
+        frappe.throw(_("Expense Request must have at least one item to create a Purchase Invoice."))
+
+    total_amount, expense_account = summarize_request_items(request_items)
+    _sync_request_amounts(request, total_amount, expense_account)
+
     pi = frappe.new_doc("Purchase Invoice")
     pi.company = company
     pi.supplier = request.supplier
@@ -98,10 +148,6 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     pi.imogi_pph_type = request.pph_type
     pi.apply_tds = 1 if request.is_pph_applicable else 0
     pi.withholding_tax_base_amount = _get_pph_base_amount(request) if request.is_pph_applicable else None
-
-    request_items = getattr(request, "items", []) or []
-    if not request_items:
-        frappe.throw(_("Expense Request must have at least one item to create a Purchase Invoice."))
 
     for item in request_items:
         pi.append(

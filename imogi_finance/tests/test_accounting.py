@@ -281,6 +281,75 @@ def test_create_purchase_invoice_handles_multiple_items(monkeypatch):
     assert request.pending_purchase_invoice == "PI-007"
 
 
+def test_create_purchase_invoice_syncs_amount_and_account(monkeypatch):
+    request = _make_expense_request(
+        name="ER-008",
+        expense_account="9999 - Old - _TC",
+        amount=5,
+    )
+    request.items = [
+        frappe._dict({"expense_account": "7777 - Meals - _TC", "amount": 125, "description": "Actual"}),
+    ]
+
+    created_pi = _doc_with_defaults(frappe._dict(), linked_purchase_invoice=None, docstatus=0)
+    db_set_calls = []
+
+    def fake_new_doc(doctype):
+        assert doctype == "Purchase Invoice"
+        return created_pi
+
+    def fake_get_doc(doctype, name):
+        assert doctype == "Expense Request"
+        return request
+
+    def fake_get_value(doctype, name, fieldname, *args, **kwargs):
+        if doctype == "Cost Center":
+            return "Test Company"
+        return None
+
+    request.db_set = lambda values: db_set_calls.append(values)
+    monkeypatch.setattr(frappe, "get_doc", fake_get_doc)
+    monkeypatch.setattr(frappe, "new_doc", fake_new_doc)
+    monkeypatch.setattr(frappe.db, "get_value", fake_get_value)
+
+    created_pi.insert = lambda ignore_permissions=False: setattr(created_pi, "name", "PI-008")
+    created_pi.append = lambda *args, **kwargs: None
+
+    pi_name = accounting.create_purchase_invoice_from_request("ER-008")
+
+    assert pi_name == "PI-008"
+    assert db_set_calls == [
+        {"amount": 125.0, "expense_account": "7777 - Meals - _TC"},
+        {"linked_purchase_invoice": "PI-008", "pending_purchase_invoice": "PI-008"},
+    ]
+    assert request.amount == 125.0
+    assert request.expense_account == "7777 - Meals - _TC"
+
+
+def test_create_purchase_invoice_rejects_mixed_expense_accounts(monkeypatch):
+    request = _make_expense_request(name="ER-009")
+    request.items = [
+        frappe._dict({"expense_account": "5130 - Meals and Entertainment - _TC", "amount": 100}),
+        frappe._dict({"expense_account": "5140 - Travel - _TC", "amount": 200}),
+    ]
+
+    def fake_get_doc(doctype, name):
+        assert doctype == "Expense Request"
+        return request
+
+    def fake_get_value(doctype, name, fieldname, *args, **kwargs):
+        if doctype == "Cost Center":
+            return "Test Company"
+        return None
+
+    monkeypatch.setattr(frappe, "get_doc", fake_get_doc)
+    monkeypatch.setattr(frappe.db, "get_value", fake_get_value)
+    monkeypatch.setattr(frappe, "throw", _throw, raising=False)
+
+    with pytest.raises(_Throw):
+        accounting.create_purchase_invoice_from_request("ER-009")
+
+
 def test_update_links_clears_pending_for_submitted_invoice():
     request = _make_expense_request(name="ER-005", pending_purchase_invoice="PI-DRAFT")
     purchase_invoice = _doc_with_defaults(frappe._dict(), name="PI-005", docstatus=1)

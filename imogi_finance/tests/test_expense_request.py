@@ -512,6 +512,17 @@ def test_validate_restarts_route_when_key_fields_change_after_submit(monkeypatch
     assert updated.level_1_user == "approver@example.com"
 
 
+def test_validate_blocks_mixed_expense_accounts():
+    request = ExpenseRequest(
+        items=[_item(expense_account="5000"), _item(expense_account="6000")],
+        cost_center="CC",
+        request_type="Expense",
+    )
+
+    with pytest.raises(NotAllowed):
+        request.validate_amounts()
+
+
 def test_before_submit_requires_level_one_approver(monkeypatch):
     monkeypatch.setattr(
         "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
