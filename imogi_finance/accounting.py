@@ -54,7 +54,17 @@ def _sync_request_amounts(
 
 
 def _get_pph_base_amount(request: frappe.model.document.Document) -> float:
-    if request.is_pph_applicable and request.pph_base_amount:
+    items = getattr(request, "items", []) or []
+    item_bases = [
+        getattr(item, "pph_base_amount", None) or getattr(item, "amount", 0)
+        for item in items
+        if getattr(item, "is_pph_applicable", 0)
+    ]
+
+    if item_bases:
+        return float(sum(item_bases))
+
+    if getattr(request, "is_pph_applicable", 0) and getattr(request, "pph_base_amount", None):
         return request.pph_base_amount
     return request.amount
 
@@ -136,6 +146,11 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     total_amount, expense_accounts = summarize_request_items(request_items)
     _sync_request_amounts(request, total_amount, expense_accounts)
 
+    ppn_items = [item for item in request_items if getattr(item, "is_ppn_applicable", 0)]
+    pph_items = [item for item in request_items if getattr(item, "is_pph_applicable", 0)]
+    is_ppn_applicable = bool(getattr(request, "is_ppn_applicable", 0) or ppn_items)
+    is_pph_applicable = bool(getattr(request, "is_pph_applicable", 0) or pph_items)
+
     pi = frappe.new_doc("Purchase Invoice")
     pi.company = company
     pi.supplier = request.supplier
@@ -145,10 +160,10 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     pi.currency = request.currency
     pi.imogi_expense_request = request.name
     pi.imogi_request_type = request.request_type
-    pi.tax_withholding_category = request.pph_type if request.is_pph_applicable else None
+    pi.tax_withholding_category = request.pph_type if is_pph_applicable else None
     pi.imogi_pph_type = request.pph_type
-    pi.apply_tds = 1 if request.is_pph_applicable else 0
-    pi.withholding_tax_base_amount = _get_pph_base_amount(request) if request.is_pph_applicable else None
+    pi.apply_tds = 1 if is_pph_applicable else 0
+    pi.withholding_tax_base_amount = _get_pph_base_amount(request) if is_pph_applicable else None
 
     for item in request_items:
         pi.append(
@@ -168,7 +183,7 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
             },
         )
 
-    if request.is_ppn_applicable and request.ppn_template:
+    if is_ppn_applicable and request.ppn_template:
         pi.taxes_and_charges = request.ppn_template
         pi.set_taxes()
 
