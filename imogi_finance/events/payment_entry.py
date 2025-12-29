@@ -13,7 +13,7 @@ def on_submit(doc, method=None):
         return
 
     request = get_approved_expense_request(
-        request, _("Payment Entry"), allowed_statuses=frozenset({"Linked", "Closed"})
+        request, _("Payment Entry"), allowed_statuses=frozenset({"Linked"})
     )
 
     linked_payment_entry = getattr(request, "linked_payment_entry", None)
@@ -21,6 +21,17 @@ def on_submit(doc, method=None):
         frappe.throw(
             _("Expense Request already linked to Payment Entry {0}").format(
                 linked_payment_entry
+            )
+        )
+
+    existing_payment_entry = frappe.db.exists(
+        "Payment Entry",
+        {"imogi_expense_request": request.name, "docstatus": ["!=", 2]},
+    )
+    if existing_payment_entry:
+        frappe.throw(
+            _("An active Payment Entry {0} already exists for Expense Request {1}").format(
+                existing_payment_entry, request.name
             )
         )
 

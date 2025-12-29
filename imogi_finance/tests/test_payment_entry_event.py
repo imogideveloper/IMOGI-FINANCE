@@ -11,6 +11,8 @@ if not hasattr(frappe, "db"):
     frappe.db = types.SimpleNamespace()
 if not hasattr(frappe.db, "set_value"):
     frappe.db.set_value = lambda *args, **kwargs: None
+if not hasattr(frappe.db, "exists"):
+    frappe.db.exists = lambda *args, **kwargs: None
 if not hasattr(frappe, "throw"):
     frappe.throw = lambda *args, **kwargs: None
 if not hasattr(frappe, "get_doc"):
@@ -34,6 +36,8 @@ def _ensure_db(monkeypatch):
         db.get_value = lambda *args, **kwargs: None
     if not hasattr(db, "set_value"):
         db.set_value = lambda *args, **kwargs: None
+    if not hasattr(db, "exists"):
+        db.exists = lambda *args, **kwargs: None
     monkeypatch.setattr(frappe, "db", db, raising=False)
 
 
@@ -55,8 +59,26 @@ def test_payment_entry_linking_requires_approved_request(monkeypatch, docstatus,
     with pytest.raises(LinkError) as excinfo:
         payment_entry.on_submit(_payment_entry_doc("ER-001"))
 
-    assert "docstatus 1 and status Closed, Linked" in str(excinfo.value)
+    assert "docstatus 1 and status Linked" in str(excinfo.value)
     assert set_value_calls == []
+
+
+def test_payment_entry_rejects_closed_request(monkeypatch):
+    request = types.SimpleNamespace(name="ER-010", docstatus=1, status="Closed", request_type="Expense")
+
+    class LinkError(Exception):
+        pass
+
+    def _throw(msg=None, title=None):
+        raise LinkError(msg or title)
+
+    monkeypatch.setattr(frappe, "throw", _throw)
+    monkeypatch.setattr(frappe, "get_doc", lambda *args, **kwargs: request)
+
+    with pytest.raises(LinkError) as excinfo:
+        payment_entry.on_submit(_payment_entry_doc("ER-010"))
+
+    assert "status Linked" in str(excinfo.value)
 
 
 def test_payment_entry_links_request_when_approved(monkeypatch):
@@ -112,6 +134,28 @@ def test_payment_entry_throws_if_already_linked(monkeypatch):
 
     assert "Expense Request already linked to Payment Entry PE-0009" in str(excinfo.value)
     assert set_value_calls == []
+
+
+def test_payment_entry_rejects_existing_payment_entry(monkeypatch):
+    request = types.SimpleNamespace(
+        name="ER-011", docstatus=1, status="Linked", linked_payment_entry=None, request_type="Expense", linked_purchase_invoice="PI-222"
+    )
+
+    class LinkError(Exception):
+        pass
+
+    def _throw(msg=None, title=None):
+        raise LinkError(msg or title)
+
+    monkeypatch.setattr(frappe, "throw", _throw)
+    monkeypatch.setattr(frappe, "get_doc", lambda *args, **kwargs: request)
+    monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: 1)
+    monkeypatch.setattr(frappe.db, "exists", lambda *args, **kwargs: "PE-EXISTING")
+
+    with pytest.raises(LinkError) as excinfo:
+        payment_entry.on_submit(_payment_entry_doc("ER-011"))
+
+    assert "An active Payment Entry PE-EXISTING already exists for Expense Request ER-011" in str(excinfo.value)
 
 
 def test_payment_entry_requires_purchase_invoice_or_asset(monkeypatch):
