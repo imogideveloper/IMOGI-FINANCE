@@ -96,9 +96,3 @@ class ExpenseRequest(Document):
 def create_purchase_invoice(expense_request: str) -> str:
     """Whitelisted helper to build a Purchase Invoice from an Expense Request."""
     return accounting.create_purchase_invoice_from_request(expense_request)
-
-
-@frappe.whitelist()
-def create_journal_entry(expense_request: str) -> str:
-    """Whitelisted helper to build a Journal Entry from an Expense Request."""
-    return accounting.create_journal_entry_from_request(expense_request)

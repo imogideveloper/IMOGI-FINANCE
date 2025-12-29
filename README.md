@@ -50,10 +50,9 @@ frappe.call("imogi_finance.accounting.create_purchase_invoice_from_request", exp
 # Tandai request sudah terhubung agar memicu error duplikasi
 request.db_set("linked_purchase_invoice", "PI-TEST")
 frappe.call("imogi_finance.accounting.create_purchase_invoice_from_request", expense_request_name=request.name)
-
-# Untuk request tipe Asset, gunakan JE dan pastikan validasi serupa berjalan
+# Untuk request tipe Asset, gunakan Purchase Invoice (Flow JE manual dihapus)
 request.db_set({"linked_purchase_invoice": None, "request_type": "Asset"})
-frappe.call("imogi_finance.accounting.create_journal_entry_from_request", expense_request_name=request.name)
+frappe.call("imogi_finance.accounting.create_purchase_invoice_from_request", expense_request_name=request.name)
 ```
 
 ### License

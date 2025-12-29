@@ -144,10 +144,6 @@ doc_events = {
         "on_submit": "imogi_finance.events.purchase_invoice.on_submit",
         "on_cancel": "imogi_finance.events.purchase_invoice.on_cancel",
     },
-    "Journal Entry": {
-        "on_submit": "imogi_finance.events.journal_entry.on_submit",
-        "on_cancel": "imogi_finance.events.journal_entry.on_cancel",
-    },
     "Payment Entry": {
         "on_submit": "imogi_finance.events.payment_entry.on_submit",
         "on_cancel": "imogi_finance.events.payment_entry.on_cancel",
@@ -268,7 +264,6 @@ fixtures = [
             "Purchase Invoice-imogi_pph_type",
             "Payment Entry-imogi_expense_request",
             "Asset-imogi_expense_request",
-            "Journal Entry-imogi_expense_request",
         ]]],
     },
     {"dt": "Workspace", "filters": [["name", "=", "IMOGI FINANCE"]]},

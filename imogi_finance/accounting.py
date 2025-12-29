@@ -5,8 +5,7 @@ from __future__ import annotations
 import frappe
 from frappe import _
 
-PURCHASE_INVOICE_REQUEST_TYPES = {"Expense"}
-JOURNAL_ENTRY_REQUEST_TYPES: set[str] = {"Asset"}
+PURCHASE_INVOICE_REQUEST_TYPES = {"Expense", "Asset"}
 
 
 def _get_pph_base_amount(request: frappe.model.document.Document) -> float:
@@ -86,91 +85,3 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
 
     request.db_set({"linked_purchase_invoice": pi.name, "status": "Linked"})
     return pi.name
-
-
-@frappe.whitelist()
-def create_journal_entry_from_request(expense_request_name: str) -> str:
-    """Create a Journal Entry from an Expense Request and return its name."""
-    request = frappe.get_doc("Expense Request", expense_request_name)
-    _validate_request_ready_for_link(request)
-    _validate_request_type(request, JOURNAL_ENTRY_REQUEST_TYPES, _("Journal Entry"))
-
-    if request.linked_journal_entry:
-        frappe.throw(
-            _("Expense Request is already linked to Journal Entry {0}.").format(
-                request.linked_journal_entry
-            )
-        )
-
-    if request.is_pph_applicable and not request.pph_type:
-        frappe.throw(_("Please set PPh Type before creating a Journal Entry."))
-
-    company = frappe.db.get_value("Cost Center", request.cost_center, "company")
-    if not company:
-        frappe.throw(_("Unable to resolve company from the selected Cost Center."))
-
-    payable_account = frappe.get_cached_value(
-        "Supplier", request.supplier, "default_payable_account"
-    ) or frappe.get_cached_value("Company", company, "default_payable_account")
-    if not payable_account:
-        frappe.throw(_("Please set a Default Payable Account for the Supplier or Company."))
-
-    withholding_amount = 0.0
-    withholding_account = None
-    if request.is_pph_applicable and request.pph_type:
-        twc_info = frappe.get_cached_value(
-            "Tax Withholding Category",
-            request.pph_type,
-            ["account", "rate"],
-            as_dict=True,
-        )
-        withholding_account = twc_info.account if twc_info else None
-        withholding_rate = twc_info.rate if twc_info else 0
-        withholding_amount = _get_pph_base_amount(request) * (withholding_rate or 0) / 100
-
-    payable_amount = request.amount - withholding_amount
-    if payable_amount < 0:
-        frappe.throw(_("Withholding amount cannot exceed the request amount."))
-
-    je = frappe.new_doc("Journal Entry")
-    je.company = company
-    je.posting_date = request.request_date
-    je.user_remark = request.description
-    je.imogi_expense_request = request.name
-    je.imogi_request_type = request.request_type
-
-    je.append(
-        "accounts",
-        {
-            "account": request.expense_account,
-            "debit_in_account_currency": request.amount,
-            "cost_center": request.cost_center,
-            "project": request.project,
-        },
-    )
-
-    if withholding_amount and withholding_account:
-        je.append(
-            "accounts",
-            {
-                "account": withholding_account,
-                "credit_in_account_currency": withholding_amount,
-                "cost_center": request.cost_center,
-            },
-        )
-
-    je.append(
-        "accounts",
-        {
-            "account": payable_account,
-            "party_type": "Supplier",
-            "party": request.supplier,
-            "credit_in_account_currency": payable_amount,
-            "cost_center": request.cost_center,
-        },
-    )
-
-    je.insert(ignore_permissions=True)
-
-    request.db_set({"linked_journal_entry": je.name, "status": "Linked"})
-    return je.name

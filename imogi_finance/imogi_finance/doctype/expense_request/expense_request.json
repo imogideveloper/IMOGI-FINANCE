@@ -46,7 +46,6 @@
     "integration_section",
     "linked_purchase_invoice",
     "linked_payment_entry",
-    "linked_journal_entry",
     "linked_asset"
   ],
   "fields": [
@@ -296,13 +295,6 @@
       "fieldtype": "Link",
       "label": "Linked Payment Entry",
       "options": "Payment Entry",
-      "read_only": 1
-    },
-    {
-      "fieldname": "linked_journal_entry",
-      "fieldtype": "Link",
-      "label": "Linked Journal Entry",
-      "options": "Journal Entry",
       "read_only": 1
     },
     {

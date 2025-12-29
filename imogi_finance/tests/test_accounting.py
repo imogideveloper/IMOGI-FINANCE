@@ -107,10 +107,16 @@ def test_pph_base_amount_used_for_invoice(monkeypatch):
     assert created_pi.withholding_tax_base_amount == 700
 
 
-def test_journal_entry_uses_pph_base_amount(monkeypatch):
-    request = _make_expense_request(request_type="Asset", name="ER-002")
+def test_asset_request_creates_purchase_invoice(monkeypatch):
+    request = _make_expense_request(
+        request_type="Asset", name="ER-002", asset_name="New Laptop", description="Laptop"
+    )
 
-    created_je = _doc_with_defaults(frappe._dict(), linked_journal_entry=None)
+    created_pi = _doc_with_defaults(frappe._dict(), linked_purchase_invoice=None)
+
+    def fake_new_doc(doctype):
+        assert doctype == "Purchase Invoice"
+        return created_pi
 
     def fake_get_doc(doctype, name):
         assert doctype == "Expense Request"
@@ -121,43 +127,29 @@ def test_journal_entry_uses_pph_base_amount(monkeypatch):
             return "Test Company"
         return None
 
-    def fake_get_cached_value(doctype, name, fieldname, *args, **kwargs):
-        if doctype == "Supplier":
-            return "2100 - Creditors - _TC"
-        if doctype == "Company":
-            return "2100 - Creditors - _TC"
-        if doctype == "Tax Withholding Category":
-            return frappe._dict({"account": "2240 - PPh 23 Payable - _TC", "rate": 2})
-        return None
-
-    def fake_new_doc(doctype):
-        assert doctype == "Journal Entry"
-        return created_je
-
-    def fake_insert(ignore_permissions=False):
-        created_je.name = "JE-001"
-
-    def fake_append(table, row):
-        if not hasattr(created_je, table):
-            setattr(created_je, table, [])
-        getattr(created_je, table).append(row)
-
     def fake_db_set(values):
-        created_je.db_set_called_with = values
+        created_pi.db_set_called_with = values
 
     request.db_set = fake_db_set
-    request.linked_journal_entry = None
+    request.linked_purchase_invoice = None
 
     monkeypatch.setattr(frappe, "get_doc", fake_get_doc)
     monkeypatch.setattr(frappe, "new_doc", fake_new_doc)
-    monkeypatch.setattr(frappe, "get_cached_value", fake_get_cached_value)
     monkeypatch.setattr(frappe.db, "get_value", fake_get_value)
-    created_je.insert = fake_insert
-    created_je.append = fake_append
 
-    je_name = accounting.create_journal_entry_from_request("ER-002")
+    def fake_insert(ignore_permissions=False):
+        created_pi.name = "PI-002"
 
-    assert je_name == "JE-001"
-    assert created_je.accounts[0]["debit_in_account_currency"] == 1000
-    assert created_je.accounts[1]["credit_in_account_currency"] == 14
-    assert created_je.accounts[2]["credit_in_account_currency"] == 986
+    def fake_append(table, row):
+        if not hasattr(created_pi, table):
+            setattr(created_pi, table, [])
+        getattr(created_pi, table).append(row)
+
+    created_pi.insert = fake_insert
+    created_pi.append = fake_append
+
+    pi_name = accounting.create_purchase_invoice_from_request("ER-002")
+
+    assert pi_name == "PI-002"
+    assert created_pi.withholding_tax_base_amount == 700
+    assert created_pi.items[0]["item_name"] == "New Laptop"
