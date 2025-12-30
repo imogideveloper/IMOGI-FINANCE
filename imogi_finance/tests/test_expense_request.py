@@ -394,10 +394,25 @@ def test_close_allows_routed_user_or_role(monkeypatch):
 
 
 def test_close_allows_configuration_override(monkeypatch):
-    request = ExpenseRequest(status="Linked", items=[_item()], cost_center="CC", request_type="Expense")
+    request = ExpenseRequest(status="Linked", name="ER-001", items=[_item()], cost_center="CC", request_type="Expense")
+    comments = []
+    warnings = []
+
+    def _logger(_name=None):
+        class _Dummy:
+            def warning(self, *args, **kwargs):
+                warnings.append((args, kwargs))
+
+        return _Dummy()
+
+    monkeypatch.setattr(frappe, "logger", _logger, raising=False)
+    request.add_comment = lambda comment_type, text: comments.append((comment_type, text))
     monkeypatch.setattr(frappe, "conf", types.SimpleNamespace(imogi_finance_allow_unrestricted_close=True))
 
     request.before_workflow_action("Close")
+
+    assert any("unrestricted override" in entry[1] for entry in comments)
+    assert warnings
 
 
 def test_close_revalidates_against_current_route(monkeypatch):

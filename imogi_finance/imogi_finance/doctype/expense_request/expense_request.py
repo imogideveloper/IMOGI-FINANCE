@@ -320,6 +320,7 @@ class ExpenseRequest(Document):
         - The user has any routed approver role.
         """
         if getattr(getattr(frappe, "conf", None), "imogi_finance_allow_unrestricted_close", False):
+            self._add_unrestricted_close_audit()
             return
 
         target_amount = getattr(self, "amount", None)
@@ -674,6 +675,31 @@ class ExpenseRequest(Document):
                             "active_links": active_links,
                             "site_override": site_override,
                             "request_override": request_override,
+                            "session_user": getattr(getattr(frappe, "session", None), "user", None),
+                        },
+                    )
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    def _add_unrestricted_close_audit(self):
+        """Record when unrestricted close override is used to bypass route validation."""
+        try:
+            message = _(
+                "Closed using unrestricted override from site config. Ensure manual audit note is added and disable the flag after emergency use. User: {user}."
+            ).format(user=getattr(getattr(frappe, "session", None), "user", None))
+
+            if getattr(self, "name", None) and hasattr(self, "add_comment"):
+                self.add_comment("Comment", message)
+
+            logger = getattr(frappe, "logger", None)
+            if logger:
+                try:
+                    logger("imogi_finance").warning(
+                        "Unrestricted close override used",
+                        extra={
+                            "expense_request": getattr(self, "name", None),
                             "session_user": getattr(getattr(frappe, "session", None), "user", None),
                         },
                     )
