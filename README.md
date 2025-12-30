@@ -2,15 +2,22 @@
 
 App for Manage Expense IMOGI
 
+### Ringkasan Fitur Terbaru
+
+- **Expense Request dengan rute persetujuan dinamis**: rute dihitung dari Expense Approval Setting per Cost Center + akun biaya + amount, disimpan di dokumen, dan wajib segar sebelum approve (deteksi perubahan konfigurasi otomatis menolak approval sampai rute direfresh). Submit hanya boleh oleh creator, approver harus sesuai user/role di rute, dan tidak boleh melompati level.
+- **Kontrol edit & status setelah submit**: perubahan amount/cost center/akun biaya saat Pending mereset status ke Pending Level 1 dengan audit comment; status Approved/Linked/Closed tidak boleh ubah field kunci. Pending edits dibatasi ke owner atau approver, dan semua penolakan/override dicatat di timeline.
+- **Reopen & Close terjaga**: reopen hanya untuk System Manager kecuali ada override, memaksa audit jika masih ada link Payment Entry/Purchase Invoice/Asset aktif. Aksi Close perlu validasi rute terbaru atau snapshot akhir; bisa override via flag darurat dengan jejak audit.
+- **Alur akuntansi terintegrasi**: Expense Request terhubung ke Purchase Invoice/Payment Entry/Asset melalui hook submit/cancel dengan validasi status, tipe request (Expense/Asset), dan duplikasi link. Pembuatan Purchase Invoice memeriksa PPN/PPh, jumlah item, serta menandai pending/submitted link agar pembayaran tidak ganda.
+- **Guardrails status**: perubahan status di luar workflow diblokir; rute approval disnapshot ketika Approved untuk audit dan validasi Close.
+
 ### BCA Bank Statement Import (Native-First)
 
-This app now includes a native-first adapter for importing BCA bank CSV statements into ERPNext:
+Adapter native untuk impor statement CSV BCA ke ERPNext:
 
-- Use the **BCA Bank Statement Import** DocType to upload a CSV export from BCA internet banking.
-- Click **Parse CSV BCA** to validate headers, amounts, and detect duplicate uploads via file hash.
-- Parsing now auto-converts rows into native ERPNext `Bank Transaction` records (with duplicate detection), and the **Convert to Bank Transaction** action remains available for retries.
-- Use the **Open Bank Reconciliation Tool** button to jump directly into reconciliation with the parsed date range and bank account.
-- Flow summary: **Upload BCA → Parse → Convert → buka Bank Reconciliation Tool (otomatis lewat tombol).**
+- Upload file di DocType **BCA Bank Statement Import**, sistem menghitung hash untuk mencegah upload berulang dan memvalidasi header/angka (mampu mendeteksi kolom gabung/"sep=" preamble).
+- Klik **Parse CSV BCA** untuk mem-parsing baris, menghitung ringkasan saldo, dan menandai parsing sukses/gagal; baris yang hanya saldo/pending otomatis diskip.
+- Parsing otomatis mencoba **Convert to Bank Transaction**: membuat `Bank Transaction` dengan status Unreconciled, mencegah duplikasi berdasarkan tanggal+amount+referensi/deskripsi, dan tetap bisa diulang via tombol **Convert to Bank Transaction** bila ada kegagalan sebagian.
+- Tombol **Open Bank Reconciliation Tool** membuka rekonsiliasi dengan rentang tanggal & akun bank yang sama.
 
 ### Kontrol dan Risiko Workflow Expense Request
 
