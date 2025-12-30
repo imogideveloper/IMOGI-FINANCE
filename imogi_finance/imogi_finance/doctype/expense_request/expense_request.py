@@ -164,6 +164,7 @@ class ExpenseRequest(Document):
         self.flags.workflow_action_allowed = True
         if action == "Submit":
             self.validate_submit_permission()
+            self.validate_reopen_override_resolution()
             return
 
         if action == "Reopen":
@@ -182,6 +183,7 @@ class ExpenseRequest(Document):
 
         if action in {"Approve", "Reject"}:
             self.validate_pending_route_freshness()
+            self.validate_reopen_override_resolution()
 
         if self.status not in {"Pending Level 1", "Pending Level 2", "Pending Level 3"}:
             return
@@ -272,12 +274,36 @@ class ExpenseRequest(Document):
             title=_("Not Allowed"),
         )
 
+    def validate_reopen_override_resolution(self):
+        """Ensure downstream links overridden during reopen are resolved before progressing."""
+        recorded_links = getattr(self, "reopen_override_links", None)
+        if not recorded_links:
+            recorded_links = getattr(getattr(self, "flags", None), "reopen_override_links", None)
+
+        if not recorded_links:
+            return
+
+        active_links = self._collect_active_links(recorded_links)
+        if not active_links:
+            return
+
+        frappe.throw(
+            _(
+                "Downstream documents reopened with override remain active: {links}. Please cancel/close them before continuing."
+            ).format(links=_(", ").join(active_links)),
+            title=_("Downstream Links Active"),
+        )
+
     def validate_reopen_without_active_links(self):
         active_links = []
+        active_link_refs = []
 
         def _is_active(doctype, name):
             docstatus = frappe.db.get_value(doctype, name, "docstatus")
-            return docstatus != 2
+            if docstatus != 2:
+                active_link_refs.append({"doctype": doctype, "name": name, "docstatus": docstatus})
+                return True
+            return False
 
         payment_entry = getattr(self, "linked_payment_entry", None)
         purchase_invoice = getattr(self, "linked_purchase_invoice", None)
@@ -293,6 +319,7 @@ class ExpenseRequest(Document):
             active_links.append(_("Asset {0}").format(asset))
 
         if not active_links:
+            self.reopen_override_links = []
             return
 
         allow_site_override = getattr(
@@ -301,6 +328,7 @@ class ExpenseRequest(Document):
         allow_request_override = getattr(self, "allow_reopen_with_active_links", False)
 
         if allow_site_override or allow_request_override:
+            self.reopen_override_links = active_link_refs
             self._add_reopen_override_audit(active_links, allow_site_override, allow_request_override)
             notifier = getattr(frappe, "msgprint", None)
             if notifier:
@@ -840,6 +868,51 @@ class ExpenseRequest(Document):
                     pass
         except Exception:
             pass
+
+    def _collect_active_links(self, recorded_links) -> list[str]:
+        """Return user-facing list of still-active links from stored reopen overrides."""
+        parsed_links = recorded_links
+        if isinstance(recorded_links, str):
+            try:
+                parsed_links = json.loads(recorded_links)
+            except Exception:
+                parsed_links = [recorded_links]
+
+        if not isinstance(parsed_links, (list, tuple)):
+            parsed_links = [parsed_links]
+
+        active_links = []
+
+        def _append_active(doctype, name):
+            if not doctype or not name:
+                return
+            status = frappe.db.get_value(doctype, name, "docstatus")
+            if status != 2:
+                active_links.append(_("{0} {1}").format(doctype, name))
+
+        for entry in parsed_links:
+            if isinstance(entry, dict):
+                _append_active(entry.get("doctype"), entry.get("name"))
+            else:
+                # fall back to current link fields if only names were captured
+                if entry == getattr(self, "linked_payment_entry", None):
+                    _append_active("Payment Entry", entry)
+                elif entry == getattr(self, "linked_purchase_invoice", None):
+                    _append_active("Purchase Invoice", entry)
+                elif entry == getattr(self, "linked_asset", None):
+                    _append_active("Asset", entry)
+
+        # also re-check current link fields in case overrides were not stored as references
+        current_links = {
+            "Payment Entry": getattr(self, "linked_payment_entry", None),
+            "Purchase Invoice": getattr(self, "linked_purchase_invoice", None),
+            "Asset": getattr(self, "linked_asset", None),
+        }
+        for doctype, name in current_links.items():
+            if name:
+                _append_active(doctype, name)
+
+        return sorted(set(active_links))
 
     def _add_unrestricted_close_audit(self):
         """Record when unrestricted close override is used to bypass route validation."""

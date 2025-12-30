@@ -610,6 +610,29 @@ def test_reopen_allows_request_override_with_audit(monkeypatch):
     assert captured["request_override"] is True
 
 
+def test_reopen_override_requires_resolution_before_approval(monkeypatch):
+    request = ExpenseRequest(
+        status="Pending Level 1",
+        docstatus=1,
+        cost_center="CC",
+        expense_account="5000",
+        items=[_item(amount=100)],
+        request_type="Expense",
+        level_1_role="Expense Approver",
+        reopen_override_links=[{"doctype": "Payment Entry", "name": "PE-1", "docstatus": 1}],
+    )
+
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="approver@example.com"))
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Expense Approver"])
+    monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: 1)
+
+    with pytest.raises(NotAllowed):
+        request.before_workflow_action("Approve", next_state="Approved")
+
+    monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: 2)
+    request.before_workflow_action("Approve", next_state="Approved")
+
+
 def test_reopen_clears_downstream_links(monkeypatch):
     monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
     monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: 2)
