@@ -10,6 +10,7 @@ Gunakan sebagai panduan saat mengaktifkan flag situs atau mengubah konfigurasi p
   - Prioritaskan penutupan/cancel dokumen downstream sebelum reopen; gunakan override hanya ketika perlu audit/penyelarasan.
   - Wajibkan checklist verifikasi internal (mis. custom field “Reopen Checklist” berisi item pengecekan Payment Entry/PI/Asset) sebelum menyalakan override.
   - Pastikan timeline comment dari audit reopen ditinjau oleh reviewer agar ada jejak siapa yang memaksa override.
+  - Jika override dipakai, pastikan tidak ada “link aktif” tersisa sebelum melanjutkan approval untuk menutup risiko double payment.
 
 ## Penutupan tanpa rute
 
@@ -26,7 +27,7 @@ Gunakan sebagai panduan saat mengaktifkan flag situs atau mengubah konfigurasi p
   - Field kunci berubah pada status Pending (amount, cost center, atau daftar akun biaya) — status turun ke Pending Level 1 dengan rute baru.
 - Perubahan aturan persetujuan di tengah jalan **tidak** langsung diterapkan ke dokumen yang sudah pending jika tidak ada pemicu di atas.
 - Rekomendasi SOP:
-  - Setelah mengubah konfigurasi route, lakukan “refresh route” pada dokumen pending dengan reopen terkontrol atau ubah minor key field yang aman (mis. re-set nilai sama) agar rute dihitung ulang.
+  - Setelah mengubah konfigurasi route, lakukan “refresh route” pada dokumen pending dengan reopen terkontrol atau ubah minor key field yang aman (mis. re-set nilai sama) agar rute dihitung ulang (rebuild tidak otomatis hanya karena konfigurasi berubah).
   - Hindari persetujuan lebih lanjut sebelum refresh dilakukan supaya tidak ada dokumen yang lolos memakai rute lama.
 
 ## Hak edit luas saat pending
@@ -36,3 +37,17 @@ Gunakan sebagai panduan saat mengaktifkan flag situs atau mengubah konfigurasi p
   - Batasi edit di lingkungan production dengan role/profile tambahan atau custom permission jika data non-kunci perlu dikunci.
   - Dorong penggunaan komentar/timeline untuk mencatat perubahan penting saat pending.
   - Pertimbangkan audit trail tambahan (mis. Enable Versioning) untuk menutup celah modifikasi tanpa jejak.
+
+## Self-submission dibatasi
+
+- Aksi **Submit** hanya boleh dijalankan oleh creator dokumen (owner). Ini mengurangi spoofing atau submit oleh pihak lain.
+- Implikasi:
+  - Untuk skenario delegasi, perlukan mekanisme resmi (mis. user proxy atau pergantian ownership) karena workflow tidak mengizinkan submit oleh user lain.
+  - Sosialisasikan batasan ini ke tim approval agar eskalasi tidak macet saat owner sedang tidak aktif.
+
+## Guard validasi status workflow
+
+- Perubahan status di luar aksi workflow akan ditolak oleh guard. Integritas status terjaga, tetapi automation/manual patch perlu mengatur flag dengan benar supaya tidak gagal diam-diam.
+- Rekomendasi:
+  - Pastikan script atau API call yang memicu aksi terkontrol menetapkan `workflow_action_allowed` (atau `frappe.flags` setara) ketika bypass diperlukan dan sudah disetujui.
+  - Dokumentasikan penggunaan bypass di log/audit trail agar reviewer tahu ada perubahan status non-standar.
