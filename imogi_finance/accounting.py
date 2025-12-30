@@ -9,26 +9,40 @@ PURCHASE_INVOICE_REQUEST_TYPES = {"Expense", "Asset"}
 PURCHASE_INVOICE_ALLOWED_STATUSES = frozenset({"Approved"})
 
 
+def _get_item_value(item: object, field: str):
+    if isinstance(item, dict):
+        return item.get(field)
+    return getattr(item, field, None)
+
+
 def summarize_request_items(
     items: list[frappe.model.document.Document] | None,
+    *,
+    skip_invalid_items: bool = False,
 ) -> tuple[float, tuple[str, ...]]:
     if not items:
+        if skip_invalid_items:
+            return 0.0, ()
         frappe.throw(_("Please add at least one item."))
 
     total = 0.0
     accounts = set()
 
     for item in items:
-        amount = getattr(item, "amount", None)
+        amount = _get_item_value(item, "amount")
         if amount is None or amount <= 0:
+            if skip_invalid_items:
+                continue
             frappe.throw(_("Each item must have an Amount greater than zero."))
 
-        account = getattr(item, "expense_account", None)
+        account = _get_item_value(item, "expense_account")
         if not account:
+            if skip_invalid_items:
+                continue
             frappe.throw(_("Each item must have an Expense Account."))
 
         accounts.add(account)
-        total += amount
+        total += float(amount)
 
     return total, tuple(sorted(accounts))
 

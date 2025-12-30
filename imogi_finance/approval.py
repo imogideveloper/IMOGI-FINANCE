@@ -179,7 +179,10 @@ def check_expense_request_route(cost_center: str, items=None, expense_accounts=N
 
     total = amount
     if parsed_items and not parsed_accounts:
-        total, parsed_accounts = frappe.get_module("imogi_finance.accounting").summarize_request_items(parsed_items)
+        total, parsed_accounts = frappe.get_module("imogi_finance.accounting").summarize_request_items(
+            parsed_items,
+            skip_invalid_items=True,
+        )
 
     target_amount = amount if amount is not None else total
 
