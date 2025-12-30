@@ -34,6 +34,20 @@ frappe.ValidationError = ValidationError
 
 @pytest.fixture(autouse=True)
 def _reset_frappe(monkeypatch):
+    def _active_setting_meta(*_args, **_kwargs):
+        cost_center = _args[0] if _args else _kwargs.get("cost_center")
+        raw = frappe.db.get_value(
+            "Expense Approval Setting",
+            {"cost_center": cost_center, "is_active": 1},
+            ["name", "modified"],
+            as_dict=True,
+        )
+        if isinstance(raw, str):
+            return {"name": raw, "modified": None}
+        if isinstance(raw, dict) and raw.get("name"):
+            return raw
+        return {"name": "EAS-TEST", "modified": "2024-01-01 00:00:00"}
+
     monkeypatch.setattr(frappe, "throw", _throw, raising=False)
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user=None), raising=False)
     monkeypatch.setattr(frappe, "get_roles", lambda: [], raising=False)
@@ -44,6 +58,14 @@ def _reset_frappe(monkeypatch):
     monkeypatch.setattr(frappe.db, "exists", lambda *args, **kwargs: False, raising=False)
     monkeypatch.setattr(frappe, "get_all", lambda *args, **kwargs: [], raising=False)
     monkeypatch.setattr(frappe, "log_error", lambda *args, **kwargs: None, raising=False)
+    monkeypatch.setattr(
+        "imogi_finance.approval.get_active_setting_meta", _active_setting_meta, raising=False
+    )
+    monkeypatch.setattr(
+        "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_active_setting_meta",
+        _active_setting_meta,
+        raising=False,
+    )
 
 frappe_model = types.ModuleType("frappe.model")
 frappe_model_document = types.ModuleType("frappe.model.document")
@@ -328,7 +350,7 @@ def test_close_requires_any_routed_user_or_role(monkeypatch):
     )
     monkeypatch.setattr(
         "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
-        lambda cost_center, accounts, amount: {
+        lambda cost_center, accounts, amount, **kwargs: {
             "level_1": {"role": "Expense Approver", "user": None},
             "level_2": {"role": None, "user": "closer@example.com"},
             "level_3": {"role": None, "user": None},
@@ -363,7 +385,7 @@ def test_close_allows_routed_user_or_role(monkeypatch):
     )
     monkeypatch.setattr(
         "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
-        lambda cost_center, accounts, amount: {
+        lambda cost_center, accounts, amount, **kwargs: {
             "level_1": {"role": None, "user": None},
             "level_2": {"role": None, "user": None},
             "level_3": {"role": "Finance Manager", "user": None},
@@ -382,7 +404,7 @@ def test_close_allows_routed_user_or_role(monkeypatch):
     )
     monkeypatch.setattr(
         "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
-        lambda cost_center, accounts, amount: {
+        lambda cost_center, accounts, amount, **kwargs: {
             "level_1": {"role": None, "user": "closer@example.com"},
             "level_2": {"role": None, "user": None},
             "level_3": {"role": None, "user": None},
@@ -426,7 +448,7 @@ def test_close_revalidates_against_current_route(monkeypatch):
     )
     monkeypatch.setattr(
         "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
-        lambda cost_center, accounts, amount: {
+        lambda cost_center, accounts, amount, **kwargs: {
             "level_1": {"role": "Finance Approver", "user": None},
             "level_2": {"role": None, "user": None},
             "level_3": {"role": None, "user": None},
@@ -462,7 +484,7 @@ def test_reopen_requires_system_manager_role(monkeypatch):
 def test_reopen_refreshes_route_and_status(monkeypatch):
     captured = {}
 
-    def _route(cost_center, accounts, amount):
+    def _route(cost_center, accounts, amount, **kwargs):
         captured["args"] = (cost_center, accounts, amount)
         return {
             "level_1": {"role": "Expense Approver", "user": "approver@example.com"},
@@ -497,7 +519,7 @@ def test_reopen_refreshes_route_and_status(monkeypatch):
 def test_reopen_to_draft_tracks_next_state(monkeypatch):
     monkeypatch.setattr(
         "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
-        lambda cost_center, accounts, amount: {
+        lambda cost_center, accounts, amount, **kwargs: {
             "level_1": {"role": "Expense Approver", "user": None},
             "level_2": {"role": None, "user": None},
             "level_3": {"role": None, "user": None},
@@ -593,7 +615,7 @@ def test_reopen_clears_downstream_links(monkeypatch):
     monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: 2)
     monkeypatch.setattr(
         "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
-        lambda cost_center, accounts, amount: {
+        lambda cost_center, accounts, amount, **kwargs: {
             "level_1": {"role": "Expense Approver", "user": "approver@example.com"},
             "level_2": {"role": None, "user": None},
             "level_3": {"role": None, "user": None},
@@ -720,7 +742,7 @@ def test_validate_blocks_key_changes_after_final_status():
 def test_validate_allows_changes_outside_final_status(monkeypatch):
     monkeypatch.setattr(
         "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
-        lambda cost_center, accounts, amount: {
+        lambda cost_center, accounts, amount, **kwargs: {
             "level_1": {"role": None, "user": None},
             "level_2": {"role": None, "user": None},
             "level_3": {"role": None, "user": None},
@@ -756,7 +778,7 @@ def test_validate_allows_changes_outside_final_status(monkeypatch):
 def test_validate_restarts_route_when_key_fields_change_after_submit(monkeypatch):
     captured = {}
 
-    def _route(cost_center, accounts, amount):
+    def _route(cost_center, accounts, amount, **kwargs):
         captured["args"] = (cost_center, accounts, amount)
         return {
             "level_1": {"role": "Level 1 User", "user": "approver@example.com"},
@@ -803,6 +825,63 @@ def test_validate_restarts_route_when_key_fields_change_after_submit(monkeypatch
     assert updated.level_1_user == "approver@example.com"
 
 
+def test_validate_pending_edit_requires_route_role(monkeypatch):
+    previous = ExpenseRequest(
+        docstatus=1,
+        status="Pending Level 1",
+        request_type="Expense",
+        supplier="Supplier A",
+        expense_account="5000",
+        amount=100,
+        currency="IDR",
+        cost_center="CC",
+        items=[_item(amount=100)],
+    )
+    updated = ExpenseRequest(
+        docstatus=1,
+        status="Pending Level 1",
+        request_type="Expense",
+        supplier="Supplier A",
+        expense_account="5000",
+        amount=100,
+        currency="IDR",
+        cost_center="CC",
+        items=[_item(amount=100)],
+        description="Updated description",
+        level_1_role="Expense Approver",
+    )
+    updated._doc_before_save = previous
+
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="editor@example.com"))
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Viewer"])
+
+    with pytest.raises(NotAllowed):
+        updated.validate_pending_edit_restrictions()
+
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Expense Approver"])
+    updated.validate_pending_edit_restrictions()
+
+
+def test_validate_pending_route_freshness_requires_refresh(monkeypatch):
+    request = ExpenseRequest(
+        docstatus=1,
+        status="Pending Level 1",
+        request_type="Expense",
+        expense_account="5000",
+        amount=150,
+        cost_center="CC",
+        approval_setting="EAS-1",
+        approval_setting_last_modified="2024-01-01 00:00:00",
+    )
+
+    monkeypatch.setattr(
+        "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_active_setting_meta",
+        lambda *_args, **_kwargs: {"name": "EAS-1", "modified": "2024-02-01 00:00:00"},
+    )
+
+    with pytest.raises(NotAllowed):
+        request.validate_pending_route_freshness()
+
 def test_validate_allows_mixed_expense_accounts():
     request = ExpenseRequest(
         items=[_item(expense_account="5000", amount=125), _item(expense_account="6000", amount=175)],
@@ -820,7 +899,7 @@ def test_validate_allows_mixed_expense_accounts():
 def test_before_submit_requires_level_one_approver(monkeypatch):
     monkeypatch.setattr(
         "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
-        lambda cost_center, accounts, amount: {
+        lambda cost_center, accounts, amount, **kwargs: {
             "level_1": {"role": None, "user": None},
             "level_2": {"role": None, "user": None},
             "level_3": {"role": None, "user": None},

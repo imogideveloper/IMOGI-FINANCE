@@ -21,7 +21,25 @@ def _normalize_accounts(accounts: str | Iterable[str]) -> tuple[str, ...]:
     raise frappe.ValidationError(_("At least one expense account is required for approval routing."))
 
 
-def _get_route_for_account(cost_center: str, account: str, amount: float) -> dict:
+def get_active_setting_meta(cost_center: str) -> dict:
+    setting = frappe.db.get_value(
+        "Expense Approval Setting",
+        {"cost_center": cost_center, "is_active": 1},
+        ["name", "modified"],
+        as_dict=True,
+    )
+    if not setting:
+        raise frappe.DoesNotExistError(
+            _("No active Expense Approval Setting found for Cost Center {0}").format(cost_center)
+        )
+
+    if isinstance(setting, str):
+        return {"name": setting, "modified": None}
+
+    return setting
+
+
+def _get_route_for_account(setting_name: str, account: str, amount: float) -> dict:
     def _get_matching_line(filters: dict):
         return frappe.get_all(
             "Expense Approval Line",
@@ -36,14 +54,6 @@ def _get_route_for_account(cost_center: str, account: str, amount: float) -> dic
             ],
             order_by="min_amount desc, max_amount asc",
             limit=1,
-        )
-
-    setting_name = frappe.db.get_value(
-        "Expense Approval Setting", {"cost_center": cost_center, "is_active": 1}, "name"
-    )
-    if not setting_name:
-        raise frappe.DoesNotExistError(
-            _("No active Expense Approval Setting found for Cost Center {0}").format(cost_center)
         )
 
     filters = {
@@ -77,7 +87,9 @@ def _get_route_for_account(cost_center: str, account: str, amount: float) -> dic
     }
 
 
-def get_approval_route(cost_center: str, accounts: str | Iterable[str], amount: float) -> dict:
+def get_approval_route(
+    cost_center: str, accounts: str | Iterable[str], amount: float, *, setting_meta: dict | None = None
+) -> dict:
     """Return approval route based on cost center, account(s) and amount.
 
     Args:
@@ -94,10 +106,16 @@ def get_approval_route(cost_center: str, accounts: str | Iterable[str], amount: 
     """
 
     normalized_accounts = _normalize_accounts(accounts)
+    route_setting = setting_meta or get_active_setting_meta(cost_center)
+    setting_name = route_setting.get("name") if isinstance(route_setting, dict) else None
+    if not setting_name:
+        raise frappe.DoesNotExistError(
+            _("No active Expense Approval Setting found for Cost Center {0}").format(cost_center)
+        )
     resolved_route = None
 
     for account in normalized_accounts:
-        route = _get_route_for_account(cost_center, account, amount)
+        route = _get_route_for_account(setting_name, account, amount)
 
         if resolved_route is None:
             resolved_route = route

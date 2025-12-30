@@ -3,14 +3,17 @@
 
 from __future__ import annotations
 
+import json
+from datetime import datetime
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
-import json
 
 from imogi_finance import accounting
 from imogi_finance.approval import (
     approval_setting_required_message,
+    get_active_setting_meta,
     get_approval_route,
     log_route_resolution_error,
 )
@@ -26,6 +29,7 @@ class ExpenseRequest(Document):
         self.validate_asset_details()
         self.validate_tax_fields()
         self.handle_key_field_changes_after_submit()
+        self.validate_pending_edit_restrictions()
         self.validate_final_state_immutability()
         self.validate_workflow_action_guard()
 
@@ -128,7 +132,10 @@ class ExpenseRequest(Document):
         """Resolve approval route and set initial workflow state."""
         self.validate_amounts()
         try:
-            route = get_approval_route(self.cost_center, self._get_expense_accounts(), self.amount)
+            setting_meta = get_active_setting_meta(self.cost_center)
+            route = get_approval_route(
+                self.cost_center, self._get_expense_accounts(), self.amount, setting_meta=setting_meta
+            )
         except (frappe.DoesNotExistError, frappe.ValidationError) as exc:
             log_route_resolution_error(
                 exc,
@@ -138,7 +145,7 @@ class ExpenseRequest(Document):
             )
             frappe.throw(approval_setting_required_message(self.cost_center))
 
-        self.apply_route(route)
+        self.apply_route(route, setting_meta=setting_meta)
         self.validate_initial_approver(route)
         self.status = "Pending Level 1"
 
@@ -172,6 +179,9 @@ class ExpenseRequest(Document):
 
             self.validate_close_permission()
             return
+
+        if action in {"Approve", "Reject"}:
+            self.validate_pending_route_freshness()
 
         if self.status not in {"Pending Level 1", "Pending Level 2", "Pending Level 3"}:
             return
@@ -231,9 +241,12 @@ class ExpenseRequest(Document):
         next_state = kwargs.get("next_state")
         try:
             self.validate_amounts()
-            route = get_approval_route(self.cost_center, self._get_expense_accounts(), self.amount)
+            setting_meta = get_active_setting_meta(self.cost_center)
+            route = get_approval_route(
+                self.cost_center, self._get_expense_accounts(), self.amount, setting_meta=setting_meta
+            )
             self.clear_downstream_links()
-            self.apply_route(route)
+            self.apply_route(route, setting_meta=setting_meta)
             self.status = next_state or "Pending Level 1"
         except (frappe.DoesNotExistError, frappe.ValidationError) as exc:
             log_route_resolution_error(
@@ -329,7 +342,10 @@ class ExpenseRequest(Document):
             self.amount = target_amount
 
         try:
-            fresh_route = get_approval_route(self.cost_center, self._get_expense_accounts(), target_amount)
+            setting_meta = get_active_setting_meta(self.cost_center)
+            fresh_route = get_approval_route(
+                self.cost_center, self._get_expense_accounts(), target_amount, setting_meta=setting_meta
+            )
         except (frappe.DoesNotExistError, frappe.ValidationError) as exc:
             log_route_resolution_error(
                 exc,
@@ -418,7 +434,7 @@ class ExpenseRequest(Document):
         if current_level == "2" and (level_3_role or level_3_user):
             frappe.throw(_("Cannot approve directly when further levels are configured."))
 
-    def apply_route(self, route: dict):
+    def apply_route(self, route: dict, *, setting_meta: dict | None = None):
         """Store approval route on the document for audit and workflow guards."""
         self.level_1_role = route.get("level_1", {}).get("role")
         self.level_1_user = route.get("level_1", {}).get("user")
@@ -426,6 +442,51 @@ class ExpenseRequest(Document):
         self.level_2_user = route.get("level_2", {}).get("user")
         self.level_3_role = route.get("level_3", {}).get("role")
         self.level_3_user = route.get("level_3", {}).get("user")
+        self._record_route_setting_meta(setting_meta)
+
+    def validate_pending_route_freshness(self):
+        """Require route refresh when approval configuration has changed while pending."""
+        if getattr(self, "docstatus", 0) != 1:
+            return
+
+        if self.status not in {"Pending Level 1", "Pending Level 2", "Pending Level 3"}:
+            return
+
+        if not getattr(self, "approval_setting", None) and not getattr(self, "approval_setting_last_modified", None):
+            return
+
+        try:
+            current_meta = get_active_setting_meta(self.cost_center)
+        except Exception:
+            return
+
+        stored_name = getattr(self, "approval_setting", None)
+        stored_modified = getattr(self, "approval_setting_last_modified", None)
+        current_name = current_meta.get("name")
+        current_modified = current_meta.get("modified")
+
+        if stored_name and current_name and stored_name != current_name:
+            self._add_stale_route_comment(
+                current_meta, _("Active Expense Approval Setting changed from {0} to {1}.").format(stored_name, current_name)
+            )
+            frappe.throw(
+                _("Approval configuration changed. Please reopen or refresh key fields to rebuild the approval route before continuing."),
+                title=_("Route Refresh Required"),
+            )
+
+        stored_dt = self._parse_datetime(stored_modified)
+        current_dt = self._parse_datetime(current_modified)
+        if stored_dt and current_dt and current_dt > stored_dt:
+            self._add_stale_route_comment(
+                current_meta,
+                _("Expense Approval Setting {0} was updated after this route was calculated.").format(
+                    current_name or _("(unknown)")
+                ),
+            )
+            frappe.throw(
+                _("Approval configuration was updated after this request entered Pending. Please refresh the route (reopen or toggle a key field) before approving."),
+                title=_("Route Refresh Required"),
+            )
 
     def get_route_snapshot(self) -> dict:
         snapshot = getattr(self, "approval_route_snapshot", None)
@@ -511,14 +572,72 @@ class ExpenseRequest(Document):
                 title=_("Not Allowed"),
             )
 
-        route = get_approval_route(self.cost_center, self._get_expense_accounts(), self.amount)
-        self.apply_route(route)
+        setting_meta = get_active_setting_meta(self.cost_center)
+        route = get_approval_route(
+            self.cost_center, self._get_expense_accounts(), self.amount, setting_meta=setting_meta
+        )
+        self.apply_route(route, setting_meta=setting_meta)
         self.status = "Pending Level 1"
         flags = getattr(self, "flags", None)
         if flags is None:
             flags = type("Flags", (), {})()
             self.flags = flags
         self.flags.workflow_action_allowed = True
+        self._add_pending_edit_audit(previous)
+
+    def validate_pending_edit_restrictions(self):
+        """Limit who can edit pending requests and add audit breadcrumbs."""
+        if getattr(self, "docstatus", 0) != 1:
+            return
+
+        if self.status not in {"Pending Level 1", "Pending Level 2", "Pending Level 3"}:
+            return
+
+        session_user = getattr(getattr(frappe, "session", None), "user", None)
+        if not session_user:
+            return
+
+        previous = self._get_previous_doc()
+        if not previous:
+            return
+
+        changed_fields = self._get_pending_change_fields(previous)
+        if not changed_fields:
+            return
+
+        allowed_roles = {
+            role
+            for role in {
+                getattr(self, "level_1_role", None),
+                getattr(self, "level_2_role", None),
+                getattr(self, "level_3_role", None),
+                "System Manager",
+            }
+            if role
+        }
+        allowed_users = {
+            user
+            for user in {
+                getattr(self, "level_1_user", None),
+                getattr(self, "level_2_user", None),
+                getattr(self, "level_3_user", None),
+                getattr(self, "owner", None),
+            }
+            if user
+        }
+
+        role_allowed = bool(set(frappe.get_roles()) & allowed_roles)
+        user_allowed = session_user in allowed_users
+
+        self._add_pending_edit_audit(previous, changed_fields=changed_fields, denied=not (role_allowed or user_allowed))
+
+        if role_allowed or user_allowed:
+            return
+
+        frappe.throw(
+            _("Edits while pending are restricted to routed approvers or the document owner. Please request an authorized user to update or log an audit note."),
+            title=_("Not Allowed"),
+        )
 
     def validate_initial_approver(self, route: dict):
         """Ensure the first approval level has a configured user or role."""
@@ -644,6 +763,45 @@ class ExpenseRequest(Document):
         except Exception:
             pass
 
+    def _add_pending_edit_audit(self, previous=None, changed_fields: list[str] | None = None, denied: bool = False):
+        """Record audit comment for edits performed while Pending."""
+        if not getattr(self, "name", None) or not hasattr(self, "add_comment"):
+            return
+
+        try:
+            fields_text = _(", ").join(changed_fields) if changed_fields else _("unspecified fields")
+            action_text = _("attempted") if denied else _("made")
+            self.add_comment(
+                "Comment",
+                _(
+                    "User {user} {action} edits on pending request (fields: {fields}). Pending edits are tracked; ensure changes are justified."
+                ).format(
+                    user=getattr(getattr(frappe, "session", None), "user", None),
+                    action=action_text,
+                    fields=fields_text,
+                ),
+            )
+        except Exception:
+            pass
+
+    def _get_pending_change_fields(self, previous) -> list[str]:
+        monitored_fields = (
+            "amount",
+            "cost_center",
+            "project",
+            "currency",
+            "description",
+            "attachment",
+            "pph_type",
+            "pph_base_amount",
+            "supplier_invoice_no",
+            "supplier_invoice_date",
+            "expense_accounts",
+        )
+
+        changed = [field for field in monitored_fields if self._get_value(previous, field) != self.get(field)]
+        return changed
+
     def _add_reopen_override_audit(self, active_links: list[str], site_override: bool, request_override: bool):
         """Record an audit trail when reopening is forced with active downstream links."""
         try:
@@ -655,7 +813,7 @@ class ExpenseRequest(Document):
 
             source_text = _(" and ").join(source) if source else _("unknown override")
             message = _(
-                "Reopened with active links: {links}. Override source: {source}. User: {user}."
+                "Reopened with active links: {links}. Override source: {source}. User: {user}. Complete the mandatory reopen checklist and disable any override flags after resolving downstream documents."
             ).format(
                 links=_(", ").join(active_links),
                 source=source_text,
@@ -707,6 +865,55 @@ class ExpenseRequest(Document):
                     pass
         except Exception:
             pass
+
+    def _record_route_setting_meta(self, setting_meta: dict | None):
+        if not setting_meta:
+            return
+
+        if isinstance(setting_meta, str):
+            self.approval_setting = setting_meta
+            return
+
+        if not isinstance(setting_meta, dict):
+            self.approval_setting = str(setting_meta)
+            return
+
+        self.approval_setting = setting_meta.get("name") or self.approval_setting
+        if setting_meta.get("modified") is not None:
+            self.approval_setting_last_modified = setting_meta.get("modified")
+
+    def _add_stale_route_comment(self, current_meta: dict, message: str):
+        if not getattr(self, "name", None) or not hasattr(self, "add_comment"):
+            return
+
+        try:
+            detail = _(
+                "{message} Current setting modified: {modified}. Perform a controlled reopen or safe key-field refresh to rebuild the route."
+            ).format(message=message, modified=current_meta.get("modified") or _("unknown"))
+            self.add_comment("Comment", detail)
+        except Exception:
+            pass
+
+    @staticmethod
+    def _parse_datetime(value):
+        if not value:
+            return None
+
+        try:
+            from frappe.utils import get_datetime
+        except Exception:
+            get_datetime = None
+
+        if get_datetime:
+            try:
+                return get_datetime(value)
+            except Exception:
+                pass
+
+        try:
+            return datetime.fromisoformat(str(value))
+        except Exception:
+            return None
 
 
 @frappe.whitelist()
