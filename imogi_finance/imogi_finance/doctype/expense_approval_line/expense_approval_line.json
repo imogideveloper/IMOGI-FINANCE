@@ -8,6 +8,7 @@
   "engine": "InnoDB",
   "field_order": [
     "expense_account",
+    "is_default",
     "min_amount",
     "max_amount",
     "section_break_1",
@@ -23,8 +24,13 @@
       "fieldname": "expense_account",
       "fieldtype": "Link",
       "label": "Expense Account",
-      "options": "Account",
-      "reqd": 1
+      "options": "Account"
+    },
+    {
+      "default": "0",
+      "fieldname": "is_default",
+      "fieldtype": "Check",
+      "label": "Apply to All Accounts"
     },
     {
       "fieldname": "min_amount",

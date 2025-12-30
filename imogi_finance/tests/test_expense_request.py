@@ -41,6 +41,8 @@ def _reset_frappe(monkeypatch):
     monkeypatch.setattr(frappe, "db", types.SimpleNamespace(), raising=False)
     monkeypatch.setattr(frappe.db, "set_value", lambda *args, **kwargs: None, raising=False)
     monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: None, raising=False)
+    monkeypatch.setattr(frappe.db, "exists", lambda *args, **kwargs: False, raising=False)
+    monkeypatch.setattr(frappe, "get_all", lambda *args, **kwargs: [], raising=False)
     monkeypatch.setattr(frappe, "log_error", lambda *args, **kwargs: None, raising=False)
 
 frappe_model = types.ModuleType("frappe.model")
@@ -61,6 +63,10 @@ frappe_model_document.Document = Document
 sys.modules["frappe.model"] = frappe_model
 sys.modules["frappe.model.document"] = frappe_model_document
 
+from imogi_finance.approval import get_approval_route  # noqa: E402
+from imogi_finance.imogi_finance.doctype.expense_approval_setting.expense_approval_setting import (  # noqa: E402
+    ExpenseApprovalSetting,
+)
 from imogi_finance.imogi_finance.doctype.expense_request.expense_request import (  # noqa: E402
     ExpenseRequest,
 )
@@ -888,3 +894,103 @@ def test_validate_allows_status_change_when_workflow_flagged():
     updated.flags.workflow_action_allowed = True
 
     updated.validate()
+
+
+def test_close_uses_snapshot_when_route_missing(monkeypatch):
+    request = ExpenseRequest(
+        status="Linked",
+        level_1_role="Expense Approver",
+        items=[_item(amount=150)],
+        amount=150,
+        cost_center="CC",
+        request_type="Expense",
+    )
+    request.approval_route_snapshot = {
+        "level_1": {"role": "Expense Approver", "user": None},
+        "level_2": {"role": None, "user": None},
+        "level_3": {"role": None, "user": None},
+    }
+
+    def _raise(*args, **kwargs):
+        raise ValidationError("missing configuration")
+
+    monkeypatch.setattr(
+        "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
+        _raise,
+    )
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="approver@example.com"))
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Expense Approver"])
+
+    request.before_workflow_action("Close")
+
+
+def test_get_approval_route_uses_default_rule(monkeypatch):
+    amount = 750
+    default_line = {
+        "parent": "EAS-1",
+        "is_default": 1,
+        "min_amount": 0,
+        "max_amount": 1000,
+        "level_1_role": "Default Approver",
+        "level_1_user": None,
+        "level_2_role": None,
+        "level_2_user": None,
+        "level_3_role": None,
+        "level_3_user": None,
+    }
+
+    monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: "EAS-1")
+
+    def _fake_get_all(doctype, filters=None, fields=None, order_by=None, limit=None):
+        if filters.get("expense_account"):
+            return []
+
+        if filters.get("is_default") != 1 or filters.get("parent") != "EAS-1":
+            return []
+
+        min_filter = filters.get("min_amount")
+        max_filter = filters.get("max_amount")
+        if not (min_filter and max_filter):
+            return []
+
+        min_value = min_filter[1]
+        max_value = max_filter[1]
+
+        if min_value <= amount <= max_value:
+            return [default_line]
+        return []
+
+    monkeypatch.setattr(frappe, "get_all", _fake_get_all, raising=False)
+
+    route = get_approval_route("CC", ("7000",), amount)
+
+    assert route["level_1"]["role"] == "Default Approver"
+
+
+def test_expense_approval_setting_requires_default_and_contiguous_ranges():
+    setting_without_default = ExpenseApprovalSetting(
+        expense_approval_lines=[Document(expense_account="5000", min_amount=0, max_amount=1000)]
+    )
+
+    with pytest.raises(NotAllowed):
+        setting_without_default.validate_default_lines()
+
+    setting_with_gaps = ExpenseApprovalSetting(
+        expense_approval_lines=[
+            Document(is_default=1, min_amount=0, max_amount=500),
+            Document(is_default=1, min_amount=750, max_amount=1000),
+        ]
+    )
+
+    with pytest.raises(NotAllowed):
+        setting_with_gaps.validate_amount_ranges()
+
+    setting_valid = ExpenseApprovalSetting(
+        expense_approval_lines=[
+            Document(is_default=1, min_amount=0, max_amount=500),
+            Document(is_default=1, min_amount=500, max_amount=1000),
+        ]
+    )
+
+    setting_valid.validate_default_lines()
+    setting_valid.validate_amount_ranges()

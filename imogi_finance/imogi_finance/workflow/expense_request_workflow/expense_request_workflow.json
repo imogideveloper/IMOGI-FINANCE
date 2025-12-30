@@ -37,7 +37,7 @@
     },
     {
       "action": "Approve",
-      "allowed": "All",
+      "allowed": "Expense Approver",
       "state": "Pending Level 1",
       "next_state": "Pending Level 2",
       "condition": "doc.level_2_role or doc.level_2_user or doc.level_3_role or doc.level_3_user",
@@ -45,7 +45,7 @@
     },
     {
       "action": "Approve",
-      "allowed": "All",
+      "allowed": "Expense Approver",
       "state": "Pending Level 2",
       "next_state": "Pending Level 3",
       "condition": "doc.level_3_role or doc.level_3_user",
@@ -53,14 +53,14 @@
     },
     {
       "action": "Approve",
-      "allowed": "All",
+      "allowed": "Expense Approver",
       "state": "Pending Level 3",
       "next_state": "Approved",
       "doc_status": 1
     },
     {
       "action": "Approve",
-      "allowed": "All",
+      "allowed": "Expense Approver",
       "state": "Pending Level 1",
       "next_state": "Approved",
       "condition": "not doc.level_2_role and not doc.level_2_user and not doc.level_3_role and not doc.level_3_user",
@@ -68,7 +68,7 @@
     },
     {
       "action": "Approve",
-      "allowed": "All",
+      "allowed": "Expense Approver",
       "state": "Pending Level 2",
       "next_state": "Approved",
       "condition": "not doc.level_3_role and not doc.level_3_user",
@@ -76,28 +76,28 @@
     },
     {
       "action": "Reject",
-      "allowed": "All",
+      "allowed": "Expense Approver",
       "state": "Pending Level 1",
       "next_state": "Rejected",
       "doc_status": 1
     },
     {
       "action": "Reject",
-      "allowed": "All",
+      "allowed": "Expense Approver",
       "state": "Pending Level 2",
       "next_state": "Rejected",
       "doc_status": 1
     },
     {
       "action": "Reject",
-      "allowed": "All",
+      "allowed": "Expense Approver",
       "state": "Pending Level 3",
       "next_state": "Rejected",
       "doc_status": 1
     },
     {
       "action": "Close",
-      "allowed": "All",
+      "allowed": "Expense Approver",
       "state": "Linked",
       "next_state": "Closed",
       "doc_status": 1

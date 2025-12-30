@@ -6,6 +6,7 @@ from __future__ import annotations
 import frappe
 from frappe import _
 from frappe.model.document import Document
+import json
 
 from imogi_finance import accounting
 from imogi_finance.approval import (
@@ -221,6 +222,9 @@ class ExpenseRequest(Document):
 
     def on_workflow_action(self, action, **kwargs):
         """Reset approval routing when a request is reopened."""
+        if action == "Approve" and kwargs.get("next_state") == "Approved":
+            self.record_approval_route_snapshot()
+
         if action != "Reopen":
             return
 
@@ -289,7 +293,7 @@ class ExpenseRequest(Document):
             if notifier:
                 notifier(
                     _(
-                        "Reopening while downstream documents remain active: {links}. Please cancel or audit them to prevent duplicate processing."
+                        "Reopening while downstream documents remain active: {links}. Please cancel or audit them to prevent duplicate processing and complete the reopening checklist (cancel/close related Purchase Invoice, Payment Entry, or Asset as needed)."
                     ).format(links=_(", ").join(active_links)),
                     alert=True,
                 )
@@ -332,9 +336,17 @@ class ExpenseRequest(Document):
                 accounts=self._get_expense_accounts(),
                 amount=target_amount,
             )
+            fresh_route = None
+
+        route_for_close = fresh_route if self._route_has_approver(fresh_route) else None
+        if route_for_close is None:
+            snapshot_route = self.get_route_snapshot()
+            route_for_close = snapshot_route if self._route_has_approver(snapshot_route) else None
+
+        if not route_for_close:
             frappe.throw(
                 _(
-                    "Unable to validate current approver route for closing. Please refresh the Expense Approval Setting and retry."
+                    "Unable to validate current or saved approver route for closing. Please refresh the Expense Approval Setting or reopen this request to rebuild the approval route."
                 ),
                 title=_("Not Allowed"),
             )
@@ -342,18 +354,18 @@ class ExpenseRequest(Document):
         allowed_roles = [
             role
             for role in (
-                fresh_route.get("level_1", {}).get("role"),
-                fresh_route.get("level_2", {}).get("role"),
-                fresh_route.get("level_3", {}).get("role"),
+                route_for_close.get("level_1", {}).get("role"),
+                route_for_close.get("level_2", {}).get("role"),
+                route_for_close.get("level_3", {}).get("role"),
             )
             if role
         ]
         allowed_users = [
             user
             for user in (
-                fresh_route.get("level_1", {}).get("user"),
-                fresh_route.get("level_2", {}).get("user"),
-                fresh_route.get("level_3", {}).get("user"),
+                route_for_close.get("level_1", {}).get("user"),
+                route_for_close.get("level_2", {}).get("user"),
+                route_for_close.get("level_3", {}).get("user"),
             )
             if user
         ]
@@ -413,6 +425,47 @@ class ExpenseRequest(Document):
         self.level_2_user = route.get("level_2", {}).get("user")
         self.level_3_role = route.get("level_3", {}).get("role")
         self.level_3_user = route.get("level_3", {}).get("user")
+
+    def get_route_snapshot(self) -> dict:
+        snapshot = getattr(self, "approval_route_snapshot", None)
+        if isinstance(snapshot, str):
+            try:
+                snapshot = json.loads(snapshot)
+            except Exception:
+                snapshot = None
+
+        if snapshot:
+            return snapshot
+
+        return {
+            "level_1": {"role": getattr(self, "level_1_role", None), "user": getattr(self, "level_1_user", None)},
+            "level_2": {"role": getattr(self, "level_2_role", None), "user": getattr(self, "level_2_user", None)},
+            "level_3": {"role": getattr(self, "level_3_role", None), "user": getattr(self, "level_3_user", None)},
+        }
+
+    def record_approval_route_snapshot(self):
+        """Persist the route used at final approval for later Close validation."""
+        try:
+            self.approval_route_snapshot = self.get_route_snapshot()
+        except Exception:
+            # Avoid blocking workflow if snapshot persistence fails.
+            pass
+
+    @staticmethod
+    def _route_has_approver(route: dict | None) -> bool:
+        if not route:
+            return False
+
+        return any(
+            [
+                route.get("level_1", {}).get("role"),
+                route.get("level_1", {}).get("user"),
+                route.get("level_2", {}).get("role"),
+                route.get("level_2", {}).get("user"),
+                route.get("level_3", {}).get("role"),
+                route.get("level_3", {}).get("user"),
+            ]
+        )
 
     def get_current_level_key(self) -> str | None:
         if self.status == "Pending Level 1":
