@@ -22,6 +22,22 @@ def _normalize_accounts(accounts: str | Iterable[str]) -> tuple[str, ...]:
 
 
 def _get_route_for_account(cost_center: str, account: str, amount: float) -> dict:
+    def _get_matching_line(filters: dict):
+        return frappe.get_all(
+            "Expense Approval Line",
+            filters=filters,
+            fields=[
+                "level_1_role",
+                "level_1_user",
+                "level_2_role",
+                "level_2_user",
+                "level_3_role",
+                "level_3_user",
+            ],
+            order_by="min_amount desc, max_amount asc",
+            limit=1,
+        )
+
     setting_name = frappe.db.get_value(
         "Expense Approval Setting", {"cost_center": cost_center, "is_active": 1}, "name"
     )
@@ -36,20 +52,17 @@ def _get_route_for_account(cost_center: str, account: str, amount: float) -> dic
         "min_amount": ["<=", amount],
         "max_amount": [">=", amount],
     }
-    approval_line = frappe.get_all(
-        "Expense Approval Line",
-        filters=filters,
-        fields=[
-            "level_1_role",
-            "level_1_user",
-            "level_2_role",
-            "level_2_user",
-            "level_3_role",
-            "level_3_user",
-        ],
-        order_by="min_amount desc, max_amount asc",
-        limit=1,
-    )
+    approval_line = _get_matching_line(filters)
+
+    if not approval_line:
+        approval_line = _get_matching_line(
+            {
+                "parent": setting_name,
+                "is_default": 1,
+                "min_amount": ["<=", amount],
+                "max_amount": [">=", amount],
+            }
+        )
 
     if not approval_line:
         raise frappe.ValidationError(

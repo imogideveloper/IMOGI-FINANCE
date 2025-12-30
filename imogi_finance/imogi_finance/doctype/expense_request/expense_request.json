@@ -45,6 +45,7 @@
     "level_2_user",
     "level_3_role",
     "level_3_user",
+    "approval_route_snapshot",
     "integration_section",
     "linked_purchase_invoice",
     "pending_purchase_invoice",
@@ -294,6 +295,15 @@
       "fieldtype": "Link",
       "label": "Level 3 User",
       "options": "User",
+      "read_only": 1
+    },
+    {
+      "allow_on_submit": 1,
+      "default": "{}",
+      "fieldname": "approval_route_snapshot",
+      "fieldtype": "JSON",
+      "hidden": 1,
+      "label": "Approval Route Snapshot",
       "read_only": 1
     },
     {
