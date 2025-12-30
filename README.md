@@ -12,6 +12,10 @@ This app now includes a native-first adapter for importing BCA bank CSV statemen
 - Use the **Open Bank Reconciliation Tool** button to jump directly into reconciliation with the parsed date range and bank account.
 - Flow summary: **Upload BCA → Parse → Convert → buka Bank Reconciliation Tool (otomatis lewat tombol).**
 
+### Kontrol dan Risiko Workflow Expense Request
+
+Lihat [Catatan Kontrol Workflow Expense Request](WORKFLOW_GUARDRAILS.md) untuk memahami dampak flag situs, perilaku rebuild rute, dan rekomendasi audit ketika melakukan reopen/close.
+
 ### Installation
 
 You can install this app using the [bench](https://github.com/frappe/bench) CLI:
