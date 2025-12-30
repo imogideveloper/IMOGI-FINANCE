@@ -6,9 +6,8 @@
     "document_type": "Expense Request",
     "is_active": 1,
     "module": "Imogi Finance",
-    "override_status": 1,
-    "states_field": "status",
-    "workflow_state_field": "status",
+    "override_status": 0,
+    "workflow_state_field": "workflow_state",
     "docstatus": 0,
 
     "actions": [
@@ -23,142 +22,142 @@
       {
         "doctype": "Workflow Document State",
         "state": "Draft",
-        "doc_status": 0,
+        "doc_status": "0",
         "allow_edit": "All"
       },
       {
         "doctype": "Workflow Document State",
         "state": "Pending Level 1",
-        "doc_status": 1,
+        "doc_status": "1",
         "allow_edit": "All"
       },
       {
         "doctype": "Workflow Document State",
         "state": "Pending Level 2",
-        "doc_status": 1,
+        "doc_status": "1",
         "allow_edit": "All"
       },
       {
         "doctype": "Workflow Document State",
         "state": "Pending Level 3",
-        "doc_status": 1,
+        "doc_status": "1",
         "allow_edit": "All"
       },
       {
         "doctype": "Workflow Document State",
         "state": "Approved",
-        "doc_status": 1,
+        "doc_status": "1",
         "allow_edit": "System Manager"
       },
       {
         "doctype": "Workflow Document State",
         "state": "Rejected",
-        "doc_status": 1,
+        "doc_status": "1",
         "allow_edit": "System Manager"
       },
       {
         "doctype": "Workflow Document State",
         "state": "Linked",
-        "doc_status": 1,
+        "doc_status": "1",
         "allow_edit": "System Manager"
       },
       {
         "doctype": "Workflow Document State",
         "state": "Closed",
-        "doc_status": 1,
+        "doc_status": "1",
         "allow_edit": "System Manager"
       }
     ],
 
     "transitions": [
       {
+        "doctype": "Workflow Transition",
         "action": "Submit",
         "state": "Draft",
         "next_state": "Pending Level 1",
         "allowed": "All",
-        "doc_status": 1,
         "allow_self_approval": 0
       },
       {
+        "doctype": "Workflow Transition",
         "action": "Approve",
         "state": "Pending Level 1",
         "next_state": "Pending Level 2",
         "allowed": "Expense Approver",
-        "condition": "doc.level_2_role or doc.level_2_user or doc.level_3_role or doc.level_3_user",
-        "doc_status": 1
+        "condition": "doc.level_2_role or doc.level_2_user or doc.level_3_role or doc.level_3_user"
       },
       {
+        "doctype": "Workflow Transition",
         "action": "Approve",
         "state": "Pending Level 2",
         "next_state": "Pending Level 3",
         "allowed": "Expense Approver",
-        "condition": "doc.level_3_role or doc.level_3_user",
-        "doc_status": 1
+        "condition": "doc.level_3_role or doc.level_3_user"
       },
       {
+        "doctype": "Workflow Transition",
         "action": "Approve",
         "state": "Pending Level 3",
         "next_state": "Approved",
-        "allowed": "Expense Approver",
-        "doc_status": 1
+        "allowed": "Expense Approver"
       },
       {
+        "doctype": "Workflow Transition",
         "action": "Approve",
         "state": "Pending Level 1",
         "next_state": "Approved",
         "allowed": "Expense Approver",
-        "condition": "not doc.level_2_role and not doc.level_2_user and not doc.level_3_role and not doc.level_3_user",
-        "doc_status": 1
+        "condition": "not doc.level_2_role and not doc.level_2_user and not doc.level_3_role and not doc.level_3_user"
       },
       {
+        "doctype": "Workflow Transition",
         "action": "Approve",
         "state": "Pending Level 2",
         "next_state": "Approved",
         "allowed": "Expense Approver",
-        "condition": "not doc.level_3_role and not doc.level_3_user",
-        "doc_status": 1
+        "condition": "not doc.level_3_role and not doc.level_3_user"
       },
       {
+        "doctype": "Workflow Transition",
         "action": "Reject",
         "state": "Pending Level 1",
         "next_state": "Rejected",
-        "allowed": "Expense Approver",
-        "doc_status": 1
+        "allowed": "Expense Approver"
       },
       {
+        "doctype": "Workflow Transition",
         "action": "Reject",
         "state": "Pending Level 2",
         "next_state": "Rejected",
-        "allowed": "Expense Approver",
-        "doc_status": 1
+        "allowed": "Expense Approver"
       },
       {
+        "doctype": "Workflow Transition",
         "action": "Reject",
         "state": "Pending Level 3",
         "next_state": "Rejected",
-        "allowed": "Expense Approver",
-        "doc_status": 1
+        "allowed": "Expense Approver"
       },
       {
+        "doctype": "Workflow Transition",
         "action": "Close",
         "state": "Linked",
         "next_state": "Closed",
-        "allowed": "Expense Approver",
-        "doc_status": 1
+        "allowed": "Expense Approver"
       },
       {
+        "doctype": "Workflow Transition",
         "action": "Reopen",
         "state": "Rejected",
         "next_state": "Draft",
-        "allowed": "System Manager",
-        "doc_status": 0
+        "allowed": "System Manager"
       },
       {
+        "doctype": "Workflow Transition",
         "action": "Reopen",
         "state": "Closed",
         "next_state": "Pending Level 1",
-        "allowed": "System Manager",
-        "doc_status": 1
+        "allowed": "System Manager"
       }
     ]
   }
