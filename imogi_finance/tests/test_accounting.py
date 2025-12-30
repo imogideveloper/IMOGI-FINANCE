@@ -130,11 +130,11 @@ def test_pph_base_amount_used_for_invoice(monkeypatch):
     assert pi_name == "PI-001"
     assert created_pi.withholding_tax_base_amount == 700
     assert created_pi.db_set_called_with == {
-        "linked_purchase_invoice": "PI-001",
+        "linked_purchase_invoice": None,
         "pending_purchase_invoice": "PI-001",
     }
     assert request.pending_purchase_invoice == "PI-001"
-    assert request.linked_purchase_invoice == "PI-001"
+    assert request.linked_purchase_invoice is None
 
 
 def test_pph_base_amount_uses_item_flags(monkeypatch):
@@ -315,11 +315,11 @@ def test_asset_request_creates_purchase_invoice(monkeypatch):
     assert created_pi.withholding_tax_base_amount == 700
     assert created_pi.items[0]["item_name"] == "New Laptop"
     assert created_pi.db_set_called_with == {
-        "linked_purchase_invoice": "PI-002",
+        "linked_purchase_invoice": None,
         "pending_purchase_invoice": "PI-002",
     }
     assert request.pending_purchase_invoice == "PI-002"
-    assert request.linked_purchase_invoice == "PI-002"
+    assert request.linked_purchase_invoice is None
 
 
 def test_purchase_invoice_creation_does_not_update_request(monkeypatch):
@@ -363,11 +363,11 @@ def test_purchase_invoice_creation_does_not_update_request(monkeypatch):
 
     assert pi_name == "PI-003"
     assert db_set_calls == [
-        {"linked_purchase_invoice": "PI-003", "pending_purchase_invoice": "PI-003"}
+        {"linked_purchase_invoice": None, "pending_purchase_invoice": "PI-003"}
     ]
     assert request.status == "Approved"
     assert request.pending_purchase_invoice == "PI-003"
-    assert request.linked_purchase_invoice == "PI-003"
+    assert request.linked_purchase_invoice is None
 
 
 def test_create_purchase_invoice_handles_multiple_items(monkeypatch):
@@ -419,10 +419,10 @@ def test_create_purchase_invoice_handles_multiple_items(monkeypatch):
     assert len(created_pi.items) == 2
     assert [row["amount"] for row in created_pi.items] == [100, 200]
     assert created_pi.db_set_called_with == {
-        "linked_purchase_invoice": "PI-007",
+        "linked_purchase_invoice": None,
         "pending_purchase_invoice": "PI-007",
     }
-    assert request.linked_purchase_invoice == "PI-007"
+    assert request.linked_purchase_invoice is None
     assert request.pending_purchase_invoice == "PI-007"
 
 
@@ -465,7 +465,7 @@ def test_create_purchase_invoice_syncs_amount_and_account(monkeypatch):
     assert pi_name == "PI-008"
     assert db_set_calls == [
         {"amount": 125.0, "expense_account": "7777 - Meals - _TC"},
-        {"linked_purchase_invoice": "PI-008", "pending_purchase_invoice": "PI-008"},
+        {"linked_purchase_invoice": None, "pending_purchase_invoice": "PI-008"},
     ]
     assert request.amount == 125.0
     assert request.expense_account == "7777 - Meals - _TC"
@@ -511,7 +511,7 @@ def test_create_purchase_invoice_allows_mixed_expense_accounts(monkeypatch):
     assert pi_name == "PI-009"
     assert db_set_calls[0] == {"amount": 300.0, "expense_account": None}
     assert db_set_calls[1] == {
-        "linked_purchase_invoice": "PI-009",
+        "linked_purchase_invoice": None,
         "pending_purchase_invoice": "PI-009",
     }
     assert request.expense_accounts == ("5130 - Meals and Entertainment - _TC", "5140 - Travel - _TC")
@@ -622,10 +622,10 @@ def test_update_links_respects_mark_pending_flag_for_draft():
     accounting._update_request_purchase_invoice_links(request, purchase_invoice, mark_pending=False)
 
     assert db_set_calls == [
-        {"linked_purchase_invoice": "PI-006", "pending_purchase_invoice": None}
+        {"linked_purchase_invoice": None, "pending_purchase_invoice": None}
     ]
     assert request.pending_purchase_invoice is None
-    assert request.linked_purchase_invoice == "PI-006"
+    assert request.linked_purchase_invoice is None
 
 
 def test_validate_request_ready_for_link_disallows_linked_status():

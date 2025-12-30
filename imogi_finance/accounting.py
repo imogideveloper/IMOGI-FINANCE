@@ -111,12 +111,12 @@ def _update_request_purchase_invoice_links(
     purchase_invoice: frappe.model.document.Document,
     mark_pending: bool = True,
 ) -> None:
-    pending_invoice = None
-    if mark_pending and getattr(purchase_invoice, "docstatus", 0) == 0:
-        pending_invoice = purchase_invoice.name
+    is_submitted = getattr(purchase_invoice, "docstatus", 0) == 1
+    pending_invoice = purchase_invoice.name if mark_pending and not is_submitted else None
+    linked_invoice = purchase_invoice.name if is_submitted else None
 
     updates = {
-        "linked_purchase_invoice": purchase_invoice.name,
+        "linked_purchase_invoice": linked_invoice,
         "pending_purchase_invoice": pending_invoice,
     }
 
@@ -199,5 +199,15 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     pi.insert(ignore_permissions=True)
 
     _update_request_purchase_invoice_links(request, pi)
+
+    if getattr(pi, "docstatus", 0) == 0:
+        notifier = getattr(frappe, "msgprint", None)
+        if notifier:
+            notifier(
+                _(
+                    "Purchase Invoice {0} was created in Draft. Please submit it before continuing to Payment Entry."
+                ).format(pi.name),
+                alert=True,
+            )
 
     return pi.name

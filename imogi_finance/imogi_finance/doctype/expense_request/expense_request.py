@@ -26,6 +26,7 @@ class ExpenseRequest(Document):
         self.validate_tax_fields()
         self.handle_key_field_changes_after_submit()
         self.validate_final_state_immutability()
+        self.validate_workflow_action_guard()
 
     def validate_amounts(self):
         total, expense_accounts = accounting.summarize_request_items(self.get("items"))
@@ -148,6 +149,11 @@ class ExpenseRequest(Document):
         document so workflow maintainers don't need to manage static roles that
         could conflict with routed approvers.
         """
+        flags = getattr(self, "flags", None)
+        if flags is None:
+            flags = type("Flags", (), {})()
+            self.flags = flags
+        self.flags.workflow_action_allowed = True
         if action == "Submit":
             self.validate_submit_permission()
             return
@@ -279,6 +285,19 @@ class ExpenseRequest(Document):
 
         if allow_site_override or allow_request_override:
             self._add_reopen_override_audit(active_links, allow_site_override, allow_request_override)
+            notifier = getattr(frappe, "msgprint", None)
+            if notifier:
+                notifier(
+                    _(
+                        "Reopening while downstream documents remain active: {links}. Please cancel or audit them to prevent duplicate processing."
+                    ).format(links=_(", ").join(active_links)),
+                    alert=True,
+                )
+            flags = getattr(self, "flags", None)
+            if flags is None:
+                flags = type("Flags", (), {})()
+                self.flags = flags
+            self.flags.reopen_override_links = active_links
             return
 
         frappe.throw(
@@ -299,21 +318,42 @@ class ExpenseRequest(Document):
         if getattr(getattr(frappe, "conf", None), "imogi_finance_allow_unrestricted_close", False):
             return
 
+        target_amount = getattr(self, "amount", None)
+        if target_amount is None:
+            target_amount, account_summary = accounting.summarize_request_items(self.get("items"))
+            self.amount = target_amount
+
+        try:
+            fresh_route = get_approval_route(self.cost_center, self._get_expense_accounts(), target_amount)
+        except (frappe.DoesNotExistError, frappe.ValidationError) as exc:
+            log_route_resolution_error(
+                exc,
+                cost_center=self.cost_center,
+                accounts=self._get_expense_accounts(),
+                amount=target_amount,
+            )
+            frappe.throw(
+                _(
+                    "Unable to validate current approver route for closing. Please refresh the Expense Approval Setting and retry."
+                ),
+                title=_("Not Allowed"),
+            )
+
         allowed_roles = [
             role
             for role in (
-                getattr(self, "level_1_role", None),
-                getattr(self, "level_2_role", None),
-                getattr(self, "level_3_role", None),
+                fresh_route.get("level_1", {}).get("role"),
+                fresh_route.get("level_2", {}).get("role"),
+                fresh_route.get("level_3", {}).get("role"),
             )
             if role
         ]
         allowed_users = [
             user
             for user in (
-                getattr(self, "level_1_user", None),
-                getattr(self, "level_2_user", None),
-                getattr(self, "level_3_user", None),
+                fresh_route.get("level_1", {}).get("user"),
+                fresh_route.get("level_2", {}).get("user"),
+                fresh_route.get("level_3", {}).get("user"),
             )
             if user
         ]
@@ -420,6 +460,11 @@ class ExpenseRequest(Document):
         route = get_approval_route(self.cost_center, self._get_expense_accounts(), self.amount)
         self.apply_route(route)
         self.status = "Pending Level 1"
+        flags = getattr(self, "flags", None)
+        if flags is None:
+            flags = type("Flags", (), {})()
+            self.flags = flags
+        self.flags.workflow_action_allowed = True
 
     def validate_initial_approver(self, route: dict):
         """Ensure the first approval level has a configured user or role."""
@@ -448,6 +493,29 @@ class ExpenseRequest(Document):
         self.linked_payment_entry = None
         self.linked_purchase_invoice = None
         self.linked_asset = None
+        self.pending_purchase_invoice = None
+
+    def validate_workflow_action_guard(self):
+        """Block status mutations that bypass workflow enforcement."""
+        flags_obj = getattr(self, "flags", None)
+        if flags_obj and getattr(flags_obj, "workflow_action_allowed", False):
+            return
+
+        flags = getattr(frappe, "flags", None)
+        if getattr(flags, "in_patch", False) or getattr(flags, "in_install", False):
+            return
+
+        previous = self._get_previous_doc()
+        if not previous or getattr(previous, "docstatus", None) != getattr(self, "docstatus", None):
+            return
+
+        if getattr(previous, "status", None) == getattr(self, "status", None):
+            return
+
+        frappe.throw(
+            _("Status changes must be performed via workflow actions."),
+            title=_("Not Allowed"),
+        )
 
     @staticmethod
     def _get_value(source, field):
