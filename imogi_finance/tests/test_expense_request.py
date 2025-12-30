@@ -780,6 +780,7 @@ def test_validate_allows_changes_outside_final_status(monkeypatch):
         amount=100,
         currency="IDR",
         cost_center="CC",
+        name="ER-ALLOW",
         items=[_item(amount=100)],
     )
     updated = ExpenseRequest(
@@ -904,6 +905,128 @@ def test_validate_pending_route_freshness_requires_refresh(monkeypatch):
 
     with pytest.raises(NotAllowed):
         request.validate_pending_route_freshness()
+
+
+def test_validate_pending_edit_allows_whitelisted_custom_field(monkeypatch):
+    previous = ExpenseRequest(
+        docstatus=1,
+        status="Pending Level 1",
+        request_type="Expense",
+        supplier="Supplier A",
+        expense_account="5000",
+        amount=100,
+        currency="IDR",
+        cost_center="CC",
+        items=[_item(amount=100)],
+    )
+    updated = ExpenseRequest(
+        docstatus=1,
+        status="Pending Level 1",
+        request_type="Expense",
+        supplier="Supplier A",
+        expense_account="5000",
+        amount=100,
+        currency="IDR",
+        cost_center="CC",
+        name="ER-ALLOW",
+        items=[_item(amount=100)],
+        pending_edit_allowed_fields="custom_note",
+    )
+    updated.custom_note = "Allowed update"
+    updated._doc_before_save = previous
+
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="editor@example.com"))
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Viewer"])
+
+    comments = []
+    updated.add_comment = lambda comment_type, text: comments.append((comment_type, text))
+
+    updated.validate_pending_edit_restrictions()
+
+    assert comments == []
+
+
+def test_validate_pending_edit_rejects_custom_field_for_non_approver(monkeypatch):
+    previous = ExpenseRequest(
+        docstatus=1,
+        status="Pending Level 1",
+        request_type="Expense",
+        supplier="Supplier A",
+        expense_account="5000",
+        amount=100,
+        currency="IDR",
+        cost_center="CC",
+        owner="owner@example.com",
+        name="ER-BLOCK",
+        items=[_item(amount=100)],
+    )
+    updated = ExpenseRequest(
+        docstatus=1,
+        status="Pending Level 1",
+        request_type="Expense",
+        supplier="Supplier A",
+        expense_account="5000",
+        amount=100,
+        currency="IDR",
+        cost_center="CC",
+        owner="owner@example.com",
+        name="ER-BLOCK",
+        items=[_item(amount=100)],
+    )
+    updated.custom_note = "Blocked update"
+    updated._doc_before_save = previous
+
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="editor@example.com"))
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Viewer"])
+
+    comments = []
+    updated.add_comment = lambda comment_type, text: comments.append((comment_type, text))
+
+    with pytest.raises(NotAllowed):
+        updated.validate_pending_edit_restrictions()
+
+    assert comments and "custom_note" in comments[0][1]
+
+
+def test_validate_pending_edit_allows_custom_field_for_routed_user(monkeypatch):
+    previous = ExpenseRequest(
+        docstatus=1,
+        status="Pending Level 1",
+        request_type="Expense",
+        supplier="Supplier A",
+        expense_account="5000",
+        amount=100,
+        currency="IDR",
+        cost_center="CC",
+        name="ER-APPROVE",
+        items=[_item(amount=100)],
+    )
+    updated = ExpenseRequest(
+        docstatus=1,
+        status="Pending Level 1",
+        request_type="Expense",
+        supplier="Supplier A",
+        expense_account="5000",
+        amount=100,
+        currency="IDR",
+        cost_center="CC",
+        name="ER-APPROVE",
+        items=[_item(amount=100)],
+        level_1_user="approver@example.com",
+    )
+    updated.custom_note = "Approved update"
+    updated._doc_before_save = previous
+
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="approver@example.com"))
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Viewer"])
+
+    comments = []
+    updated.add_comment = lambda comment_type, text: comments.append((comment_type, text))
+
+    updated.validate_pending_edit_restrictions()
+
+    assert comments and "custom_note" in comments[0][1]
+
 
 def test_validate_pending_route_freshness_records_meta_when_missing(monkeypatch):
     request = ExpenseRequest(

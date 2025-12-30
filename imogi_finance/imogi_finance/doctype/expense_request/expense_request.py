@@ -663,6 +663,12 @@ class ExpenseRequest(Document):
         if not changed_fields:
             return
 
+        allowed_pending_fields = self._get_pending_edit_allowed_fields()
+        audited_fields = [field for field in changed_fields if field not in allowed_pending_fields]
+
+        if not audited_fields:
+            return
+
         allowed_roles = {
             role
             for role in {
@@ -687,7 +693,7 @@ class ExpenseRequest(Document):
         role_allowed = bool(set(frappe.get_roles()) & allowed_roles)
         user_allowed = session_user in allowed_users
 
-        self._add_pending_edit_audit(previous, changed_fields=changed_fields, denied=not (role_allowed or user_allowed))
+        self._add_pending_edit_audit(previous, changed_fields=audited_fields, denied=not (role_allowed or user_allowed))
 
         if role_allowed or user_allowed:
             return
@@ -780,6 +786,25 @@ class ExpenseRequest(Document):
         _, accounts = accounting.summarize_request_items(items)
         return accounts
 
+    def _get_pending_edit_allowed_fields(self) -> set[str]:
+        def _parse_fields(source) -> set[str]:
+            if not source:
+                return set()
+
+            if isinstance(source, str):
+                raw_fields = source.replace("\n", ",").split(",")
+                return {field.strip() for field in raw_fields if field and field.strip()}
+
+            if isinstance(source, (list, tuple, set)):
+                return {str(field) for field in source if field}
+
+            return set()
+
+        allowed = set()
+        allowed.update(_parse_fields(getattr(getattr(frappe, "conf", None), "pending_edit_allowed_fields", None)))
+        allowed.update(_parse_fields(getattr(self, "pending_edit_allowed_fields", None)))
+        return allowed
+
     def _log_denied_action(self, action, level, expected_role, expected_user):
         logger = getattr(frappe, "logger", None)
         if not logger:
@@ -857,7 +882,35 @@ class ExpenseRequest(Document):
             "expense_accounts",
         )
 
-        changed = [field for field in monitored_fields if self._get_value(previous, field) != self.get(field)]
+        system_fields = {
+            "name",
+            "owner",
+            "creation",
+            "modified",
+            "modified_by",
+            "docstatus",
+            "idx",
+            "doctype",
+            "flags",
+            "_doc_before_save",
+            "pending_edit_allowed_fields",
+            "items",
+        }
+
+        dynamic_fields = set(getattr(previous, "__dict__", {}) or {}).union(self.__dict__ or {})
+        candidate_fields = [field for field in monitored_fields if field not in system_fields]
+        for field in sorted(dynamic_fields):
+            if field in system_fields or field in monitored_fields or field.startswith("_"):
+                continue
+
+            current_value = getattr(self, field, None)
+            previous_value = getattr(previous, field, None)
+            if callable(current_value) or callable(previous_value):
+                continue
+
+            candidate_fields.append(field)
+
+        changed = [field for field in candidate_fields if self._get_value(previous, field) != self.get(field)]
         return changed
 
     def _add_reopen_override_audit(self, active_links: list[str], site_override: bool, request_override: bool):

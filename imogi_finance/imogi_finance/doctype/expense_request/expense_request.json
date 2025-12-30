@@ -326,6 +326,15 @@
       "read_only": 1
     },
     {
+      "allow_on_submit": 1,
+      "default": "",
+      "fieldname": "pending_edit_allowed_fields",
+      "fieldtype": "Small Text",
+      "hidden": 1,
+      "label": "Pending Edit Allowed Fields",
+      "read_only": 1
+    },
+    {
       "collapsible": 1,
       "fieldname": "integration_section",
       "fieldtype": "Section Break",
