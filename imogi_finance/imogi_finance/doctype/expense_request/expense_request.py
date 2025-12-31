@@ -234,13 +234,16 @@ class ExpenseRequest(Document):
 
     def on_workflow_action(self, action, **kwargs):
         """Reset approval routing when a request is reopened."""
-        if action == "Approve" and kwargs.get("next_state") == "Approved":
+        next_state = kwargs.get("next_state")
+        if action == "Approve" and next_state == "Approved":
             self.record_approval_route_snapshot()
+
+        if action in {"Approve", "Reject", "Close", "Submit"} and next_state:
+            self.status = next_state
 
         if action != "Reopen":
             return
 
-        next_state = kwargs.get("next_state")
         try:
             self.validate_amounts()
             setting_meta = get_active_setting_meta(self.cost_center)
