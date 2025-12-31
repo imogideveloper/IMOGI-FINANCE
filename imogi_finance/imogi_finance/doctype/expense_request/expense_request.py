@@ -28,6 +28,7 @@ class ExpenseRequest(Document):
         self.validate_amounts()
         self.validate_asset_details()
         self.validate_tax_fields()
+        self.sync_status_with_workflow_state()
         self.handle_key_field_changes_after_submit()
         self.validate_pending_edit_restrictions()
         self.validate_final_state_immutability()
@@ -645,6 +646,35 @@ class ExpenseRequest(Document):
             self.flags = flags
         self.flags.workflow_action_allowed = True
         self._add_pending_edit_audit(previous)
+
+    def sync_status_with_workflow_state(self):
+        """Keep status aligned with workflow_state when workflows use a separate field."""
+        workflow_state = getattr(self, "workflow_state", None)
+        if not workflow_state:
+            return
+
+        valid_states = {
+            "Draft",
+            "Pending Level 1",
+            "Pending Level 2",
+            "Pending Level 3",
+            "Approved",
+            "Rejected",
+            "Linked",
+            "Closed",
+        }
+        if workflow_state not in valid_states:
+            return
+
+        if self.status == workflow_state:
+            return
+
+        self.status = workflow_state
+        flags = getattr(self, "flags", None)
+        if flags is None:
+            flags = type("Flags", (), {})()
+            self.flags = flags
+        self.flags.workflow_action_allowed = True
 
     def validate_pending_edit_restrictions(self):
         """Limit who can edit pending requests and add audit breadcrumbs."""
