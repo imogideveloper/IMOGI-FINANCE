@@ -1,0 +1,99 @@
+{
+  "doctype": "DocType",
+  "name": "Internal Charge Request",
+  "module": "Imogi Finance",
+  "custom": 0,
+  "istable": 0,
+  "is_submittable": 1,
+  "track_changes": 1,
+  "editable_grid": 0,
+  "autoname": "ICR-.YYYY.-.#####",
+  "field_order": [
+    "naming_series",
+    "expense_request",
+    "company",
+    "posting_date",
+    "fiscal_year",
+    "source_cost_center",
+    "total_amount",
+    "allocation_mode",
+    "internal_charge_lines",
+    "status"
+  ],
+  "fields": [
+    {
+      "fieldname": "naming_series",
+      "label": "Naming Series",
+      "fieldtype": "Select",
+      "options": "ICR-.YYYY.-.#####",
+      "default": "ICR-.YYYY.-.#####",
+      "reqd": 1
+    },
+    {
+      "fieldname": "expense_request",
+      "label": "Expense Request",
+      "fieldtype": "Link",
+      "options": "Expense Request",
+      "reqd": 1
+    },
+    {
+      "fieldname": "company",
+      "label": "Company",
+      "fieldtype": "Link",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "fieldname": "posting_date",
+      "label": "Posting Date",
+      "fieldtype": "Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "fiscal_year",
+      "label": "Fiscal Year",
+      "fieldtype": "Link",
+      "options": "Fiscal Year",
+      "reqd": 1
+    },
+    {
+      "fieldname": "source_cost_center",
+      "label": "Source Cost Center",
+      "fieldtype": "Link",
+      "options": "Cost Center",
+      "reqd": 1
+    },
+    {
+      "fieldname": "total_amount",
+      "label": "Total Amount",
+      "fieldtype": "Currency",
+      "reqd": 1
+    },
+    {
+      "fieldname": "allocation_mode",
+      "label": "Allocation Mode",
+      "fieldtype": "Select",
+      "options": "Direct\nAllocated via Internal Charge",
+      "default": "Allocated via Internal Charge"
+    },
+    {
+      "fieldname": "internal_charge_lines",
+      "label": "Internal Charge Lines",
+      "fieldtype": "Table",
+      "options": "Internal Charge Line",
+      "reqd": 1
+    },
+    {
+      "fieldname": "status",
+      "label": "Status",
+      "fieldtype": "Select",
+      "options": "Draft\nPending Approval\nPartially Approved\nApproved\nRejected",
+      "default": "Draft"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager"
+    }
+  ]
+}

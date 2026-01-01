@@ -1,0 +1,107 @@
+{
+  "doctype": "DocType",
+  "name": "Internal Charge Line",
+  "module": "Imogi Finance",
+  "custom": 0,
+  "istable": 1,
+  "track_changes": 1,
+  "field_order": [
+    "target_cost_center",
+    "amount",
+    "line_status",
+    "current_approval_level",
+    "route_snapshot",
+    "level_1_role",
+    "level_1_approver",
+    "level_2_role",
+    "level_2_approver",
+    "level_3_role",
+    "level_3_approver",
+    "approved_by",
+    "approved_on"
+  ],
+  "fields": [
+    {
+      "fieldname": "target_cost_center",
+      "label": "Target Cost Center",
+      "fieldtype": "Link",
+      "options": "Cost Center",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "amount",
+      "label": "Amount",
+      "fieldtype": "Currency",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "line_status",
+      "label": "Line Status",
+      "fieldtype": "Select",
+      "options": "Draft\nPending L1\nPending L2\nPending L3\nApproved\nRejected",
+      "default": "Draft",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "current_approval_level",
+      "label": "Current Approval Level",
+      "fieldtype": "Int"
+    },
+    {
+      "fieldname": "route_snapshot",
+      "label": "Route Snapshot",
+      "fieldtype": "Long Text"
+    },
+    {
+      "fieldname": "level_1_role",
+      "label": "Level 1 Role",
+      "fieldtype": "Link",
+      "options": "Role"
+    },
+    {
+      "fieldname": "level_1_approver",
+      "label": "Level 1 Approver",
+      "fieldtype": "Link",
+      "options": "User"
+    },
+    {
+      "fieldname": "level_2_role",
+      "label": "Level 2 Role",
+      "fieldtype": "Link",
+      "options": "Role"
+    },
+    {
+      "fieldname": "level_2_approver",
+      "label": "Level 2 Approver",
+      "fieldtype": "Link",
+      "options": "User"
+    },
+    {
+      "fieldname": "level_3_role",
+      "label": "Level 3 Role",
+      "fieldtype": "Link",
+      "options": "Role"
+    },
+    {
+      "fieldname": "level_3_approver",
+      "label": "Level 3 Approver",
+      "fieldtype": "Link",
+      "options": "User"
+    },
+    {
+      "fieldname": "approved_by",
+      "label": "Approved By",
+      "fieldtype": "Link",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "approved_on",
+      "label": "Approved On",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    }
+  ]
+}

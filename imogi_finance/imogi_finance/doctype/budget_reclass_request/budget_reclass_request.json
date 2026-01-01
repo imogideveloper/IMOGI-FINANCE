@@ -1,0 +1,111 @@
+{
+  "doctype": "DocType",
+  "name": "Budget Reclass Request",
+  "module": "Imogi Finance",
+  "custom": 0,
+  "istable": 0,
+  "is_submittable": 1,
+  "track_changes": 1,
+  "editable_grid": 0,
+  "autoname": "BCR-.YYYY.-.#####",
+  "field_order": [
+    "naming_series",
+    "company",
+    "posting_date",
+    "fiscal_year",
+    "from_cost_center",
+    "from_account",
+    "to_cost_center",
+    "to_account",
+    "amount",
+    "reason",
+    "attachments",
+    "status"
+  ],
+  "fields": [
+    {
+      "fieldname": "naming_series",
+      "label": "Naming Series",
+      "fieldtype": "Select",
+      "options": "BCR-.YYYY.-.#####",
+      "reqd": 1,
+      "default": "BCR-.YYYY.-.#####"
+    },
+    {
+      "fieldname": "company",
+      "label": "Company",
+      "fieldtype": "Link",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "fieldname": "posting_date",
+      "label": "Posting Date",
+      "fieldtype": "Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "fiscal_year",
+      "label": "Fiscal Year",
+      "fieldtype": "Link",
+      "options": "Fiscal Year",
+      "reqd": 1
+    },
+    {
+      "fieldname": "from_cost_center",
+      "label": "From Cost Center",
+      "fieldtype": "Link",
+      "options": "Cost Center",
+      "reqd": 1
+    },
+    {
+      "fieldname": "from_account",
+      "label": "From Account",
+      "fieldtype": "Link",
+      "options": "Account",
+      "reqd": 1
+    },
+    {
+      "fieldname": "to_cost_center",
+      "label": "To Cost Center",
+      "fieldtype": "Link",
+      "options": "Cost Center",
+      "reqd": 1
+    },
+    {
+      "fieldname": "to_account",
+      "label": "To Account",
+      "fieldtype": "Link",
+      "options": "Account",
+      "reqd": 1
+    },
+    {
+      "fieldname": "amount",
+      "label": "Amount",
+      "fieldtype": "Currency",
+      "reqd": 1
+    },
+    {
+      "fieldname": "reason",
+      "label": "Reason",
+      "fieldtype": "Small Text"
+    },
+    {
+      "fieldname": "attachments",
+      "label": "Attachments",
+      "fieldtype": "Attach"
+    },
+    {
+      "fieldname": "status",
+      "label": "Status",
+      "fieldtype": "Select",
+      "options": "Draft\nPending Approval\nApproved\nRejected",
+      "default": "Draft"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager"
+    }
+  ]
+}

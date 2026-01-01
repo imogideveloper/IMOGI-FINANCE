@@ -1,0 +1,99 @@
+{
+  "doctype": "DocType",
+  "name": "Budget Control Settings",
+  "module": "Imogi Finance",
+  "custom": 0,
+  "istable": 0,
+  "issingle": 1,
+  "editable_grid": 0,
+  "track_changes": 1,
+  "field_order": [
+    "enable_budget_lock",
+    "enable_budget_reclass",
+    "enable_additional_budget",
+    "enable_internal_charge",
+    "lock_on_workflow_state",
+    "enforce_mode",
+    "allow_budget_overrun_role",
+    "allow_reclass_override_role",
+    "internal_charge_required_before_er_approval",
+    "internal_charge_posting_mode",
+    "dimension_mode"
+  ],
+  "fields": [
+    {
+      "fieldname": "enable_budget_lock",
+      "label": "Enable Budget Lock",
+      "fieldtype": "Check",
+      "default": "0"
+    },
+    {
+      "fieldname": "enable_budget_reclass",
+      "label": "Enable Budget Reclass",
+      "fieldtype": "Check",
+      "default": "0"
+    },
+    {
+      "fieldname": "enable_additional_budget",
+      "label": "Enable Additional Budget",
+      "fieldtype": "Check",
+      "default": "0"
+    },
+    {
+      "fieldname": "enable_internal_charge",
+      "label": "Enable Internal Charge",
+      "fieldtype": "Check",
+      "default": "0"
+    },
+    {
+      "fieldname": "lock_on_workflow_state",
+      "label": "Lock on Workflow State",
+      "fieldtype": "Data",
+      "default": "Approved"
+    },
+    {
+      "fieldname": "enforce_mode",
+      "label": "Enforce Mode",
+      "fieldtype": "Select",
+      "options": "Approval Only\nPI Submit Only\nBoth",
+      "default": "Both"
+    },
+    {
+      "fieldname": "allow_budget_overrun_role",
+      "label": "Allow Budget Overrun Role",
+      "fieldtype": "Link",
+      "options": "Role"
+    },
+    {
+      "fieldname": "allow_reclass_override_role",
+      "label": "Allow Reclass Override Role",
+      "fieldtype": "Link",
+      "options": "Role"
+    },
+    {
+      "fieldname": "internal_charge_required_before_er_approval",
+      "label": "Internal Charge Required before ER Approval",
+      "fieldtype": "Check",
+      "default": "1"
+    },
+    {
+      "fieldname": "internal_charge_posting_mode",
+      "label": "Internal Charge Posting Mode",
+      "fieldtype": "Select",
+      "options": "None\nAuto JE on PI Submit",
+      "default": "Auto JE on PI Submit"
+    },
+    {
+      "fieldname": "dimension_mode",
+      "label": "Dimension Mode",
+      "fieldtype": "Select",
+      "options": "Native (Cost Center + Account)\nNative + Project (optional)\nNative + Branch (optional)",
+      "default": "Native (Cost Center + Account)"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager"
+    }
+  ]
+}

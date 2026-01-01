@@ -1,0 +1,95 @@
+{
+  "doctype": "DocType",
+  "name": "Additional Budget Request",
+  "module": "Imogi Finance",
+  "custom": 0,
+  "istable": 0,
+  "is_submittable": 1,
+  "track_changes": 1,
+  "editable_grid": 0,
+  "autoname": "ABR-.YYYY.-.#####",
+  "field_order": [
+    "naming_series",
+    "company",
+    "posting_date",
+    "fiscal_year",
+    "cost_center",
+    "account",
+    "amount",
+    "reason",
+    "attachments",
+    "status"
+  ],
+  "fields": [
+    {
+      "fieldname": "naming_series",
+      "label": "Naming Series",
+      "fieldtype": "Select",
+      "options": "ABR-.YYYY.-.#####",
+      "reqd": 1,
+      "default": "ABR-.YYYY.-.#####"
+    },
+    {
+      "fieldname": "company",
+      "label": "Company",
+      "fieldtype": "Link",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "fieldname": "posting_date",
+      "label": "Posting Date",
+      "fieldtype": "Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "fiscal_year",
+      "label": "Fiscal Year",
+      "fieldtype": "Link",
+      "options": "Fiscal Year",
+      "reqd": 1
+    },
+    {
+      "fieldname": "cost_center",
+      "label": "Cost Center",
+      "fieldtype": "Link",
+      "options": "Cost Center",
+      "reqd": 1
+    },
+    {
+      "fieldname": "account",
+      "label": "Account",
+      "fieldtype": "Link",
+      "options": "Account",
+      "reqd": 1
+    },
+    {
+      "fieldname": "amount",
+      "label": "Amount",
+      "fieldtype": "Currency",
+      "reqd": 1
+    },
+    {
+      "fieldname": "reason",
+      "label": "Reason",
+      "fieldtype": "Small Text"
+    },
+    {
+      "fieldname": "attachments",
+      "label": "Attachments",
+      "fieldtype": "Attach"
+    },
+    {
+      "fieldname": "status",
+      "label": "Status",
+      "fieldtype": "Select",
+      "options": "Draft\nPending Approval\nApproved\nRejected",
+      "default": "Draft"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager"
+    }
+  ]
+}

@@ -615,5 +615,60 @@
     "insert_after": "match_confidence",
     "label": "Match Notes",
     "read_only": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-budget_lock_status",
+    "dt": "Expense Request",
+    "fieldname": "budget_lock_status",
+    "fieldtype": "Select",
+    "insert_after": "status",
+    "label": "Budget Lock Status",
+    "options": "Not Locked\nLocked\nReleased\nConsumed\nOverrun Allowed",
+    "read_only": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-internal_charge_request",
+    "dt": "Expense Request",
+    "fieldname": "internal_charge_request",
+    "fieldtype": "Link",
+    "insert_after": "linked_asset",
+    "label": "Internal Charge Request",
+    "options": "Internal Charge Request",
+    "read_only": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-allocation_mode",
+    "dt": "Expense Request",
+    "fieldname": "allocation_mode",
+    "fieldtype": "Select",
+    "insert_after": "cost_center",
+    "label": "Allocation Mode",
+    "options": "Direct\nAllocated via Internal Charge",
+    "default": "Direct"
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-prevent_pi_if_not_ready",
+    "dt": "Expense Request",
+    "fieldname": "prevent_pi_if_not_ready",
+    "fieldtype": "Check",
+    "insert_after": "internal_charge_request",
+    "label": "Prevent PI if Not Ready",
+    "read_only": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Purchase Invoice-internal_charge_request",
+    "dt": "Purchase Invoice",
+    "fieldname": "internal_charge_request",
+    "fieldtype": "Link",
+    "insert_after": "imogi_expense_request",
+    "label": "Internal Charge Request",
+    "options": "Internal Charge Request",
+    "read_only": 1,
+    "allow_on_submit": 1
   }
 ]

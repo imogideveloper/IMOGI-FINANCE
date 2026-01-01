@@ -1,0 +1,115 @@
+{
+  "doctype": "DocType",
+  "name": "Budget Control Entry",
+  "module": "Imogi Finance",
+  "custom": 0,
+  "istable": 0,
+  "is_submittable": 1,
+  "track_changes": 1,
+  "editable_grid": 0,
+  "autoname": "BCE-.YYYY.-.#####",
+  "field_order": [
+    "entry_type",
+    "company",
+    "posting_date",
+    "fiscal_year",
+    "cost_center",
+    "account",
+    "project",
+    "branch",
+    "amount",
+    "direction",
+    "ref_doctype",
+    "ref_name",
+    "remarks"
+  ],
+  "fields": [
+    {
+      "fieldname": "entry_type",
+      "label": "Entry Type",
+      "fieldtype": "Select",
+      "options": "RESERVATION\nCONSUMPTION\nRELEASE\nRECLASS\nSUPPLEMENT\nREVERSAL",
+      "reqd": 1
+    },
+    {
+      "fieldname": "company",
+      "label": "Company",
+      "fieldtype": "Link",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "fieldname": "posting_date",
+      "label": "Posting Date",
+      "fieldtype": "Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "fiscal_year",
+      "label": "Fiscal Year",
+      "fieldtype": "Link",
+      "options": "Fiscal Year",
+      "reqd": 1
+    },
+    {
+      "fieldname": "cost_center",
+      "label": "Cost Center",
+      "fieldtype": "Link",
+      "options": "Cost Center",
+      "reqd": 1
+    },
+    {
+      "fieldname": "account",
+      "label": "Account",
+      "fieldtype": "Link",
+      "options": "Account",
+      "reqd": 1
+    },
+    {
+      "fieldname": "project",
+      "label": "Project",
+      "fieldtype": "Link",
+      "options": "Project"
+    },
+    {
+      "fieldname": "branch",
+      "label": "Branch",
+      "fieldtype": "Link",
+      "options": "Branch"
+    },
+    {
+      "fieldname": "amount",
+      "label": "Amount",
+      "fieldtype": "Currency",
+      "reqd": 1
+    },
+    {
+      "fieldname": "direction",
+      "label": "Direction",
+      "fieldtype": "Select",
+      "options": "IN\nOUT",
+      "reqd": 1
+    },
+    {
+      "fieldname": "ref_doctype",
+      "label": "Reference Doctype",
+      "fieldtype": "Data"
+    },
+    {
+      "fieldname": "ref_name",
+      "label": "Reference Name",
+      "fieldtype": "Dynamic Link",
+      "options": "ref_doctype"
+    },
+    {
+      "fieldname": "remarks",
+      "label": "Remarks",
+      "fieldtype": "Small Text"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager"
+    }
+  ]
+}
