@@ -359,25 +359,155 @@ def build_payment_entry_lines(amount: float, payable_account: str, payment_accou
     ]
 
 
-def create_tax_payment_journal_entry(batch: Document) -> str:
+def _validate_payment_batch(batch: Document, *, require_payment_account: bool = True) -> None:
     if not batch.amount or batch.amount <= 0:
-        frappe.throw(_("Amount must be greater than zero to create a Journal Entry."))
+        frappe.throw(_("Amount must be greater than zero to create a payment."))
 
-    if not batch.payable_account or not batch.payment_account:
-        frappe.throw(_("Please set both Payable Account and Payment Account on the Tax Payment Batch."))
+    if not batch.payable_account:
+        frappe.throw(_("Please set Payable Account on the Tax Payment Batch."))
+
+    if require_payment_account and not batch.payment_account:
+        frappe.throw(_("Please set Payment Account on the Tax Payment Batch."))
+
+
+def create_tax_payment_journal_entry(batch: Document) -> str:
+    _validate_payment_batch(batch)
 
     je = frappe.new_doc("Journal Entry")
     je.company = batch.company
-    je.posting_date = batch.get("posting_date") or nowdate()
+    je.posting_date = batch.get("payment_date") or batch.get("posting_date") or nowdate()
     je.user_remark = _("{0} payment for period {1}-{2}").format(
         batch.tax_type or _("Tax"), batch.period_month or "", batch.period_year or ""
     )
+
+    reference_notes = []
+    for row in getattr(batch, "references", []) or []:
+        if getattr(row, "reference_name", None):
+            reference_notes.append(f"{row.reference_doctype or '-'} {row.reference_name}: {row.amount or 0}")
 
     for line in build_payment_entry_lines(batch.amount, batch.payable_account, batch.payment_account):
         line["reference_type"] = "Tax Payment Batch"
         line["reference_name"] = batch.name
         je.append("accounts", line)
 
+    if reference_notes:
+        je.user_remark += " | " + "; ".join(reference_notes)
+
     je.insert(ignore_permissions=True)
     batch.db_set("journal_entry", je.name)
+    batch.db_set("status", "Prepared")
+    return je.name
+
+
+def create_tax_payment_entry(batch: Document) -> str:
+    _validate_payment_batch(batch, require_payment_account=True)
+
+    if not batch.party_type or not batch.party:
+        frappe.throw(_("Please set Party Type and Party to prepare a Payment Entry."))
+
+    pe = frappe.new_doc("Payment Entry")
+    pe.company = batch.company
+    pe.payment_type = "Pay"
+    pe.party_type = batch.party_type
+    pe.party = batch.party
+    pe.posting_date = batch.get("payment_date") or batch.get("posting_date") or nowdate()
+    pe.mode_of_payment = batch.get("payment_mode")
+    pe.paid_from = batch.payment_account
+    pe.paid_to = batch.payable_account
+    pe.paid_amount = batch.amount
+    pe.received_amount = batch.amount
+    pe.reference_no = batch.name
+    pe.reference_date = pe.posting_date
+    pe.remarks = _("Tax payment for {0} period {1}-{2}").format(
+        batch.tax_type or _("Tax"), batch.period_month or "", batch.period_year or ""
+    )
+
+    pe.insert(ignore_permissions=True)
+    batch.db_set("payment_entry", pe.name)
+    batch.db_set("status", "Prepared")
+    return pe.name
+
+
+def build_vat_netting_lines(
+    *,
+    input_vat_total: float,
+    output_vat_total: float,
+    input_account: str,
+    output_account: str,
+    payable_account: str,
+) -> list[dict]:
+    if not input_account or not output_account or not payable_account:
+        frappe.throw(_("VAT netting requires Input VAT, Output VAT, and Payable accounts."))
+
+    lines: list[dict] = []
+    debit_output = flt(output_vat_total)
+    credit_input = min(flt(input_vat_total), debit_output) if debit_output else flt(input_vat_total)
+    net_payable = debit_output - credit_input
+
+    if debit_output:
+        lines.append(
+            {
+                "account": output_account,
+                "debit_in_account_currency": debit_output,
+                "credit_in_account_currency": 0,
+            }
+        )
+
+    if credit_input:
+        lines.append(
+            {
+                "account": input_account,
+                "debit_in_account_currency": 0,
+                "credit_in_account_currency": credit_input,
+            }
+        )
+
+    if net_payable > 0:
+        lines.append(
+            {
+                "account": payable_account,
+                "debit_in_account_currency": 0,
+                "credit_in_account_currency": net_payable,
+            }
+        )
+
+    return lines
+
+
+def create_vat_netting_entry(
+    *,
+    company: str,
+    period_month: int,
+    period_year: int,
+    input_vat_total: float,
+    output_vat_total: float,
+    input_account: str,
+    output_account: str,
+    payable_account: str,
+    posting_date: str | None = None,
+    reference: str | None = None,
+) -> str:
+    lines = build_vat_netting_lines(
+        input_vat_total=input_vat_total,
+        output_vat_total=output_vat_total,
+        input_account=input_account,
+        output_account=output_account,
+        payable_account=payable_account,
+    )
+
+    if not lines:
+        frappe.throw(_("No VAT netting lines were generated for the selected period."))
+
+    je = frappe.new_doc("Journal Entry")
+    je.company = company
+    je.posting_date = posting_date or nowdate()
+    je.user_remark = _("VAT netting for {0}-{1}").format(period_month, period_year)
+
+    for line in lines:
+        if reference:
+            line["reference_type"] = "Tax Period Closing"
+            line["reference_name"] = reference
+        je.append("accounts", line)
+
+    je.insert(ignore_permissions=True)
     return je.name

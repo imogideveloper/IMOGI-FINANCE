@@ -8,11 +8,12 @@ import json
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt
+from frappe.utils import flt, nowdate
 
 from imogi_finance.tax_operations import (
     _get_period_bounds,
     build_register_snapshot,
+    create_vat_netting_entry,
     generate_coretax_export,
 )
 
@@ -113,6 +114,52 @@ class TaxPeriodClosing(Document):
             "output_export": self.coretax_output_export,
         }
 
+    def _get_tax_profile_doc(self):
+        if not self.tax_profile:
+            self._ensure_tax_profile()
+        if not self.tax_profile:
+            frappe.throw(_("Tax Profile is required to create VAT Netting Journal Entry."))
+        return frappe.get_cached_doc("Tax Profile", self.tax_profile)
+
+    def create_vat_netting_journal_entry(self, save: bool = True) -> str:
+        frappe.only_for(("System Manager", "Accounts Manager", "Tax Reviewer"))
+        profile = self._get_tax_profile_doc()
+
+        if not self.input_vat_total and not self.output_vat_total:
+            self._update_totals_from_snapshot()
+
+        payable_account = self.netting_payable_account or profile.get("ppn_payable_account")
+        input_account = profile.get("ppn_input_account")
+        output_account = profile.get("ppn_output_account")
+
+        if not (input_account and output_account and payable_account):
+            frappe.throw(
+                _("Please set PPN Input, PPN Output, and PPN Payable accounts on Tax Profile or this closing.")
+            )
+
+        posting_date = self.netting_posting_date or self.date_to or nowdate()
+
+        je_name = create_vat_netting_entry(
+            company=self.company,
+            period_month=int(self.period_month),
+            period_year=int(self.period_year),
+            input_vat_total=self.input_vat_total or 0,
+            output_vat_total=self.output_vat_total or 0,
+            input_account=input_account,
+            output_account=output_account,
+            payable_account=payable_account,
+            posting_date=posting_date,
+            reference=self.name,
+        )
+
+        self.vat_netting_journal_entry = je_name
+        self.netting_posting_date = posting_date
+
+        if save:
+            self.save(ignore_permissions=True)
+
+        return je_name
+
 
 @frappe.whitelist()
 def refresh_tax_registers(closing_name: str):
@@ -126,3 +173,10 @@ def generate_coretax_exports(closing_name: str):
     closing = frappe.get_doc("Tax Period Closing", closing_name)
     frappe.only_for(("System Manager", "Accounts Manager", "Tax Reviewer"))
     return closing.generate_exports()
+
+
+@frappe.whitelist()
+def create_vat_netting_entry_for_closing(closing_name: str):
+    closing = frappe.get_doc("Tax Period Closing", closing_name)
+    frappe.only_for(("System Manager", "Accounts Manager", "Tax Reviewer"))
+    return closing.create_vat_netting_journal_entry()

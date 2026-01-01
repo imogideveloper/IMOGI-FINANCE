@@ -9,17 +9,28 @@
   "field_order": [
     "company",
     "tax_type",
+    "status",
     "period_month",
     "period_year",
     "date_from",
     "date_to",
+    "section_payment",
     "source_closing",
     "tax_profile",
     "posting_date",
+    "payment_date",
+    "due_date",
     "payable_account",
     "payment_account",
+    "payment_mode",
+    "party_type",
+    "party",
+    "pph_type",
     "amount",
-    "journal_entry"
+    "journal_entry",
+    "payment_entry",
+    "references_section",
+    "references"
   ],
   "fields": [
     {
@@ -37,6 +48,15 @@
       "in_list_view": 1,
       "label": "Tax Type",
       "options": "PPN\nPPh\nPB1",
+      "reqd": 1
+    },
+    {
+      "default": "Draft",
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Status",
+      "options": "Draft\nPrepared\nPosted\nPaid\nCancelled",
       "reqd": 1
     },
     {
@@ -67,6 +87,13 @@
       "read_only": 1
     },
     {
+      "collapsible": 1,
+      "collapsible_depends_on": "eval:doc.period_month && doc.period_year",
+      "fieldname": "section_payment",
+      "fieldtype": "Section Break",
+      "label": "Payment Details"
+    },
+    {
       "fieldname": "source_closing",
       "fieldtype": "Link",
       "label": "Source Tax Period Closing",
@@ -84,6 +111,16 @@
       "label": "Payment Posting Date"
     },
     {
+      "fieldname": "payment_date",
+      "fieldtype": "Date",
+      "label": "Payment Date"
+    },
+    {
+      "fieldname": "due_date",
+      "fieldtype": "Date",
+      "label": "Due Date"
+    },
+    {
       "fieldname": "payable_account",
       "fieldtype": "Link",
       "label": "Payable Account",
@@ -96,6 +133,31 @@
       "options": "Account"
     },
     {
+      "fieldname": "payment_mode",
+      "fieldtype": "Link",
+      "label": "Mode of Payment",
+      "options": "Mode of Payment"
+    },
+    {
+      "fieldname": "party_type",
+      "fieldtype": "Link",
+      "label": "Party Type",
+      "options": "DocType"
+    },
+    {
+      "fieldname": "party",
+      "fieldtype": "Dynamic Link",
+      "label": "Party",
+      "options": "party_type"
+    },
+    {
+      "depends_on": "eval:doc.tax_type==\"PPh\"",
+      "fieldname": "pph_type",
+      "fieldtype": "Link",
+      "label": "PPh Type",
+      "options": "Tax Withholding Category"
+    },
+    {
       "fieldname": "amount",
       "fieldtype": "Currency",
       "label": "Amount"
@@ -106,6 +168,24 @@
       "label": "Journal Entry",
       "options": "Journal Entry",
       "read_only": 1
+    },
+    {
+      "fieldname": "payment_entry",
+      "fieldtype": "Link",
+      "label": "Payment Entry",
+      "options": "Payment Entry",
+      "read_only": 1
+    },
+    {
+      "fieldname": "references_section",
+      "fieldtype": "Section Break",
+      "label": "References"
+    },
+    {
+      "fieldname": "references",
+      "fieldtype": "Table",
+      "label": "References",
+      "options": "Tax Payment Reference"
     }
   ],
   "index_web_pages_for_search": 1,

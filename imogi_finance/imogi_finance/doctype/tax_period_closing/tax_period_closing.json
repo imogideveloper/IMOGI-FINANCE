@@ -25,7 +25,11 @@
     "coretax_settings_input",
     "coretax_settings_output",
     "coretax_input_export",
-    "coretax_output_export"
+    "coretax_output_export",
+    "netting_section",
+    "netting_payable_account",
+    "netting_posting_date",
+    "vat_netting_journal_entry"
   ],
   "fields": [
     {
@@ -147,6 +151,30 @@
       "fieldname": "coretax_output_export",
       "fieldtype": "Attach",
       "label": "CoreTax Output Export",
+      "read_only": 1
+    },
+    {
+      "collapsible": 1,
+      "fieldname": "netting_section",
+      "fieldtype": "Section Break",
+      "label": "VAT Netting"
+    },
+    {
+      "fieldname": "netting_payable_account",
+      "fieldtype": "Link",
+      "label": "PPN Payable Account",
+      "options": "Account"
+    },
+    {
+      "fieldname": "netting_posting_date",
+      "fieldtype": "Date",
+      "label": "Netting Posting Date"
+    },
+    {
+      "fieldname": "vat_netting_journal_entry",
+      "fieldtype": "Link",
+      "label": "VAT Netting Journal Entry",
+      "options": "Journal Entry",
       "read_only": 1
     }
   ],

@@ -11,6 +11,7 @@
     "tax_settings_section",
     "ppn_input_account",
     "ppn_output_account",
+    "ppn_payable_account",
     "pb1_payable_account",
     "pph_section",
     "pph_accounts",
@@ -45,6 +46,12 @@
       "fieldname": "ppn_output_account",
       "fieldtype": "Link",
       "label": "PPN Output Account",
+      "options": "Account"
+    },
+    {
+      "fieldname": "ppn_payable_account",
+      "fieldtype": "Link",
+      "label": "PPN Payable Account",
       "options": "Account"
     },
     {
