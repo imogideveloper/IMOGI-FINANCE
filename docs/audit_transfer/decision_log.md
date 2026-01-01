@@ -4,7 +4,7 @@
 - **Existing options evaluated:**
   - *Administrative Payment Voucher* posts Payment Entries and enforces accounting flows → rejected for transfer-instruction use to avoid mixing with posting logic.
   - *Customer Receipt* and other receipt/tax doctypes are inbound or compliance-oriented → not applicable to outbound transfer instructions.
-- **Decision:** Implement a new, non-accounting DocType **Transfer Application** with native links to Payment Entry and Bank Transaction. Extend native doctypes via minimal custom fields (Payment Entry link + Bank Transaction matching flags) and add workflow/print format in-app.
+- **Decision (latest scan 2026-01-01):** The app already contains the **Transfer Application** DocType, workflow, print format, settings, and Payment Entry/Bank Transaction linkages. Continue using this module as the canonical non-accounting transfer instruction document rather than introducing any new “transfer” doctypes.
 - **Reuse plan:**
   - Leverage native Payment Entry for actual postings; Transfer Application will only orchestrate and link.
   - Reuse native Bank Transaction for evidence-based matching; add lightweight custom fields for linkage and match confidence.

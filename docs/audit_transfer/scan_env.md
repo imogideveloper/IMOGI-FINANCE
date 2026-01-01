@@ -1,9 +1,9 @@
 # Environment Scan
 
-## Bench / Site Commands
+## Bench / Site Commands (2026-01-01 run)
 
-- `bench --version`: command not available (`bash: command not found: bench`).
-- `bench list-apps`: command not available (`bash: command not found: bench`).
-- `bench --site <site> list-apps`: command not available (`bash: command not found: bench`).
+- `bench --version` → `bash: command not found: bench`
+- `bench list-apps` → `bash: command not found: bench`
+- `bench --site <site> list-apps` → `bash: command not found: bench`
 
-> Note: Bench CLI is not installed in this container, so site-level queries could not be executed. No `sites/` directory was found in the repo root.
+> Bench CLI is not installed in this container (no `bench` binary or `sites/` directory detected), so site-level inventories could not be executed.
