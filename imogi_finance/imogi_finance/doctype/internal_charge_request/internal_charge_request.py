@@ -9,7 +9,7 @@ from frappe import _
 from imogi_finance import accounting
 from imogi_finance.approval import get_active_setting_meta, get_approval_route, log_route_resolution_error
 from imogi_finance.budget_control import service, utils
-from imogi_finance.events.utils import get_approved_expense_request
+from imogi_finance.budget_control.workflow import _parse_route_snapshot
 
 try:
     from frappe.model.document import Document
@@ -32,6 +32,53 @@ class InternalChargeRequest(Document):
         self._populate_line_routes()
         self._sync_status()
 
+    def before_submit(self):
+        settings = utils.get_settings()
+        if not settings.get("enable_internal_charge"):
+            return
+
+        self._populate_line_routes()
+        self._sync_status()
+
+    def before_workflow_action(self, action, **kwargs):
+        settings = utils.get_settings()
+        if not settings.get("enable_internal_charge"):
+            return
+
+        if action != "Approve":
+            return
+
+        approvable_lines = []
+        session_user = getattr(getattr(frappe, "session", None), "user", None)
+        session_roles = set(frappe.get_roles())
+
+        for line in getattr(self, "internal_charge_lines", []) or []:
+            if getattr(line, "line_status", None) not in {"Pending L1", "Pending L2", "Pending L3"}:
+                continue
+
+            snapshot = _parse_route_snapshot(getattr(line, "route_snapshot", None))
+            current_level = getattr(line, "current_approval_level", 0) or 0
+            level_key = f"level_{current_level}"
+            level_meta = snapshot.get(level_key, {}) if snapshot else {}
+            expected_role = level_meta.get("role") or getattr(line, f"{level_key}_role", None)
+            expected_user = level_meta.get("user") or getattr(line, f"{level_key}_approver", None)
+
+            role_allowed = not expected_role or expected_role in session_roles
+            user_allowed = not expected_user or expected_user == session_user
+            if role_allowed and user_allowed:
+                approvable_lines.append(line)
+
+        if not approvable_lines:
+            frappe.throw(_("You are not authorized to approve any pending lines."))
+
+        for line in approvable_lines:
+            _advance_line_status(line, session_user=session_user)
+
+        self._sync_status()
+        if self.status == "Approved":
+            self.approved_by = session_user
+            self.approved_on = frappe.utils.now_datetime()
+
     def _validate_amounts(self):
         lines = getattr(self, "internal_charge_lines", []) or []
         if not lines:
@@ -49,12 +96,15 @@ class InternalChargeRequest(Document):
         if not getattr(self, "expense_request", None):
             return
 
-        expense_request = get_approved_expense_request(
-            self.expense_request,
-            _("Internal Charge Request"),
-            allowed_statuses={"Approved", "Linked"},
-        )
-        _, expense_accounts = accounting.summarize_request_items(expense_request.get("items"), skip_invalid_items=True)
+        try:
+            expense_request = frappe.get_doc("Expense Request", self.expense_request)
+        except Exception:
+            expense_request = None
+
+        items = expense_request.get("items") if expense_request else []
+        _, expense_accounts = accounting.summarize_request_items(items, skip_invalid_items=True)
+        if not expense_accounts:
+            return
 
         for line in getattr(self, "internal_charge_lines", []) or []:
             try:
@@ -111,3 +161,26 @@ class InternalChargeRequest(Document):
             self.status = "Pending Approval"
         else:
             self.status = "Partially Approved"
+
+
+def _advance_line_status(line, *, session_user=None):
+    level = getattr(line, "current_approval_level", 0) or 0
+    if level == 1:
+        line.line_status = "Pending L2" if (getattr(line, "level_2_role", None) or getattr(line, "level_2_approver", None)) else "Approved"
+        line.current_approval_level = 2 if line.line_status == "Pending L2" else 0
+    elif level == 2:
+        line.line_status = "Pending L3" if (getattr(line, "level_3_role", None) or getattr(line, "level_3_approver", None)) else "Approved"
+        line.current_approval_level = 3 if line.line_status == "Pending L3" else 0
+    elif level == 3:
+        line.line_status = "Approved"
+        line.current_approval_level = 0
+    else:
+        line.line_status = "Approved"
+        line.current_approval_level = 0
+
+    if line.line_status == "Approved":
+        line.approved_by = session_user
+        try:
+            line.approved_on = frappe.utils.now_datetime()
+        except Exception:
+            line.approved_on = None

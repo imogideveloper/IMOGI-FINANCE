@@ -81,8 +81,11 @@ frappe.ui.form.on('Expense Request', {
     addCheckRouteButton();
 
     if (!frm.doc.docstatus) {
+      maybeRenderInternalChargeButton(frm);
       return;
     }
+
+    maybeRenderInternalChargeButton(frm);
 
     const isSubmitted = frm.doc.docstatus === 1;
     const allowedStatuses = ['Approved'];
@@ -223,3 +226,41 @@ frappe.ui.form.on('Expense Request', {
     maybeAddVerifyButton();
   },
 });
+
+function maybeRenderInternalChargeButton(frm) {
+  const requiresInternalCharge = frm.doc.allocation_mode === 'Allocated via Internal Charge';
+  const hasInternalCharge = Boolean(frm.doc.internal_charge_request);
+
+  if (!requiresInternalCharge) {
+    return;
+  }
+
+  if (hasInternalCharge) {
+    frm.dashboard.add_indicator(__('Internal Charge {0}', [frm.doc.internal_charge_request]), 'green');
+    return;
+  }
+
+  frm.dashboard.add_indicator(__('Internal Charge not generated'), 'orange');
+
+  frm.add_custom_button(__('Generate Internal Charge'), async () => {
+    try {
+      const { message } = await frappe.call({
+        method: 'imogi_finance.budget_control.workflow.create_internal_charge_from_expense_request',
+        args: { er_name: frm.doc.name },
+        freeze: true,
+        freeze_message: __('Generating Internal Charge...'),
+      });
+
+      if (message) {
+        frappe.show_alert({ message: __('Internal Charge Request {0} created.', [message]), indicator: 'green' });
+        await frm.reload_doc();
+      }
+    } catch (error) {
+      frappe.msgprint({
+        title: __('Unable to Generate Internal Charge'),
+        message: error?.message || __('An unexpected error occurred. Please try again.'),
+        indicator: 'red',
+      });
+    }
+  }, __('Actions'));
+}

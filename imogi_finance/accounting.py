@@ -169,6 +169,25 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     _sync_request_amounts(request, total_amount, expense_accounts)
 
     settings = get_settings()
+    enforce_mode = (settings.get("enforce_mode") or "").lower()
+    if settings.get("enable_budget_lock") and enforce_mode in {"approval only", "both"}:
+        lock_status = getattr(request, "budget_lock_status", None)
+        if lock_status not in {"Locked", "Overrun Allowed"}:
+            frappe.throw(
+                _("Expense Request must be budget locked before creating a Purchase Invoice. Current status: {0}").format(
+                    lock_status or _("Not Locked")
+                )
+            )
+
+        if getattr(request, "allocation_mode", "Direct") == "Allocated via Internal Charge":
+            ic_name = getattr(request, "internal_charge_request", None)
+            if not ic_name:
+                frappe.throw(_("Internal Charge Request is required before creating a Purchase Invoice."))
+
+            ic_status = frappe.db.get_value("Internal Charge Request", ic_name, "status")
+            if ic_status != "Approved":
+                frappe.throw(_("Internal Charge Request {0} must be Approved.").format(ic_name))
+
     if (
         cint(settings.get("enable_tax_invoice_ocr"))
         and cint(settings.get("require_verification_before_create_pi_from_expense_request"))
@@ -191,6 +210,7 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     pi.bill_no = request.supplier_invoice_no
     pi.currency = request.currency
     pi.imogi_expense_request = request.name
+    pi.internal_charge_request = getattr(request, "internal_charge_request", None)
     pi.imogi_request_type = request.request_type
     pi.tax_withholding_category = request.pph_type if is_pph_applicable else None
     pi.imogi_pph_type = request.pph_type

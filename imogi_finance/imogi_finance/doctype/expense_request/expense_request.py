@@ -18,6 +18,7 @@ from imogi_finance.approval import (
     get_approval_route,
     log_route_resolution_error,
 )
+from imogi_finance.budget_control.workflow import handle_expense_request_workflow, release_budget_for_request
 
 
 class ExpenseRequest(Document):
@@ -263,6 +264,7 @@ class ExpenseRequest(Document):
             self.status = next_state
 
         if action != "Reopen":
+            handle_expense_request_workflow(self, action, next_state)
             return
 
         try:
@@ -282,6 +284,11 @@ class ExpenseRequest(Document):
                 amount=self.amount,
             )
             frappe.throw(approval_setting_required_message(self.cost_center))
+
+        handle_expense_request_workflow(self, action, next_state)
+
+    def on_cancel(self):
+        release_budget_for_request(self)
 
     def validate_reopen_permission(self):
         allowed = self.REOPEN_ALLOWED_ROLES

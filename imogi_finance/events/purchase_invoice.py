@@ -9,6 +9,11 @@ from imogi_finance.events.utils import (
     get_cancel_updates,
 )
 from imogi_finance.tax_invoice_ocr import get_settings
+from imogi_finance.budget_control.workflow import (
+    consume_budget_for_purchase_invoice,
+    reverse_consumption_for_purchase_invoice,
+    maybe_post_internal_charge_je,
+)
 
 
 def validate_before_submit(doc, method=None):
@@ -60,6 +65,8 @@ def on_submit(doc, method=None):
         {"linked_purchase_invoice": doc.name, "pending_purchase_invoice": None, "status": "Linked"},
     )
     request.pending_purchase_invoice = None
+    consume_budget_for_purchase_invoice(doc, expense_request=request)
+    maybe_post_internal_charge_je(doc, expense_request=request)
 
 
 def on_cancel(doc, method=None):
@@ -71,3 +78,4 @@ def on_cancel(doc, method=None):
     updates["pending_purchase_invoice"] = None
 
     frappe.db.set_value("Expense Request", request, updates)
+    reverse_consumption_for_purchase_invoice(doc)
