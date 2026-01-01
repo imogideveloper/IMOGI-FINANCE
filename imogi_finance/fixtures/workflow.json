@@ -240,5 +240,89 @@
         "allow_self_approval": 0
       }
     ]
+  },
+  {
+    "doctype": "Workflow",
+    "name": "Transfer Application Workflow",
+    "workflow_name": "Transfer Application Workflow",
+    "document_type": "Transfer Application",
+    "is_active": 1,
+    "module": "Imogi Finance",
+    "override_status": 0,
+    "workflow_state_field": "workflow_state",
+    "docstatus": 0,
+    "actions": [
+      { "action": "Submit for Review", "allowed": "Accounts User" },
+      { "action": "Approve Transfer", "allowed": "Accounts Manager" },
+      { "action": "Release to Bank", "allowed": "Accounts User" },
+      { "action": "Mark Paid", "allowed": "Accounts Manager" }
+    ],
+    "states": [
+      {
+        "doctype": "Workflow Document State",
+        "state": "Draft",
+        "doc_status": "0",
+        "allow_edit": "Owner"
+      },
+      {
+        "doctype": "Workflow Document State",
+        "state": "Finance Review",
+        "doc_status": "0",
+        "allow_edit": "Accounts User"
+      },
+      {
+        "doctype": "Workflow Document State",
+        "state": "Approved for Transfer",
+        "doc_status": "0",
+        "allow_edit": "Accounts Manager"
+      },
+      {
+        "doctype": "Workflow Document State",
+        "state": "Awaiting Bank Confirmation",
+        "doc_status": "0",
+        "allow_edit": "Accounts User"
+      },
+      {
+        "doctype": "Workflow Document State",
+        "state": "Paid",
+        "doc_status": "1",
+        "allow_edit": "System Manager"
+      }
+    ],
+    "transitions": [
+      {
+        "doctype": "Workflow Transition",
+        "action": "Submit for Review",
+        "state": "Draft",
+        "next_state": "Finance Review",
+        "allowed": "Accounts User",
+        "allow_self_approval": 0
+      },
+      {
+        "doctype": "Workflow Transition",
+        "action": "Approve Transfer",
+        "state": "Finance Review",
+        "next_state": "Approved for Transfer",
+        "allowed": "Accounts Manager",
+        "allow_self_approval": 0
+      },
+      {
+        "doctype": "Workflow Transition",
+        "action": "Release to Bank",
+        "state": "Approved for Transfer",
+        "next_state": "Awaiting Bank Confirmation",
+        "allowed": "Accounts User",
+        "allow_self_approval": 0
+      },
+      {
+        "doctype": "Workflow Transition",
+        "action": "Mark Paid",
+        "state": "Awaiting Bank Confirmation",
+        "next_state": "Paid",
+        "allowed": "Accounts Manager",
+        "allow_self_approval": 0,
+        "condition": "doc.payment_entry and frappe.db.get_value(\\\"Payment Entry\\\", doc.payment_entry, \\\"docstatus\\\") == 1"
+      }
+    ]
   }
 ]
