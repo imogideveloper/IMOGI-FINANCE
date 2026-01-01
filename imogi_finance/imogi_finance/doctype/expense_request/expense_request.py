@@ -11,6 +11,7 @@ from frappe import _
 from frappe.model.document import Document
 
 from imogi_finance import accounting
+from imogi_finance.branching import apply_branch, resolve_branch
 from imogi_finance.approval import (
     approval_setting_required_message,
     get_active_setting_meta,
@@ -30,6 +31,7 @@ class ExpenseRequest(Document):
     def validate(self):
         self._set_requester_to_creator()
         self.validate_amounts()
+        self.apply_branch_defaults()
         self.validate_asset_details()
         self.validate_tax_fields()
         self.sync_status_with_workflow_state()
@@ -43,6 +45,15 @@ class ExpenseRequest(Document):
         self.amount = total
         self.expense_accounts = expense_accounts
         self.expense_account = expense_accounts[0] if len(expense_accounts) == 1 else None
+
+    def apply_branch_defaults(self):
+        branch = resolve_branch(
+            company=self._get_company(),
+            cost_center=getattr(self, "cost_center", None),
+            explicit_branch=getattr(self, "branch", None),
+        )
+        if branch:
+            apply_branch(self, branch)
 
     def validate_asset_details(self):
         if self.request_type != "Asset":
@@ -114,6 +125,7 @@ class ExpenseRequest(Document):
             "amount",
             "currency",
             "cost_center",
+            "branch",
             "project",
             "asset_category",
             "asset_name",
@@ -625,7 +637,7 @@ class ExpenseRequest(Document):
         previous_accounts = self._get_expense_accounts_from_doc(previous)
         current_accounts = self._get_expense_accounts_from_doc(self)
 
-        key_fields = ("amount", "cost_center")
+        key_fields = ("amount", "cost_center", "branch")
         changed_fields = [
             field for field in key_fields if self._get_value(previous, field) != self.get(field)
         ]
@@ -810,6 +822,19 @@ class ExpenseRequest(Document):
                 previous = None
 
         return previous
+
+    def _get_company(self) -> str | None:
+        cached_company = getattr(self, "_cached_company", None)
+        if cached_company is not None:
+            return cached_company
+
+        company = None
+        cost_center = getattr(self, "cost_center", None)
+        if cost_center:
+            company = frappe.db.get_value("Cost Center", cost_center, "company")
+
+        self._cached_company = company
+        return company
 
     def _get_expense_accounts(self) -> tuple[str, ...]:
         accounts = getattr(self, "expense_accounts", None)

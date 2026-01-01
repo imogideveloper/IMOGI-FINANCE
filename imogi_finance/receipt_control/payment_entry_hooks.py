@@ -6,6 +6,7 @@ from typing import Dict, Iterable
 import frappe
 from frappe import _
 
+from imogi_finance.branching import get_branch_settings, validate_branch_alignment
 from imogi_finance.receipt_control.utils import get_receipt_control_settings
 from imogi_finance.receipt_control.validators import (
     PaymentEntryInfo,
@@ -20,6 +21,7 @@ from imogi_finance.receipt_control.validators import (
 
 def validate_customer_receipt_link(doc, method=None):
     settings_doc = get_receipt_control_settings()
+    branch_settings = get_branch_settings()
     settings = ReceiptControlSettings(
         enable_customer_receipt=settings_doc.enable_customer_receipt,
         receipt_mode=settings_doc.receipt_mode,
@@ -44,6 +46,12 @@ def validate_customer_receipt_link(doc, method=None):
         return
 
     receipt = _get_receipt_info(payment_entry.customer_receipt)
+    if branch_settings.enable_multi_branch and branch_settings.enforce_branch_on_links:
+        validate_branch_alignment(
+            payment_entry.branch,
+            receipt.branch,
+            label=_("Payment Entry branch"),
+        )
     validator.reference_consumption = _get_reference_consumption(receipt.name)
 
     try:
@@ -136,6 +144,7 @@ def _as_payment_entry_info(doc) -> PaymentEntryInfo:
         customer_receipt=getattr(doc, "customer_receipt", None),
         customer=getattr(doc, "party", None),
         company=getattr(doc, "company", None),
+        branch=getattr(doc, "branch", None),
         party_type=getattr(doc, "party_type", None),
         payment_type=getattr(doc, "payment_type", None),
         paid_amount=Decimal(getattr(doc, "paid_amount", 0) or getattr(doc, "received_amount", 0) or 0),
@@ -160,6 +169,7 @@ def _get_receipt_info(receipt_name: str) -> ReceiptInfo:
         name=receipt_doc.name,
         customer=receipt_doc.customer,
         company=receipt_doc.company,
+        branch=getattr(receipt_doc, "branch", None),
         receipt_purpose=receipt_doc.receipt_purpose,
         total_amount=Decimal(receipt_doc.total_amount or 0),
         paid_amount=Decimal(receipt_doc.paid_amount or 0),
@@ -171,14 +181,19 @@ def _get_receipt_info(receipt_name: str) -> ReceiptInfo:
 
 
 def _get_open_receipts(doc) -> Iterable[str]:
+    filters = {
+        "customer": getattr(doc, "party", None),
+        "company": getattr(doc, "company", None),
+        "status": ("in", ["Issued", "Partially Paid"]),
+        "docstatus": 1,
+        "outstanding_amount": (">", 0),
+    }
+    branch_settings = get_branch_settings()
+    if branch_settings.enable_multi_branch and getattr(doc, "branch", None):
+        filters["branch"] = getattr(doc, "branch", None)
+
     return frappe.get_all(
         "Customer Receipt",
-        filters={
-            "customer": getattr(doc, "party", None),
-            "company": getattr(doc, "company", None),
-            "status": ("in", ["Issued", "Partially Paid"]),
-            "docstatus": 1,
-            "outstanding_amount": (">", 0),
-        },
+        filters=filters,
         pluck="name",
     )

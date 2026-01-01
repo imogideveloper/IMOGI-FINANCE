@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 
+from imogi_finance.branching import get_branch_settings, validate_branch_alignment
 from imogi_finance.events.utils import (
     get_approved_expense_request,
     get_cancel_updates,
@@ -62,6 +63,14 @@ def on_submit(doc, method=None):
             ).format(
                 _(" or Asset") if request.request_type == "Asset" else ""
             )
+        )
+
+    branch_settings = get_branch_settings()
+    if branch_settings.enable_multi_branch and branch_settings.enforce_branch_on_links:
+        validate_branch_alignment(
+            getattr(doc, "branch", None),
+            getattr(request, "branch", None),
+            label=_("Payment Entry"),
         )
 
     frappe.db.set_value(

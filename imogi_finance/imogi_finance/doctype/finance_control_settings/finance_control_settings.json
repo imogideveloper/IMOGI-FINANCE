@@ -19,7 +19,12 @@
     "digital_stamp_threshold_amount",
     "allow_physical_stamp_fallback",
     "digital_stamp_provider",
-    "provider_mode"
+    "provider_mode",
+    "section_branch",
+    "enable_multi_branch",
+    "inherit_branch_from_cost_center",
+    "default_branch",
+    "enforce_branch_on_links"
   ],
   "fields": [
     {
@@ -92,6 +97,35 @@
       "fieldtype": "Select",
       "label": "Provider Mode",
       "options": "API Auto\nManual Upload"
+    },
+    {
+      "fieldname": "section_branch",
+      "fieldtype": "Section Break",
+      "label": "Branch Controls"
+    },
+    {
+      "default": "0",
+      "fieldname": "enable_multi_branch",
+      "fieldtype": "Check",
+      "label": "Enable Multi-Branch Enforcement"
+    },
+    {
+      "default": "1",
+      "fieldname": "inherit_branch_from_cost_center",
+      "fieldtype": "Check",
+      "label": "Derive Branch from Cost Center"
+    },
+    {
+      "fieldname": "default_branch",
+      "fieldtype": "Link",
+      "label": "Default Branch",
+      "options": "Branch"
+    },
+    {
+      "default": "1",
+      "fieldname": "enforce_branch_on_links",
+      "fieldtype": "Check",
+      "label": "Enforce Branch Consistency on Links"
     }
   ],
   "hide_toolbar": 0,

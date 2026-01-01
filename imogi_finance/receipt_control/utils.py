@@ -10,6 +10,8 @@ from frappe import _
 def get_receipt_control_settings():
     """Fetch Finance Control Settings with sane defaults."""
 
+    from imogi_finance.branching import BRANCH_SETTING_DEFAULTS
+
     defaults = frappe._dict(
         {
             "enable_customer_receipt": 0,
@@ -24,6 +26,7 @@ def get_receipt_control_settings():
             "provider_mode": None,
         }
     )
+    defaults.update(BRANCH_SETTING_DEFAULTS)
 
     if not frappe.db.exists("DocType", "Finance Control Settings"):
         return defaults

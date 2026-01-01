@@ -11,6 +11,7 @@
     "naming_series",
     "status",
     "company",
+    "branch",
     "posting_date",
     "customer",
     "customer_reference_no",
@@ -45,6 +46,7 @@
       "read_only": 1
     },
     { "fieldname": "company", "fieldtype": "Link", "label": "Company", "options": "Company", "reqd": 1, "in_list_view": 1 },
+    { "fieldname": "branch", "fieldtype": "Link", "label": "Branch", "options": "Branch" },
     { "fieldname": "posting_date", "fieldtype": "Date", "label": "Posting Date", "reqd": 1, "default": "Today", "in_list_view": 1 },
     { "fieldname": "customer", "fieldtype": "Link", "label": "Customer", "options": "Customer", "reqd": 1, "in_list_view": 1 },
     { "fieldname": "customer_reference_no", "fieldtype": "Data", "label": "Customer Reference No" },

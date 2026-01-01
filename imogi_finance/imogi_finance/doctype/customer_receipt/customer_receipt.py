@@ -7,6 +7,13 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from imogi_finance.branching import (
+    apply_branch,
+    doc_supports_branch,
+    get_branch_settings,
+    resolve_branch,
+    validate_branch_alignment,
+)
 from imogi_finance.receipt_control.utils import get_receipt_control_settings
 
 
@@ -46,6 +53,12 @@ class CustomerReceipt(Document):
             self.receipt_design = settings.default_receipt_design
         if not self.posting_date:
             self.posting_date = frappe.utils.today()
+        branch = resolve_branch(
+            company=self.company,
+            explicit_branch=getattr(self, "branch", None),
+        )
+        if branch:
+            apply_branch(self, branch)
 
     def enforce_item_lock(self):
         previous = getattr(self, "_doc_before_save", None) or self.get_doc_before_save()
@@ -67,12 +80,13 @@ class CustomerReceipt(Document):
             frappe.throw(_("Please add at least one receipt item."))
 
         allowed_doctype = self.allowed_reference_doctype
+        branch_settings = get_branch_settings()
         for row in self.get("items"):
             reference = row.sales_invoice if allowed_doctype == "Sales Invoice" else row.sales_order
             if not reference:
                 frappe.throw(_("Receipt items must have a reference document."))
 
-            self.set_reference_meta(row, allowed_doctype, reference)
+            self.set_reference_meta(row, allowed_doctype, reference, branch_settings=branch_settings)
 
             if row.amount_to_collect and row.reference_outstanding and row.amount_to_collect > row.reference_outstanding:
                 frappe.throw(
@@ -81,8 +95,11 @@ class CustomerReceipt(Document):
                     )
                 )
 
-    def set_reference_meta(self, row, allowed_doctype: str, reference: str):
+    def set_reference_meta(self, row, allowed_doctype: str, reference: str, *, branch_settings=None):
         fields = ["customer", "company", "docstatus"]
+        branch_field = "branch" if doc_supports_branch(allowed_doctype) else None
+        if branch_field:
+            fields.append(branch_field)
         if allowed_doctype == "Sales Invoice":
             fields.append("outstanding_amount")
             fields.append("posting_date")
@@ -105,6 +122,13 @@ class CustomerReceipt(Document):
         if values.company != self.company:
             frappe.throw(
                 _("{0} {1} belongs to a different company {2}.").format(allowed_doctype, reference, values.company)
+            )
+
+        if branch_field and branch_settings and branch_settings.enable_multi_branch and branch_settings.enforce_branch_on_links:
+            validate_branch_alignment(
+                values.get(branch_field),
+                getattr(self, "branch", None),
+                label=_("{0} {1}").format(allowed_doctype, reference),
             )
 
         if allowed_doctype == "Sales Invoice":
@@ -212,6 +236,12 @@ class CustomerReceipt(Document):
         pe.customer_receipt = self.name
         pe.received_amount = float(paid_amount)
         pe.paid_amount = float(paid_amount)
+        branch = resolve_branch(
+            company=self.company,
+            explicit_branch=getattr(self, "branch", None),
+        )
+        if branch:
+            apply_branch(pe, branch)
 
         availability = self.get_reference_availability()
         remaining = paid_amount

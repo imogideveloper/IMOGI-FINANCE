@@ -29,6 +29,7 @@
     "column_break_costing",
     "cost_center",
     "project",
+    "branch",
     "section_break_description",
     "description",
     "attachment",
@@ -206,6 +207,12 @@
       "in_standard_filter": 1,
       "label": "Project",
       "options": "Project"
+    },
+    {
+      "fieldname": "branch",
+      "fieldtype": "Link",
+      "label": "Branch",
+      "options": "Branch"
     },
     {
       "fieldname": "section_break_description",
