@@ -11,7 +11,6 @@
     "main_section",
     "request_date",
     "column_break_main",
-    "requester_type",
     "requester",
     "section_break_1",
     "request_type",
@@ -85,28 +84,23 @@
       "reqd": 1
     },
     {
-      "fieldname": "column_break_main",
-      "fieldtype": "Column Break"
-    },
-    {
-      "default": "User",
-      "fieldname": "requester_type",
-      "fieldtype": "Select",
-      "label": "Requester Type",
-      "options": "User\nEmployee",
-      "reqd": 1
-    },
-    {
-      "fieldname": "requester",
-      "fieldtype": "Dynamic Link",
-      "in_list_view": 1,
-      "in_standard_filter": 1,
-      "label": "Requester",
-      "options": "requester_type"
-    },
+    "fieldname": "column_break_main",
+    "fieldtype": "Column Break"
+  },
+  {
+    "fieldname": "requester",
+    "fieldtype": "Link",
+    "default": "frappe.session.user",
+    "in_list_view": 1,
+    "in_standard_filter": 1,
+    "label": "Requester",
+    "options": "User",
+    "read_only": 1,
+    "reqd": 1
+  },
 
-    {
-      "fieldname": "section_break_1",
+  {
+    "fieldname": "section_break_1",
       "fieldtype": "Section Break"
     },
     {
