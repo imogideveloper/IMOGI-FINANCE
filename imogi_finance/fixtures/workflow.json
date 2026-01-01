@@ -321,7 +321,7 @@
         "next_state": "Paid",
         "allowed": "Accounts Manager",
         "allow_self_approval": 0,
-        "condition": "doc.payment_entry and frappe.db.get_value(\\\"Payment Entry\\\", doc.payment_entry, \\\"docstatus\\\") == 1"
+        "condition": "doc.payment_entry and frappe.db.get_value('Payment Entry', doc.payment_entry, 'docstatus') == 1"
       }
     ]
   }
