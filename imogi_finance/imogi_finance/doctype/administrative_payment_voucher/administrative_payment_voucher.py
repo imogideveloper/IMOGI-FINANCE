@@ -6,7 +6,7 @@ from typing import Optional
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import get_fiscal_year, getdate, now_datetime
+from frappe.utils import getdate, now_datetime
 
 from imogi_finance.branching import apply_branch, doc_supports_branch, resolve_branch
 from imogi_finance.tax_operations import validate_tax_period_lock
@@ -29,6 +29,17 @@ DEFAULT_APV_SETTINGS = {
     "require_attachment_for_reasons": 0,
     "posting_requires_accounts_manager": 0,
 }
+
+
+def resolve_fiscal_year(posting_date, company: str) -> frappe._dict:
+    for path in ("erpnext.accounts.utils.get_fiscal_year", "frappe.utils.get_fiscal_year"):
+        try:
+            getter = frappe.get_attr(path)
+        except Exception:
+            continue
+        return getter(posting_date, company=company, as_dict=True)
+
+    frappe.throw(_("Unable to resolve fiscal year helper. Please check ERPNext installation."))
 
 
 def get_apv_settings() -> frappe._dict:
@@ -311,7 +322,7 @@ class AdministrativePaymentVoucher(Document):
 
         posting = getdate(self.posting_date)
         try:
-            fiscal_year = get_fiscal_year(posting, company=self.company, as_dict=True)
+            fiscal_year = resolve_fiscal_year(posting, company=self.company)
         except Exception:
             fiscal_year = None
         if fiscal_year:
