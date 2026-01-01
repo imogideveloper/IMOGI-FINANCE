@@ -24,6 +24,7 @@
     "tolerance_idr",
     "block_duplicate_fp_no",
     "ppn_input_account",
+    "ppn_output_account",
     "default_ppn_type",
     "use_tax_rule_effective_date",
     "default_ppn_tax_template",
@@ -123,6 +124,12 @@
       "fieldname": "ppn_input_account",
       "fieldtype": "Link",
       "label": "PPN Input Account",
+      "options": "Account"
+    },
+    {
+      "fieldname": "ppn_output_account",
+      "fieldtype": "Link",
+      "label": "PPN Output Account",
       "options": "Account"
     },
     {

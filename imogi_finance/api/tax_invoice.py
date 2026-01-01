@@ -17,6 +17,11 @@ def run_ocr_for_expense_request(er_name: str):
 
 
 @frappe.whitelist()
+def run_ocr_for_sales_invoice(si_name: str):
+    return run_ocr(si_name, "Sales Invoice")
+
+
+@frappe.whitelist()
 def verify_purchase_invoice_tax_invoice(pi_name: str, force: bool = False):
     doc = frappe.get_doc("Purchase Invoice", pi_name)
     frappe.only_for(("Accounts Manager", "Accounts User", "System Manager"))
@@ -28,3 +33,10 @@ def verify_expense_request_tax_invoice(er_name: str, force: bool = False):
     doc = frappe.get_doc("Expense Request", er_name)
     frappe.only_for(("Accounts Manager", "System Manager"))
     return verify_tax_invoice(doc, doctype="Expense Request", force=bool(force))
+
+
+@frappe.whitelist()
+def verify_sales_invoice_tax_invoice(si_name: str, force: bool = False):
+    doc = frappe.get_doc("Sales Invoice", si_name)
+    frappe.only_for(("Accounts Manager", "Accounts User", "System Manager"))
+    return verify_tax_invoice(doc, doctype="Sales Invoice", force=bool(force))

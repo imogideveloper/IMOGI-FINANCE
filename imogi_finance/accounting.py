@@ -232,6 +232,9 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     pi.ti_fp_ppn = getattr(request, "ti_fp_ppn", None)
     pi.ti_fp_ppn_type = getattr(request, "ti_fp_ppn_type", None)
     pi.ti_verification_status = getattr(request, "ti_verification_status", None)
+    pi.ti_verification_notes = getattr(request, "ti_verification_notes", None)
+    pi.ti_duplicate_flag = getattr(request, "ti_duplicate_flag", None)
+    pi.ti_npwp_match = getattr(request, "ti_npwp_match", None)
 
     pi.insert(ignore_permissions=True)
 

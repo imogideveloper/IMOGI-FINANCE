@@ -21,6 +21,7 @@ frappe.utils = types.SimpleNamespace(
     get_site_path=lambda path: path,
 )
 sys.modules.setdefault("frappe.utils", frappe.utils)
+sys.modules.setdefault("frappe.utils.formatters", types.SimpleNamespace(format_value=lambda v, *_a, **_k: v))
 ValidationError = type("ValidationError", (Exception,), {})
 frappe.exceptions = types.SimpleNamespace(ValidationError=ValidationError)
 sys.modules.setdefault("frappe.exceptions", frappe.exceptions)
@@ -202,3 +203,52 @@ def test_duplicate_detection_marks_flag(monkeypatch):
 
     assert result["status"] == "Needs Review"
     assert getattr(doc, "ti_duplicate_flag", 0) == 1
+
+
+def test_sales_invoice_verification_uses_output_fields(monkeypatch):
+    doc = types.SimpleNamespace(
+        name="SI-1",
+        out_fp_no="020304",
+        company="Comp",
+        customer="Cust",
+        taxes=[],
+        out_fp_ppn_type="Standard",
+        out_fp_dpp=100,
+        out_fp_ppn=20,
+    )
+
+    saved = {}
+
+    def fake_save(ignore_permissions=False):
+        saved["status"] = getattr(doc, "out_fp_status", None)
+        saved["notes"] = getattr(doc, "out_fp_verification_notes", "")
+        saved["duplicate"] = getattr(doc, "out_fp_duplicate_flag", 0)
+        saved["npwp_match"] = getattr(doc, "out_fp_npwp_match", 0)
+
+    doc.save = fake_save
+
+    monkeypatch.setattr(
+        tax_invoice_ocr,
+        "get_settings",
+        lambda: {"block_duplicate_fp_no": 1, "tolerance_idr": 10, "npwp_normalize": 1},
+    )
+
+    def fake_get_value(doctype, name, field):
+        if doctype == "Customer" and field in ("tax_id", "npwp"):
+            return "554433"
+        return None
+
+    monkeypatch.setattr(frappe.db, "get_value", fake_get_value)
+
+    def fake_get_all(doctype, *args, **kwargs):
+        if doctype in {"Purchase Invoice", "Sales Invoice"}:
+            return ["EXISTING"]
+        return []
+
+    monkeypatch.setattr(frappe, "get_all", fake_get_all)
+
+    result = verify_tax_invoice(doc, doctype="Sales Invoice")
+
+    assert result["status"] == "Needs Review"
+    assert saved["duplicate"] == 1
+    assert saved["npwp_match"] == 0

@@ -395,5 +395,170 @@
     "label": "NPWP Match",
     "read_only": 1,
     "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_fp_section",
+    "dt": "Sales Invoice",
+    "fieldname": "out_fp_section",
+    "fieldtype": "Section Break",
+    "insert_after": "apply_discount_on",
+    "label": "Output Tax Invoice"
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_fp_pdf",
+    "dt": "Sales Invoice",
+    "fieldname": "out_fp_pdf",
+    "fieldtype": "Attach",
+    "insert_after": "out_fp_section",
+    "label": "Faktur Pajak PDF"
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_fp_ocr_status",
+    "dt": "Sales Invoice",
+    "fieldname": "out_fp_ocr_status",
+    "fieldtype": "Select",
+    "insert_after": "out_fp_pdf",
+    "label": "OCR Status",
+    "options": "Not Started\nQueued\nProcessing\nDone\nFailed",
+    "default": "Not Started",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_fp_ocr_confidence",
+    "dt": "Sales Invoice",
+    "fieldname": "out_fp_ocr_confidence",
+    "fieldtype": "Float",
+    "insert_after": "out_fp_ocr_status",
+    "label": "OCR Confidence",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_fp_ocr_raw_json",
+    "dt": "Sales Invoice",
+    "fieldname": "out_fp_ocr_raw_json",
+    "fieldtype": "Code",
+    "insert_after": "out_fp_ocr_confidence",
+    "label": "OCR Raw JSON",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_fp_data_section",
+    "dt": "Sales Invoice",
+    "fieldname": "out_fp_data_section",
+    "fieldtype": "Section Break",
+    "insert_after": "out_fp_ocr_raw_json",
+    "label": "Tax Invoice Data"
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_fp_no",
+    "dt": "Sales Invoice",
+    "fieldname": "out_fp_no",
+    "fieldtype": "Data",
+    "insert_after": "out_fp_data_section",
+    "label": "No Faktur Pajak",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_fp_date",
+    "dt": "Sales Invoice",
+    "fieldname": "out_fp_date",
+    "fieldtype": "Date",
+    "insert_after": "out_fp_no",
+    "label": "Tanggal Faktur Pajak",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_buyer_tax_id",
+    "dt": "Sales Invoice",
+    "fieldname": "out_buyer_tax_id",
+    "fieldtype": "Data",
+    "insert_after": "out_fp_date",
+    "label": "Buyer Tax ID (NPWP)",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_fp_dpp",
+    "dt": "Sales Invoice",
+    "fieldname": "out_fp_dpp",
+    "fieldtype": "Currency",
+    "insert_after": "out_buyer_tax_id",
+    "label": "DPP",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_fp_ppn",
+    "dt": "Sales Invoice",
+    "fieldname": "out_fp_ppn",
+    "fieldtype": "Currency",
+    "insert_after": "out_fp_dpp",
+    "label": "PPN",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_fp_ppn_type",
+    "dt": "Sales Invoice",
+    "fieldname": "out_fp_ppn_type",
+    "fieldtype": "Select",
+    "insert_after": "out_fp_ppn",
+    "label": "PPN Type",
+    "options": "Standard\nZero Rated\nExempt/Not PPN",
+    "default": "Standard",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_fp_status",
+    "dt": "Sales Invoice",
+    "fieldname": "out_fp_status",
+    "fieldtype": "Select",
+    "insert_after": "out_fp_ppn_type",
+    "label": "Tax Invoice Verification Status",
+    "options": "Needs Review\nVerified\nRejected",
+    "default": "Needs Review",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_fp_verification_notes",
+    "dt": "Sales Invoice",
+    "fieldname": "out_fp_verification_notes",
+    "fieldtype": "Small Text",
+    "insert_after": "out_fp_status",
+    "label": "Tax Invoice Verification Notes",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_fp_duplicate_flag",
+    "dt": "Sales Invoice",
+    "fieldname": "out_fp_duplicate_flag",
+    "fieldtype": "Check",
+    "insert_after": "out_fp_verification_notes",
+    "label": "Duplicate Tax Invoice",
+    "read_only": 1,
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_fp_npwp_match",
+    "dt": "Sales Invoice",
+    "fieldname": "out_fp_npwp_match",
+    "fieldtype": "Check",
+    "insert_after": "out_fp_duplicate_flag",
+    "label": "NPWP Match",
+    "read_only": 1,
+    "allow_on_submit": 1
   }
 ]
