@@ -24,7 +24,11 @@ class ExpenseRequest(Document):
 
     REOPEN_ALLOWED_ROLES = {"System Manager"}
 
+    def before_insert(self):
+        self._set_requester_to_creator()
+
     def validate(self):
+        self._set_requester_to_creator()
         self.validate_amounts()
         self.validate_asset_details()
         self.validate_tax_fields()
@@ -128,6 +132,10 @@ class ExpenseRequest(Document):
                 _("Cannot modify key fields after approval: {0}.").format(_(", ").join(changed_fields)),
                 title=_("Not Allowed"),
             )
+
+    def _set_requester_to_creator(self):
+        if getattr(self, "requester", None) in {None, "", "frappe.session.user"}:
+            self.requester = frappe.session.user
 
     def before_submit(self):
         """Resolve approval route and set initial workflow state."""
