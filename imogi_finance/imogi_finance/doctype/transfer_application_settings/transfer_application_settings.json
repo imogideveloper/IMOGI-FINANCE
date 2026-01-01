@@ -1,0 +1,96 @@
+{
+  "actions": [],
+  "allow_copy": 0,
+  "allow_events_in_timeline": 0,
+  "allow_guest_to_view": 0,
+  "allow_rename": 0,
+  "autoname": "",
+  "beta": 0,
+  "creation": "2024-01-01 00:00:00.000000",
+  "default_view": "Form",
+  "doctype": "DocType",
+  "editable_grid": 0,
+  "engine": "InnoDB",
+  "field_order": [
+    "enable_bank_txn_matching",
+    "enable_auto_create_payment_entry_on_strong_match",
+    "default_paid_from_account",
+    "default_paid_to_account",
+    "matching_amount_tolerance"
+  ],
+  "fields": [
+    {
+      "default": "1",
+      "fieldname": "enable_bank_txn_matching",
+      "fieldtype": "Check",
+      "label": "Enable Bank Transaction Matching"
+    },
+    {
+      "default": "0",
+      "fieldname": "enable_auto_create_payment_entry_on_strong_match",
+      "fieldtype": "Check",
+      "label": "Auto-create Payment Entry on Strong Match"
+    },
+    {
+      "fieldname": "default_paid_from_account",
+      "fieldtype": "Link",
+      "label": "Default Paid From Account",
+      "options": "Account"
+    },
+    {
+      "fieldname": "default_paid_to_account",
+      "fieldtype": "Link",
+      "label": "Default Paid To Account",
+      "options": "Account"
+    },
+    {
+      "fieldname": "matching_amount_tolerance",
+      "fieldtype": "Currency",
+      "label": "Matching Amount Tolerance"
+    }
+  ],
+  "has_web_view": 0,
+  "hide_heading": 0,
+  "hide_toolbar": 0,
+  "idx": 0,
+  "image_field": "",
+  "in_create": 0,
+  "is_published_field": "",
+  "is_submittable": 0,
+  "issingle": 1,
+  "istable": 0,
+  "links": [],
+  "max_attachments": 0,
+  "modified": "2024-01-01 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Imogi Finance",
+  "name": "Transfer Application Settings",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "read": 1,
+      "role": "Accounts Manager"
+    }
+  ],
+  "quick_entry": 0,
+  "read_only": 0,
+  "read_only_onload": 0,
+  "show_name_in_global_search": 1,
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "track_changes": 1,
+  "track_seen": 1,
+  "track_views": 1,
+  "translate_fieldname": 0
+}

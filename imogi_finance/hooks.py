@@ -169,6 +169,7 @@ doc_events = {
     "Payment Entry": {
         "validate": [
             "imogi_finance.receipt_control.payment_entry_hooks.validate_customer_receipt_link",
+            "imogi_finance.transfer_application.payment_entry_hooks.validate_transfer_application_link",
         ],
         "before_submit": [
             "imogi_finance.receipt_control.payment_entry_hooks.validate_customer_receipt_link",
@@ -176,17 +177,23 @@ doc_events = {
         "on_submit": [
             "imogi_finance.events.payment_entry.on_submit",
             "imogi_finance.receipt_control.payment_entry_hooks.record_payment_entry",
+            "imogi_finance.transfer_application.payment_entry_hooks.on_submit",
         ],
         "on_cancel": [
             "imogi_finance.events.payment_entry.on_cancel",
             "imogi_finance.receipt_control.payment_entry_hooks.remove_payment_entry",
+            "imogi_finance.transfer_application.payment_entry_hooks.on_cancel",
         ],
     },
     "Asset": {
         "on_submit": "imogi_finance.events.asset.on_submit",
         "on_cancel": "imogi_finance.events.asset.on_cancel",
     },
-    "Bank Transaction": {"before_cancel": "imogi_finance.events.bank_transaction.before_cancel"},
+    "Bank Transaction": {
+        "before_cancel": "imogi_finance.events.bank_transaction.before_cancel",
+        "on_submit": "imogi_finance.transfer_application.matching.handle_bank_transaction",
+        "on_update_after_submit": "imogi_finance.transfer_application.matching.handle_bank_transaction",
+    },
 }
 
 # Scheduled Tasks
@@ -314,8 +321,12 @@ fixtures = [
             "Purchase Invoice-ti_verification_notes",
             "Purchase Invoice-ti_duplicate_flag",
             "Purchase Invoice-ti_npwp_match",
+            "Payment Entry-transfer_application",
             "Payment Entry-imogi_expense_request",
             "Payment Entry-customer_receipt",
+            "Bank Transaction-transfer_application",
+            "Bank Transaction-match_confidence",
+            "Bank Transaction-match_notes",
             "Asset-imogi_expense_request",
             "Expense Request-ti_tax_invoice_section",
             "Expense Request-ti_tax_invoice_pdf",
@@ -352,7 +363,16 @@ fixtures = [
         ]]],
     },
     {"dt": "Workspace", "filters": [["name", "=", "IMOGI FINANCE"]]},
-    {"dt": "Workflow", "filters": [["name", "in", ["Expense Request Workflow", "Administrative Payment Voucher Workflow"]]]},
+    {
+        "dt": "Workflow",
+        "filters": [
+            [
+                "name",
+                "in",
+                ["Expense Request Workflow", "Administrative Payment Voucher Workflow", "Transfer Application Workflow"],
+            ]
+        ],
+    },
     {
         "dt": "Role",
         "filters": [

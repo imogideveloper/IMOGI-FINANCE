@@ -1,0 +1,371 @@
+{
+  "actions": [],
+  "allow_copy": 0,
+  "allow_events_in_timeline": 0,
+  "allow_guest_to_view": 0,
+  "allow_rename": 0,
+  "autoname": "naming_series:",
+  "beta": 0,
+  "creation": "2024-01-01 00:00:00.000000",
+  "default_view": "Form",
+  "doctype": "DocType",
+  "editable_grid": 0,
+  "engine": "InnoDB",
+  "field_order": [
+    "naming_series",
+    "company",
+    "posting_date",
+    "status",
+    "workflow_state",
+    "section_reference",
+    "reference_doctype",
+    "reference_name",
+    "column_break_party",
+    "payee_type",
+    "party_type",
+    "party",
+    "beneficiary_name",
+    "bank_name",
+    "bank_branch",
+    "account_number",
+    "account_holder_name",
+    "transfer_method",
+    "currency",
+    "amount",
+    "expected_amount",
+    "amount_in_words",
+    "requested_transfer_date",
+    "transfer_purpose",
+    "bank_reference_hint",
+    "section_signatories",
+    "signatory_1_label",
+    "signatory_1_name",
+    "signatory_1_title",
+    "column_break_signatory",
+    "signatory_2_label",
+    "signatory_2_name",
+    "signatory_2_title",
+    "section_payment",
+    "payment_entry",
+    "paid_date",
+    "paid_amount",
+    "printed_by",
+    "printed_at"
+  ],
+  "fields": [
+    {
+      "default": "TA-.YYYY.-.#####",
+      "fieldname": "naming_series",
+      "fieldtype": "Data",
+      "label": "Series"
+    },
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "default": "Today",
+      "fieldname": "posting_date",
+      "fieldtype": "Date",
+      "label": "Posting Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Draft\nFinance Review\nApproved for Transfer\nAwaiting Bank Confirmation\nPaid\nCancelled",
+      "read_only": 1
+    },
+    {
+      "fieldname": "workflow_state",
+      "fieldtype": "Select",
+      "label": "Workflow State",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_reference",
+      "fieldtype": "Section Break",
+      "label": "Reference"
+    },
+    {
+      "fieldname": "reference_doctype",
+      "fieldtype": "Select",
+      "label": "Reference Doctype",
+      "placeholder": "Select source"
+    },
+    {
+      "fieldname": "reference_name",
+      "fieldtype": "Dynamic Link",
+      "label": "Reference Name",
+      "options": "reference_doctype"
+    },
+    {
+      "fieldname": "column_break_party",
+      "fieldtype": "Column Break"
+    },
+    {
+      "default": "Supplier",
+      "fieldname": "payee_type",
+      "fieldtype": "Select",
+      "label": "Payee Type",
+      "options": "Supplier\nEmployee\nGovernment\nOther"
+    },
+    {
+      "fieldname": "party_type",
+      "fieldtype": "Select",
+      "label": "Party Type",
+      "options": "Supplier\nEmployee\nNone"
+    },
+    {
+      "fieldname": "party",
+      "fieldtype": "Dynamic Link",
+      "label": "Party",
+      "options": "party_type"
+    },
+    {
+      "fieldname": "beneficiary_name",
+      "fieldtype": "Data",
+      "label": "Beneficiary Name",
+      "reqd": 1
+    },
+    {
+      "fieldname": "bank_name",
+      "fieldtype": "Data",
+      "label": "Bank Name",
+      "reqd": 1
+    },
+    {
+      "fieldname": "bank_branch",
+      "fieldtype": "Data",
+      "label": "Bank Branch"
+    },
+    {
+      "fieldname": "account_number",
+      "fieldtype": "Data",
+      "label": "Account Number",
+      "reqd": 1
+    },
+    {
+      "fieldname": "account_holder_name",
+      "fieldtype": "Data",
+      "label": "Account Holder Name"
+    },
+    {
+      "fieldname": "transfer_method",
+      "fieldtype": "Select",
+      "label": "Transfer Method",
+      "options": "RTGS\nSKN\nOnline\nInternal\nOther"
+    },
+    {
+      "fieldname": "currency",
+      "fieldtype": "Link",
+      "label": "Currency",
+      "options": "Currency",
+      "reqd": 1
+    },
+    {
+      "fieldname": "amount",
+      "fieldtype": "Currency",
+      "label": "Amount",
+      "options": "currency",
+      "reqd": 1
+    },
+    {
+      "fieldname": "expected_amount",
+      "fieldtype": "Currency",
+      "label": "Expected Amount",
+      "options": "currency"
+    },
+    {
+      "fieldname": "amount_in_words",
+      "fieldtype": "Data",
+      "label": "Amount in Words",
+      "read_only": 1
+    },
+    {
+      "fieldname": "requested_transfer_date",
+      "fieldtype": "Date",
+      "label": "Requested Transfer Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "transfer_purpose",
+      "fieldtype": "Small Text",
+      "label": "Transfer Purpose",
+      "reqd": 1
+    },
+    {
+      "fieldname": "bank_reference_hint",
+      "fieldtype": "Data",
+      "label": "Bank Reference Hint"
+    },
+    {
+      "fieldname": "section_signatories",
+      "fieldtype": "Section Break",
+      "label": "Signatory Placeholders"
+    },
+    {
+      "default": "Disetujui Oleh",
+      "fieldname": "signatory_1_label",
+      "fieldtype": "Data",
+      "label": "Signatory 1 Label"
+    },
+    {
+      "fieldname": "signatory_1_name",
+      "fieldtype": "Data",
+      "label": "Signatory 1 Name"
+    },
+    {
+      "fieldname": "signatory_1_title",
+      "fieldtype": "Data",
+      "label": "Signatory 1 Title"
+    },
+    {
+      "fieldname": "column_break_signatory",
+      "fieldtype": "Column Break"
+    },
+    {
+      "default": "Disetujui Oleh",
+      "fieldname": "signatory_2_label",
+      "fieldtype": "Data",
+      "label": "Signatory 2 Label"
+    },
+    {
+      "fieldname": "signatory_2_name",
+      "fieldtype": "Data",
+      "label": "Signatory 2 Name"
+    },
+    {
+      "fieldname": "signatory_2_title",
+      "fieldtype": "Data",
+      "label": "Signatory 2 Title"
+    },
+    {
+      "fieldname": "section_payment",
+      "fieldtype": "Section Break",
+      "label": "Payment Tracking"
+    },
+    {
+      "fieldname": "payment_entry",
+      "fieldtype": "Link",
+      "label": "Payment Entry",
+      "options": "Payment Entry",
+      "read_only": 1
+    },
+    {
+      "fieldname": "paid_date",
+      "fieldtype": "Date",
+      "label": "Paid Date",
+      "read_only": 1
+    },
+    {
+      "fieldname": "paid_amount",
+      "fieldtype": "Currency",
+      "label": "Paid Amount",
+      "options": "currency",
+      "read_only": 1
+    },
+    {
+      "fieldname": "printed_by",
+      "fieldtype": "Link",
+      "label": "Printed By",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "printed_at",
+      "fieldtype": "Datetime",
+      "label": "Printed At",
+      "read_only": 1
+    }
+  ],
+  "has_web_view": 0,
+  "hide_heading": 0,
+  "hide_toolbar": 0,
+  "idx": 0,
+  "image_field": "",
+  "in_create": 0,
+  "is_published_field": "",
+  "is_submittable": 1,
+  "issingle": 0,
+  "istable": 0,
+  "links": [],
+  "max_attachments": 0,
+  "modified": "2024-01-01 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Imogi Finance",
+  "name": "Transfer Application",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts User",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "cancel": 1,
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts Manager",
+      "share": 1,
+      "submit": 1,
+      "write": 1
+    },
+    {
+      "all": 1,
+      "role": "System Manager"
+    }
+  ],
+  "quick_entry": 0,
+  "read_only": 0,
+  "read_only_onload": 0,
+  "show_name_in_global_search": 1,
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": [
+    {
+      "color": "Gray",
+      "title": "Draft"
+    },
+    {
+      "color": "Blue",
+      "title": "Finance Review"
+    },
+    {
+      "color": "Green",
+      "title": "Approved for Transfer"
+    },
+    {
+      "color": "Orange",
+      "title": "Awaiting Bank Confirmation"
+    },
+    {
+      "color": "Green",
+      "title": "Paid"
+    },
+    {
+      "color": "Red",
+      "title": "Cancelled"
+    }
+  ],
+  "track_changes": 1,
+  "track_seen": 1,
+  "track_views": 1,
+  "translate_fieldname": 0,
+  "workflow_state_field": "workflow_state"
+}
