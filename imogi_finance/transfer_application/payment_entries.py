@@ -6,7 +6,7 @@ from frappe.model.document import Document
 from frappe.utils import today
 
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_party_account
-from erpnext.accounts.utils import get_company_default, get_default_bank_cash_account
+from erpnext.accounts.utils import get_company_default
 
 from imogi_finance.transfer_application.settings import get_transfer_application_settings
 
@@ -105,15 +105,40 @@ def _resolve_paid_from_account(company: str, *, settings=None):
     if account:
         return account
 
-    bank_account = get_default_bank_cash_account(company, account_type="Bank")
+    bank_account = _get_default_bank_cash_account(company, account_type="Bank")
     if bank_account and bank_account.get("account"):
         return bank_account.get("account")
 
-    cash_account = get_default_bank_cash_account(company, account_type="Cash")
+    cash_account = _get_default_bank_cash_account(company, account_type="Cash")
     if cash_account and cash_account.get("account"):
         return cash_account.get("account")
 
     return None
+
+
+def _get_default_bank_cash_account(company: str, *, account_type: str):
+    get_default = None
+    try:
+        get_default = frappe.get_attr("erpnext.accounts.utils.get_default_bank_cash_account")
+    except Exception:
+        get_default = None
+
+    if get_default:
+        return get_default(company, account_type=account_type)
+
+    field_map = {
+        "Bank": "default_bank_account",
+        "Cash": "default_cash_account",
+    }
+    default_field = field_map.get(account_type)
+    if not default_field:
+        return None
+
+    account = get_company_default(company, default_field)
+    if not account:
+        return None
+
+    return {"account": account}
 
 
 def _resolve_paid_to_account(transfer_application: Document, *, settings=None):
