@@ -121,7 +121,32 @@ frappe.ui.form.on('Expense Request', {
       );
     }
 
-    if (canCreatePurchaseInvoice) {
+    const maybeRenderPurchaseInvoiceButton = async () => {
+      if (!canCreatePurchaseInvoice) {
+        showPurchaseInvoiceAvailability();
+        return;
+      }
+
+      const [ocrEnabled, requireVerified] = await Promise.all([
+        frappe.db.get_single_value('Tax Invoice OCR Settings', 'enable_tax_invoice_ocr'),
+        frappe.db.get_single_value(
+          'Tax Invoice OCR Settings',
+          'require_verification_before_create_pi_from_expense_request'
+        ),
+      ]);
+
+      const gateByVerification = Boolean(ocrEnabled && requireVerified);
+      const isVerified = frm.doc.ti_verification_status === 'Verified';
+      const allowButton = !gateByVerification || isVerified;
+
+      if (!allowButton) {
+        frappe.show_alert({
+          message: __('Please verify the Tax Invoice before creating a Purchase Invoice.'),
+          indicator: 'orange',
+        });
+        return;
+      }
+
       const purchaseInvoiceBtn = frm.add_custom_button(__('Create Purchase Invoice'), async () => {
         purchaseInvoiceBtn.prop('disabled', true);
 
@@ -150,8 +175,51 @@ frappe.ui.form.on('Expense Request', {
           purchaseInvoiceBtn.prop('disabled', false);
         }
       }, __('Create'));
-    } else {
-      showPurchaseInvoiceAvailability();
-    }
+    };
+
+    maybeRenderPurchaseInvoiceButton();
+
+    const maybeAddOcrButton = async () => {
+      const enabled = await frappe.db.get_single_value('Tax Invoice OCR Settings', 'enable_tax_invoice_ocr');
+      if (!enabled || !frm.doc.ti_tax_invoice_pdf) {
+        return;
+      }
+
+      frm.add_custom_button(__('Run OCR'), async () => {
+        await frappe.call({
+          method: 'imogi_finance.api.tax_invoice.run_ocr_for_expense_request',
+          args: { er_name: frm.doc.name },
+          freeze: true,
+          freeze_message: __('Queueing OCR...'),
+        });
+        frappe.show_alert({ message: __('OCR queued.'), indicator: 'green' });
+        frm.reload_doc();
+      }, __('Tax Invoice'));
+    };
+
+    const maybeAddVerifyButton = () => {
+      const hasData =
+        frm.doc.ti_fp_no || frm.doc.ti_fp_npwp || frm.doc.ti_fp_dpp || frm.doc.ti_fp_ppn || frm.doc.ti_ocr_status === 'Done';
+
+      if (!hasData) {
+        return;
+      }
+
+      frm.add_custom_button(__('Verify Tax Invoice'), async () => {
+        const r = await frappe.call({
+          method: 'imogi_finance.api.tax_invoice.verify_expense_request_tax_invoice',
+          args: { er_name: frm.doc.name },
+          freeze: true,
+          freeze_message: __('Verifying...'),
+        });
+        if (r && r.message) {
+          frappe.show_alert({ message: __('Verification status: {0}', [r.message.status]), indicator: 'green' });
+          frm.reload_doc();
+        }
+      }, __('Tax Invoice'));
+    };
+
+    maybeAddOcrButton();
+    maybeAddVerifyButton();
   },
 });

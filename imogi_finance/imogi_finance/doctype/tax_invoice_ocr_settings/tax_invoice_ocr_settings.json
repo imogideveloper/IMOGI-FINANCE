@@ -1,0 +1,180 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "prompt",
+  "creation": "2024-01-01 00:00:00.000000",
+  "default_view": "Form",
+  "doctype": "DocType",
+  "editable_grid": 0,
+  "engine": "InnoDB",
+  "field_order": [
+    "section_ocr",
+    "enable_tax_invoice_ocr",
+    "ocr_provider",
+    "ocr_language",
+    "ocr_max_pages",
+    "ocr_min_confidence",
+    "ocr_max_retry",
+    "ocr_file_max_mb",
+    "store_raw_ocr_json",
+    "npwp_normalize",
+    "section_verification",
+    "require_verification_before_submit_pi",
+    "require_verification_before_create_pi_from_expense_request",
+    "tolerance_idr",
+    "block_duplicate_fp_no",
+    "ppn_input_account",
+    "default_ppn_type",
+    "use_tax_rule_effective_date",
+    "default_ppn_tax_template",
+    "zero_ppn_tax_template"
+  ],
+  "fields": [
+    {
+      "fieldname": "section_ocr",
+      "fieldtype": "Section Break",
+      "label": "OCR"
+    },
+    {
+      "default": "0",
+      "fieldname": "enable_tax_invoice_ocr",
+      "fieldtype": "Check",
+      "label": "Enable Tax Invoice OCR"
+    },
+    {
+      "default": "Manual Only",
+      "fieldname": "ocr_provider",
+      "fieldtype": "Select",
+      "label": "OCR Provider",
+      "options": "Manual Only\nGoogle Vision\nTesseract"
+    },
+    {
+      "default": "id",
+      "fieldname": "ocr_language",
+      "fieldtype": "Data",
+      "label": "OCR Language"
+    },
+    {
+      "default": 2,
+      "fieldname": "ocr_max_pages",
+      "fieldtype": "Int",
+      "label": "OCR Max Pages"
+    },
+    {
+      "default": 0.85,
+      "fieldname": "ocr_min_confidence",
+      "fieldtype": "Float",
+      "label": "OCR Minimum Confidence"
+    },
+    {
+      "default": 1,
+      "fieldname": "ocr_max_retry",
+      "fieldtype": "Int",
+      "label": "OCR Max Retry"
+    },
+    {
+      "default": 10,
+      "fieldname": "ocr_file_max_mb",
+      "fieldtype": "Int",
+      "label": "OCR File Max (MB)"
+    },
+    {
+      "default": "1",
+      "fieldname": "store_raw_ocr_json",
+      "fieldtype": "Check",
+      "label": "Store Raw OCR JSON"
+    },
+    {
+      "default": "1",
+      "fieldname": "npwp_normalize",
+      "fieldtype": "Check",
+      "label": "Normalize NPWP"
+    },
+    {
+      "fieldname": "section_verification",
+      "fieldtype": "Section Break",
+      "label": "Verification"
+    },
+    {
+      "default": "1",
+      "fieldname": "require_verification_before_submit_pi",
+      "fieldtype": "Check",
+      "label": "Require Verification before Submit PI"
+    },
+    {
+      "default": "1",
+      "fieldname": "require_verification_before_create_pi_from_expense_request",
+      "fieldtype": "Check",
+      "label": "Require Verification before Create PI from Expense Request"
+    },
+    {
+      "default": 10,
+      "fieldname": "tolerance_idr",
+      "fieldtype": "Currency",
+      "label": "Tolerance (IDR)"
+    },
+    {
+      "default": "1",
+      "fieldname": "block_duplicate_fp_no",
+      "fieldtype": "Check",
+      "label": "Block Duplicate Tax Invoice No"
+    },
+    {
+      "fieldname": "ppn_input_account",
+      "fieldtype": "Link",
+      "label": "PPN Input Account",
+      "options": "Account"
+    },
+    {
+      "default": "Standard",
+      "fieldname": "default_ppn_type",
+      "fieldtype": "Select",
+      "label": "Default PPN Type",
+      "options": "Standard\nZero Rated\nExempt/Not PPN"
+    },
+    {
+      "default": "1",
+      "fieldname": "use_tax_rule_effective_date",
+      "fieldtype": "Check",
+      "label": "Use Tax Rule Effective Date"
+    },
+    {
+      "fieldname": "default_ppn_tax_template",
+      "fieldtype": "Link",
+      "label": "Default PPN Tax Template",
+      "options": "Purchase Taxes and Charges Template"
+    },
+    {
+      "fieldname": "zero_ppn_tax_template",
+      "fieldtype": "Link",
+      "label": "Zero PPN Tax Template",
+      "options": "Purchase Taxes and Charges Template"
+    }
+  ],
+  "hide_toolbar": 0,
+  "index_web_pages_for_search": 1,
+  "issingle": 1,
+  "links": [],
+  "modified": "2024-01-01 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Imogi Finance",
+  "name": "Tax Invoice OCR Settings",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "show_name_in_global_search": 0,
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

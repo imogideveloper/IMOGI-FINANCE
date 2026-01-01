@@ -16,5 +16,11 @@
     "name": "Receipt Auditor",
     "role_name": "Receipt Auditor",
     "desk_access": 1
+  },
+  {
+    "doctype": "Role",
+    "name": "Tax Reviewer",
+    "role_name": "Tax Reviewer",
+    "desk_access": 1
   }
 ]

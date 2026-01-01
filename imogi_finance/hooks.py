@@ -43,7 +43,10 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {"Bank Transaction": "public/js/bank_transaction.js"}
+doctype_js = {
+    "Bank Transaction": "public/js/bank_transaction.js",
+    "Purchase Invoice": "public/js/purchase_invoice_tax_invoice.js",
+}
 doctype_list_js = {
     "BCA Bank Statement Import": "imogi_finance/doctype/bca_bank_statement_import/bca_bank_statement_import_list.js",
 }
@@ -143,6 +146,7 @@ jinja = {
 
 doc_events = {
     "Purchase Invoice": {
+        "before_submit": "imogi_finance.events.purchase_invoice.validate_before_submit",
         "on_submit": "imogi_finance.events.purchase_invoice.on_submit",
         "on_cancel": "imogi_finance.events.purchase_invoice.on_cancel",
     },
@@ -276,9 +280,41 @@ fixtures = [
             "Purchase Invoice-imogi_expense_request",
             "Purchase Invoice-imogi_request_type",
             "Purchase Invoice-imogi_pph_type",
+            "Purchase Invoice-ti_tax_invoice_section",
+            "Purchase Invoice-ti_tax_invoice_pdf",
+            "Purchase Invoice-ti_ocr_status",
+            "Purchase Invoice-ti_ocr_confidence",
+            "Purchase Invoice-ti_ocr_raw_json",
+            "Purchase Invoice-ti_tax_invoice_data_section",
+            "Purchase Invoice-ti_fp_no",
+            "Purchase Invoice-ti_fp_date",
+            "Purchase Invoice-ti_fp_npwp",
+            "Purchase Invoice-ti_fp_dpp",
+            "Purchase Invoice-ti_fp_ppn",
+            "Purchase Invoice-ti_fp_ppn_type",
+            "Purchase Invoice-ti_verification_status",
+            "Purchase Invoice-ti_verification_notes",
+            "Purchase Invoice-ti_duplicate_flag",
+            "Purchase Invoice-ti_npwp_match",
             "Payment Entry-imogi_expense_request",
             "Payment Entry-customer_receipt",
             "Asset-imogi_expense_request",
+            "Expense Request-ti_tax_invoice_section",
+            "Expense Request-ti_tax_invoice_pdf",
+            "Expense Request-ti_ocr_status",
+            "Expense Request-ti_ocr_confidence",
+            "Expense Request-ti_ocr_raw_json",
+            "Expense Request-ti_tax_invoice_data_section",
+            "Expense Request-ti_fp_no",
+            "Expense Request-ti_fp_date",
+            "Expense Request-ti_fp_npwp",
+            "Expense Request-ti_fp_dpp",
+            "Expense Request-ti_fp_ppn",
+            "Expense Request-ti_fp_ppn_type",
+            "Expense Request-ti_verification_status",
+            "Expense Request-ti_verification_notes",
+            "Expense Request-ti_duplicate_flag",
+            "Expense Request-ti_npwp_match",
         ]]],
     },
     {"dt": "Workspace", "filters": [["name", "=", "IMOGI FINANCE"]]},
@@ -293,6 +329,7 @@ fixtures = [
                     "Receipt Maker",
                     "Receipt Approver",
                     "Receipt Auditor",
+                    "Tax Reviewer",
                 ],
             ]
         ],

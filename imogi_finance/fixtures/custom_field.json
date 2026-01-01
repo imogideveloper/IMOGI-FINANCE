@@ -65,5 +65,335 @@
     "options": "Customer Receipt",
     "allow_on_submit": 1,
     "description": "Controlled customer receipt reference"
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Purchase Invoice-ti_tax_invoice_section",
+    "dt": "Purchase Invoice",
+    "fieldname": "ti_tax_invoice_section",
+    "fieldtype": "Section Break",
+    "insert_after": "apply_tds",
+    "label": "Tax Invoice (OCR)"
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Purchase Invoice-ti_tax_invoice_pdf",
+    "dt": "Purchase Invoice",
+    "fieldname": "ti_tax_invoice_pdf",
+    "fieldtype": "Attach",
+    "insert_after": "ti_tax_invoice_section",
+    "label": "Faktur Pajak PDF"
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Purchase Invoice-ti_ocr_status",
+    "dt": "Purchase Invoice",
+    "fieldname": "ti_ocr_status",
+    "fieldtype": "Select",
+    "insert_after": "ti_tax_invoice_pdf",
+    "label": "OCR Status",
+    "options": "Not Started\nQueued\nProcessing\nDone\nFailed",
+    "default": "Not Started",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Purchase Invoice-ti_ocr_confidence",
+    "dt": "Purchase Invoice",
+    "fieldname": "ti_ocr_confidence",
+    "fieldtype": "Float",
+    "insert_after": "ti_ocr_status",
+    "label": "OCR Confidence",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Purchase Invoice-ti_ocr_raw_json",
+    "dt": "Purchase Invoice",
+    "fieldname": "ti_ocr_raw_json",
+    "fieldtype": "Code",
+    "insert_after": "ti_ocr_confidence",
+    "label": "OCR Raw JSON",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Purchase Invoice-ti_tax_invoice_data_section",
+    "dt": "Purchase Invoice",
+    "fieldname": "ti_tax_invoice_data_section",
+    "fieldtype": "Section Break",
+    "insert_after": "ti_ocr_raw_json",
+    "label": "Tax Invoice Data"
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Purchase Invoice-ti_fp_no",
+    "dt": "Purchase Invoice",
+    "fieldname": "ti_fp_no",
+    "fieldtype": "Data",
+    "insert_after": "ti_tax_invoice_data_section",
+    "label": "No Faktur Pajak",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Purchase Invoice-ti_fp_date",
+    "dt": "Purchase Invoice",
+    "fieldname": "ti_fp_date",
+    "fieldtype": "Date",
+    "insert_after": "ti_fp_no",
+    "label": "Tanggal Faktur Pajak",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Purchase Invoice-ti_fp_npwp",
+    "dt": "Purchase Invoice",
+    "fieldname": "ti_fp_npwp",
+    "fieldtype": "Data",
+    "insert_after": "ti_fp_date",
+    "label": "NPWP",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Purchase Invoice-ti_fp_dpp",
+    "dt": "Purchase Invoice",
+    "fieldname": "ti_fp_dpp",
+    "fieldtype": "Currency",
+    "insert_after": "ti_fp_npwp",
+    "label": "DPP",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Purchase Invoice-ti_fp_ppn",
+    "dt": "Purchase Invoice",
+    "fieldname": "ti_fp_ppn",
+    "fieldtype": "Currency",
+    "insert_after": "ti_fp_dpp",
+    "label": "PPN",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Purchase Invoice-ti_fp_ppn_type",
+    "dt": "Purchase Invoice",
+    "fieldname": "ti_fp_ppn_type",
+    "fieldtype": "Select",
+    "insert_after": "ti_fp_ppn",
+    "label": "PPN Type",
+    "options": "Standard\nZero Rated\nExempt/Not PPN",
+    "default": "Standard",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Purchase Invoice-ti_verification_status",
+    "dt": "Purchase Invoice",
+    "fieldname": "ti_verification_status",
+    "fieldtype": "Select",
+    "insert_after": "ti_fp_ppn_type",
+    "label": "Tax Invoice Verification Status",
+    "options": "Needs Review\nVerified\nRejected",
+    "default": "Needs Review",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Purchase Invoice-ti_verification_notes",
+    "dt": "Purchase Invoice",
+    "fieldname": "ti_verification_notes",
+    "fieldtype": "Small Text",
+    "insert_after": "ti_verification_status",
+    "label": "Tax Invoice Verification Notes",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Purchase Invoice-ti_duplicate_flag",
+    "dt": "Purchase Invoice",
+    "fieldname": "ti_duplicate_flag",
+    "fieldtype": "Check",
+    "insert_after": "ti_verification_notes",
+    "label": "Duplicate Tax Invoice",
+    "read_only": 1,
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Purchase Invoice-ti_npwp_match",
+    "dt": "Purchase Invoice",
+    "fieldname": "ti_npwp_match",
+    "fieldtype": "Check",
+    "insert_after": "ti_duplicate_flag",
+    "label": "NPWP Match",
+    "read_only": 1,
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-ti_tax_invoice_section",
+    "dt": "Expense Request",
+    "fieldname": "ti_tax_invoice_section",
+    "fieldtype": "Section Break",
+    "insert_after": "taxes_section",
+    "label": "Tax Invoice (OCR)"
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-ti_tax_invoice_pdf",
+    "dt": "Expense Request",
+    "fieldname": "ti_tax_invoice_pdf",
+    "fieldtype": "Attach",
+    "insert_after": "ti_tax_invoice_section",
+    "label": "Faktur Pajak PDF"
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-ti_ocr_status",
+    "dt": "Expense Request",
+    "fieldname": "ti_ocr_status",
+    "fieldtype": "Select",
+    "insert_after": "ti_tax_invoice_pdf",
+    "label": "OCR Status",
+    "options": "Not Started\nQueued\nProcessing\nDone\nFailed",
+    "default": "Not Started",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-ti_ocr_confidence",
+    "dt": "Expense Request",
+    "fieldname": "ti_ocr_confidence",
+    "fieldtype": "Float",
+    "insert_after": "ti_ocr_status",
+    "label": "OCR Confidence",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-ti_ocr_raw_json",
+    "dt": "Expense Request",
+    "fieldname": "ti_ocr_raw_json",
+    "fieldtype": "Code",
+    "insert_after": "ti_ocr_confidence",
+    "label": "OCR Raw JSON",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-ti_tax_invoice_data_section",
+    "dt": "Expense Request",
+    "fieldname": "ti_tax_invoice_data_section",
+    "fieldtype": "Section Break",
+    "insert_after": "ti_ocr_raw_json",
+    "label": "Tax Invoice Data"
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-ti_fp_no",
+    "dt": "Expense Request",
+    "fieldname": "ti_fp_no",
+    "fieldtype": "Data",
+    "insert_after": "ti_tax_invoice_data_section",
+    "label": "No Faktur Pajak",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-ti_fp_date",
+    "dt": "Expense Request",
+    "fieldname": "ti_fp_date",
+    "fieldtype": "Date",
+    "insert_after": "ti_fp_no",
+    "label": "Tanggal Faktur Pajak",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-ti_fp_npwp",
+    "dt": "Expense Request",
+    "fieldname": "ti_fp_npwp",
+    "fieldtype": "Data",
+    "insert_after": "ti_fp_date",
+    "label": "NPWP",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-ti_fp_dpp",
+    "dt": "Expense Request",
+    "fieldname": "ti_fp_dpp",
+    "fieldtype": "Currency",
+    "insert_after": "ti_fp_npwp",
+    "label": "DPP",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-ti_fp_ppn",
+    "dt": "Expense Request",
+    "fieldname": "ti_fp_ppn",
+    "fieldtype": "Currency",
+    "insert_after": "ti_fp_dpp",
+    "label": "PPN",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-ti_fp_ppn_type",
+    "dt": "Expense Request",
+    "fieldname": "ti_fp_ppn_type",
+    "fieldtype": "Select",
+    "insert_after": "ti_fp_ppn",
+    "label": "PPN Type",
+    "options": "Standard\nZero Rated\nExempt/Not PPN",
+    "default": "Standard",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-ti_verification_status",
+    "dt": "Expense Request",
+    "fieldname": "ti_verification_status",
+    "fieldtype": "Select",
+    "insert_after": "ti_fp_ppn_type",
+    "label": "Tax Invoice Verification Status",
+    "options": "Needs Review\nVerified\nRejected",
+    "default": "Needs Review",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-ti_verification_notes",
+    "dt": "Expense Request",
+    "fieldname": "ti_verification_notes",
+    "fieldtype": "Small Text",
+    "insert_after": "ti_verification_status",
+    "label": "Tax Invoice Verification Notes",
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-ti_duplicate_flag",
+    "dt": "Expense Request",
+    "fieldname": "ti_duplicate_flag",
+    "fieldtype": "Check",
+    "insert_after": "ti_verification_notes",
+    "label": "Duplicate Tax Invoice",
+    "read_only": 1,
+    "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Expense Request-ti_npwp_match",
+    "dt": "Expense Request",
+    "fieldname": "ti_npwp_match",
+    "fieldtype": "Check",
+    "insert_after": "ti_duplicate_flag",
+    "label": "NPWP Match",
+    "read_only": 1,
+    "allow_on_submit": 1
   }
 ]

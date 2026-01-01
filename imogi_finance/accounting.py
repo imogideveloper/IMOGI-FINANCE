@@ -5,6 +5,8 @@ from __future__ import annotations
 import frappe
 from frappe import _
 
+from imogi_finance.tax_invoice_ocr import get_settings
+
 PURCHASE_INVOICE_REQUEST_TYPES = {"Expense", "Asset"}
 PURCHASE_INVOICE_ALLOWED_STATUSES = frozenset({"Approved"})
 
@@ -160,6 +162,16 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     total_amount, expense_accounts = summarize_request_items(request_items)
     _sync_request_amounts(request, total_amount, expense_accounts)
 
+    settings = get_settings()
+    if (
+        settings.get("require_verification_before_create_pi_from_expense_request")
+        and getattr(request, "ti_verification_status", "") != "Verified"
+    ):
+        frappe.throw(
+            _("Tax Invoice must be verified before creating a Purchase Invoice from this request."),
+            title=_("Verification Required"),
+        )
+
     pph_items = [item for item in request_items if getattr(item, "is_pph_applicable", 0)]
     is_ppn_applicable = bool(getattr(request, "is_ppn_applicable", 0))
     is_pph_applicable = bool(getattr(request, "is_pph_applicable", 0) or pph_items)
@@ -209,6 +221,16 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     if is_ppn_applicable and request.ppn_template:
         pi.taxes_and_charges = request.ppn_template
         pi.set_taxes()
+
+    # map tax invoice metadata
+    pi.ti_tax_invoice_pdf = getattr(request, "ti_tax_invoice_pdf", None)
+    pi.ti_fp_no = getattr(request, "ti_fp_no", None)
+    pi.ti_fp_date = getattr(request, "ti_fp_date", None)
+    pi.ti_fp_npwp = getattr(request, "ti_fp_npwp", None)
+    pi.ti_fp_dpp = getattr(request, "ti_fp_dpp", None)
+    pi.ti_fp_ppn = getattr(request, "ti_fp_ppn", None)
+    pi.ti_fp_ppn_type = getattr(request, "ti_fp_ppn_type", None)
+    pi.ti_verification_status = getattr(request, "ti_verification_status", None)
 
     pi.insert(ignore_permissions=True)
 
