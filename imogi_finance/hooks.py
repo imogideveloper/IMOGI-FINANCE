@@ -93,6 +93,7 @@ jinja = {
 
 # before_install = "imogi_finance.install.before_install"
 # after_install = "imogi_finance.install.after_install"
+after_install = "imogi_finance.utils.ensure_coretax_export_doctypes"
 
 # Uninstallation
 # ------------
@@ -213,6 +214,8 @@ doc_events = {
 # -------
 
 # before_tests = "imogi_finance.install.before_tests"
+
+after_migrate = "imogi_finance.utils.ensure_coretax_export_doctypes"
 
 # Overriding Methods
 # ------------------------------
