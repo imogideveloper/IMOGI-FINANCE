@@ -1,0 +1,383 @@
+"""Tax operations utilities for VAT, PPh, PB1, and CoreTax exports."""
+
+from __future__ import annotations
+
+import csv
+import io
+import json
+from datetime import date
+from typing import Iterable
+
+import frappe
+from frappe import _, bold
+from frappe.model.document import Document
+from frappe.utils import flt, get_first_day, get_last_day, nowdate
+from frappe.utils.xlsxutils import make_xlsx
+
+INPUT_VAT_REPORT = "imogi_finance.imogi_finance.report.vat_input_register_verified.vat_input_register_verified"
+OUTPUT_VAT_REPORT = "imogi_finance.imogi_finance.report.vat_output_register_verified.vat_output_register_verified"
+
+
+def _get_period_bounds(period_month: int | None, period_year: int | None) -> tuple[date | None, date | None]:
+    if not period_month or not period_year:
+        return None, None
+    start = get_first_day(f"{period_year}-{period_month:02d}-01")
+    end = get_last_day(start)
+    return start, end
+
+
+def _get_tax_profile(company: str) -> frappe._dict:
+    profile_name = frappe.db.get_value("Tax Profile", {"company": company}, "name")
+    if not profile_name:
+        frappe.throw(
+            _("Please create a Tax Profile for company {0} to continue.").format(bold(company)),
+            title=_("Tax Profile Missing"),
+        )
+
+    return frappe.get_cached_doc("Tax Profile", profile_name)  # type: ignore[return-value]
+
+
+def _run_report(report: str, filters: dict) -> list[dict]:
+    result = frappe.get_all(
+        "Report",
+        filters={"report_name": report.split(".")[-1]},
+        limit=1,
+        pluck="ref_doctype",
+    )
+    if not result:
+        return []
+
+    execute = frappe.get_attr(f"{report}.execute")
+    _, data = execute(filters)
+    return data or []
+
+
+def _sum_field(rows: Iterable[dict], field: str) -> float:
+    return sum(flt(row.get(field)) for row in rows)
+
+
+def _get_vat_totals(company: str, date_from: date | str | None, date_to: date | str | None) -> tuple[float, float]:
+    filters = {"company": company}
+    if date_from:
+        filters["from_date"] = date_from
+    if date_to:
+        filters["to_date"] = date_to
+
+    input_rows = _run_report(INPUT_VAT_REPORT, filters)
+    output_rows = _run_report(OUTPUT_VAT_REPORT, filters)
+
+    input_total = _sum_field(input_rows, "tax_row_amount")
+    output_total = _sum_field(output_rows, "tax_row_amount")
+    return input_total, output_total
+
+
+def _get_gl_total(company: str, accounts: list[str], date_from: date | str | None, date_to: date | str | None) -> float:
+    if not accounts:
+        return 0.0
+
+    filters: dict[str, object] = {
+        "company": company,
+        "is_cancelled": 0,
+        "account": ["in", accounts],
+    }
+
+    if date_from and date_to:
+        filters["posting_date"] = ["between", [date_from, date_to]]
+    elif date_from:
+        filters["posting_date"] = [">=", date_from]
+    elif date_to:
+        filters["posting_date"] = ["<=", date_to]
+
+    aggregates = frappe.get_all(
+        "GL Entry",
+        filters=filters,
+        fields=[["sum", "credit", "credit_total"], ["sum", "debit", "debit_total"]],
+    )
+    if not aggregates:
+        return 0.0
+
+    credit_total = flt(aggregates[0].get("credit_total"))
+    debit_total = flt(aggregates[0].get("debit_total"))
+    return credit_total - debit_total
+
+
+def build_register_snapshot(company: str, date_from: date | str | None, date_to: date | str | None) -> dict:
+    profile = _get_tax_profile(company)
+    input_total, output_total = _get_vat_totals(company, date_from, date_to)
+
+    pph_accounts = [row.payable_account for row in getattr(profile, "pph_accounts", []) or [] if row.payable_account]
+    pph_total = _get_gl_total(company, pph_accounts, date_from, date_to)
+
+    pb1_account = getattr(profile, "pb1_payable_account", None)
+    pb1_total = _get_gl_total(company, [pb1_account], date_from, date_to) if pb1_account else 0.0
+
+    vat_net = output_total - input_total
+
+    return {
+        "input_vat_total": input_total,
+        "output_vat_total": output_total,
+        "vat_net": vat_net,
+        "pph_total": pph_total,
+        "pb1_total": pb1_total,
+        "meta": {
+            "company": company,
+            "date_from": str(date_from) if date_from else None,
+            "date_to": str(date_to) if date_to else None,
+            "profile": profile.name,
+        },
+    }
+
+
+def _get_tax_invoice_fields(doctype: str) -> set[str]:
+    if doctype == "Purchase Invoice" or doctype == "Expense Request":
+        prefix = "ti_"
+    else:
+        prefix = "out_"
+
+    base_fields = {
+        f"{prefix}fp_no",
+        f"{prefix}fp_date",
+        f"{prefix}fp_npwp" if doctype != "Sales Invoice" else "out_buyer_tax_id",
+        f"{prefix}fp_dpp",
+        f"{prefix}fp_ppn",
+        f"{prefix}fp_ppn_type",
+        f"{prefix}verification_status",
+        f"{prefix}verification_notes",
+        f"{prefix}duplicate_flag",
+        f"{prefix}npwp_match",
+        f"{prefix}tax_invoice_pdf" if doctype != "Sales Invoice" else "out_fp_pdf",
+    }
+
+    tax_mapping_fields = {"taxes_and_charges", "taxes"}
+    if doctype == "Purchase Invoice":
+        tax_mapping_fields.update({"apply_tds", "tax_withholding_category"})
+
+    return base_fields | tax_mapping_fields
+
+
+def _has_locked_period(company: str, posting_date: date | str | None) -> str | None:
+    if not posting_date:
+        return None
+
+    locked = frappe.get_all(
+        "Tax Period Closing",
+        filters={
+            "company": company,
+            "status": "Closed",
+            "docstatus": 1,
+            "date_from": ["<=", posting_date],
+            "date_to": [">=", posting_date],
+        },
+        limit=1,
+        pluck="name",
+    )
+    return locked[0] if locked else None
+
+
+def _get_previous_doc(doc: Document):
+    previous = getattr(doc, "_doc_before_save", None)
+    if previous:
+        return previous
+
+    if getattr(doc, "name", None):
+        try:
+            return frappe.get_doc(doc.doctype, doc.name)
+        except Exception:
+            return None
+    return None
+
+
+def validate_tax_period_lock(doc: Document, posting_date_field: str = "posting_date") -> None:
+    company = getattr(doc, "company", None)
+    if not company:
+        cost_center = getattr(doc, "cost_center", None)
+        if cost_center:
+            company = frappe.db.get_value("Cost Center", cost_center, "company")
+
+    posting_date = (
+        getattr(doc, posting_date_field, None)
+        or getattr(doc, "request_date", None)
+        or getattr(doc, "bill_date", None)
+    )
+    locked_name = _has_locked_period(company, posting_date)
+    if not locked_name:
+        return
+
+    privileged_roles = {"System Manager", "Tax Reviewer"}
+    if set(frappe.get_roles()) & privileged_roles:
+        return
+
+    previous = _get_previous_doc(doc)
+    if not previous:
+        frappe.throw(
+            _("Tax period is closed for the selected date range (Closing {0}). Please reopen the period or contact a Tax Reviewer.").format(
+                locked_name
+            ),
+            title=_("Tax Period Locked"),
+        )
+
+    fields_to_guard = _get_tax_invoice_fields(doc.doctype)
+    changed = []
+    for field in fields_to_guard:
+        if getattr(previous, field, None) != getattr(doc, field, None):
+            changed.append(field)
+
+    if not changed:
+        return
+
+    frappe.throw(
+        _("Cannot modify tax invoice or tax mapping fields because Tax Period Closing {0} is Closed.").format(
+            locked_name
+        ),
+        title=_("Tax Period Locked"),
+    )
+
+
+def _serialize_rows(rows: list[list[object]], headers: list[str], file_format: str, filename: str) -> str:
+    if file_format == "XLSX":
+        xlsx_file = make_xlsx(rows, "CoreTax Export", headers)
+        filedata = xlsx_file.getvalue()
+        file_name = f"{filename}.xlsx"
+        file_doc = frappe.get_doc(
+            {
+                "doctype": "File",
+                "file_name": file_name,
+                "content": filedata,
+                "is_private": 1,
+            }
+        )
+    else:
+        buffer = io.StringIO()
+        writer = csv.writer(buffer)
+        writer.writerow(headers)
+        writer.writerows(rows)
+        file_name = f"{filename}.csv"
+        file_doc = frappe.get_doc(
+            {
+                "doctype": "File",
+                "file_name": file_name,
+                "content": buffer.getvalue(),
+                "is_private": 1,
+            }
+        )
+
+    file_doc.save(ignore_permissions=True)
+    return file_doc.file_url
+
+
+def _resolve_mapping_value(mapping, doc: Document, party_doc: Document | None):
+    source_type = mapping.source_type
+    source = mapping.source
+
+    if source_type == "Document Field":
+        return doc.get(source)
+    if source_type == "Party Field" and party_doc:
+        return party_doc.get(source)
+    if source_type == "Computed DPP":
+        return doc.get("ti_fp_dpp") or doc.get("out_fp_dpp")
+    if source_type == "Computed PPN":
+        return doc.get("ti_fp_ppn") or doc.get("out_fp_ppn")
+    if source_type == "Tax Invoice Number":
+        return doc.get("ti_fp_no") or doc.get("out_fp_no")
+    if source_type == "Tax Invoice Date":
+        return doc.get("ti_fp_date") or doc.get("out_fp_date")
+    if source_type == "Fixed Value":
+        return mapping.fixed_value or mapping.default_value
+    return mapping.default_value
+
+
+def generate_coretax_rows(
+    invoices: list[Document],
+    settings: Document,
+    *,
+    party_type: str,
+) -> tuple[list[str], list[list[object]]]:
+    headers = [mapping.label or mapping.source for mapping in settings.column_mappings]
+    rows: list[list[object]] = []
+    for doc in invoices:
+        party_doc = None
+        party_name = getattr(doc, "supplier", None) if party_type == "Supplier" else getattr(doc, "customer", None)
+        if party_name:
+            try:
+                party_doc = frappe.get_cached_doc(party_type, party_name)
+            except Exception:
+                party_doc = None
+
+        row = []
+        for mapping in settings.column_mappings:
+            value = _resolve_mapping_value(mapping, doc, party_doc)
+            row.append(value)
+        rows.append(row)
+    return headers, rows
+
+
+def generate_coretax_export(
+    *,
+    company: str,
+    date_from: date | str | None,
+    date_to: date | str | None,
+    direction: str,
+    settings_name: str,
+    filename: str,
+) -> str:
+    settings = frappe.get_cached_doc("CoreTax Export Settings", settings_name)
+    filters: dict[str, object] = {
+        "company": company,
+        "docstatus": 1,
+        "posting_date": ["between", [date_from, date_to]],
+    }
+
+    if direction == "Input":
+        filters["ti_verification_status"] = "Verified"
+        invoices = frappe.get_list("Purchase Invoice", filters=filters, fields="*")
+        party_type = "Supplier"
+    else:
+        filters["out_fp_status"] = "Verified"
+        invoices = frappe.get_list("Sales Invoice", filters=filters, fields="*")
+        party_type = "Customer"
+
+    headers, rows = generate_coretax_rows(invoices, settings, party_type=party_type)
+    return _serialize_rows(rows, headers, settings.file_format or "CSV", filename)
+
+
+def compute_tax_totals(company: str, date_from: date | str | None, date_to: date | str | None) -> dict:
+    return build_register_snapshot(company, date_from, date_to)
+
+
+def build_payment_entry_lines(amount: float, payable_account: str, payment_account: str) -> list[dict]:
+    return [
+        {
+            "account": payable_account,
+            "debit_in_account_currency": amount,
+            "credit_in_account_currency": 0,
+        },
+        {
+            "account": payment_account,
+            "credit_in_account_currency": amount,
+            "debit_in_account_currency": 0,
+        },
+    ]
+
+
+def create_tax_payment_journal_entry(batch: Document) -> str:
+    if not batch.amount or batch.amount <= 0:
+        frappe.throw(_("Amount must be greater than zero to create a Journal Entry."))
+
+    if not batch.payable_account or not batch.payment_account:
+        frappe.throw(_("Please set both Payable Account and Payment Account on the Tax Payment Batch."))
+
+    je = frappe.new_doc("Journal Entry")
+    je.company = batch.company
+    je.posting_date = batch.get("posting_date") or nowdate()
+    je.user_remark = _("{0} payment for period {1}-{2}").format(
+        batch.tax_type or _("Tax"), batch.period_month or "", batch.period_year or ""
+    )
+
+    for line in build_payment_entry_lines(batch.amount, batch.payable_account, batch.payment_account):
+        line["reference_type"] = "Tax Payment Batch"
+        line["reference_name"] = batch.name
+        je.append("accounts", line)
+
+    je.insert(ignore_permissions=True)
+    batch.db_set("journal_entry", je.name)
+    return je.name

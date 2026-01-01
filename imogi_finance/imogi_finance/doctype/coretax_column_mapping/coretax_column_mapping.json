@@ -1,0 +1,62 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "autoincrement",
+  "creation": "2024-01-01 00:00:00.000000",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "label",
+    "source_type",
+    "source",
+    "fixed_value",
+    "default_value"
+  ],
+  "fields": [
+    {
+      "fieldname": "label",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Column Label",
+      "reqd": 1
+    },
+    {
+      "default": "Document Field",
+      "fieldname": "source_type",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Source Type",
+      "options": "Document Field\nParty Field\nComputed DPP\nComputed PPN\nTax Invoice Number\nTax Invoice Date\nFixed Value"
+    },
+    {
+      "fieldname": "source",
+      "fieldtype": "Data",
+      "label": "Source Field / Path",
+      "description": "Document or party fieldname; leave blank for computed values."
+    },
+    {
+      "fieldname": "fixed_value",
+      "fieldtype": "Data",
+      "label": "Fixed Value"
+    },
+    {
+      "fieldname": "default_value",
+      "fieldtype": "Data",
+      "label": "Fallback Value"
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "is_submittable": 0,
+  "issingle": 0,
+  "istable": 1,
+  "links": [],
+  "modified": "2024-01-01 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Imogi Finance",
+  "name": "CoreTax Column Mapping",
+  "owner": "Administrator",
+  "permissions": [],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

@@ -48,5 +48,57 @@
     "charts": [],
     "quick_lists": [],
     "number_cards": []
+  },
+  {
+    "doctype": "Workspace",
+    "name": "Tax Operations",
+    "title": "Tax Operations",
+    "label": "Tax Operations",
+    "icon": "tax",
+    "module": "Imogi Finance",
+    "public": 1,
+    "sequence": 20,
+    "is_hidden": 0,
+    "hide_custom": 0,
+    "content_type": "Blocks",
+    "content": "[{\"id\":\"hdr1\",\"type\":\"header\",\"data\":{\"text\":\"Closings & Payments\",\"col\":12}},{\"id\":\"s1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Tax Period Closing\",\"col\":3}},{\"id\":\"s2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Tax Payment Batch\",\"col\":3}},{\"id\":\"hdr2\",\"type\":\"header\",\"data\":{\"text\":\"Registers\",\"col\":12}},{\"id\":\"s3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"VAT Input Register (Verified)\",\"col\":3}},{\"id\":\"s4\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"VAT Output Register (Verified)\",\"col\":3}},{\"id\":\"s5\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Withholding Register\",\"col\":3}},{\"id\":\"s6\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"PB1 Register\",\"col\":3}},{\"id\":\"hdr3\",\"type\":\"header\",\"data\":{\"text\":\"Needs Review\",\"col\":12}},{\"id\":\"c1\",\"type\":\"card\",\"data\":{\"col\":6,\"links\":[{\"label\":\"Purchase Invoices (Tax Needs Review)\",\"link_to\":\"/app/purchase-invoice?ti_verification_status=Needs+Review\",\"type\":\"URL\"},{\"label\":\"Expense Requests (Tax Needs Review)\",\"link_to\":\"/app/expense-request?ti_verification_status=Needs+Review\",\"type\":\"URL\"},{\"label\":\"Sales Invoices (Tax Needs Review)\",\"link_to\":\"/app/sales-invoice?out_fp_status=Needs+Review\",\"type\":\"URL\"}]}}]",
+    "shortcuts": [
+      {
+        "label": "Tax Period Closing",
+        "link_to": "Tax Period Closing",
+        "type": "DocType"
+      },
+      {
+        "label": "Tax Payment Batch",
+        "link_to": "Tax Payment Batch",
+        "type": "DocType"
+      },
+      {
+        "label": "VAT Input Register (Verified)",
+        "link_to": "VAT Input Register (Verified)",
+        "type": "Report"
+      },
+      {
+        "label": "VAT Output Register (Verified)",
+        "link_to": "VAT Output Register (Verified)",
+        "type": "Report"
+      },
+      {
+        "label": "Withholding Register",
+        "link_to": "Withholding Register",
+        "type": "Report"
+      },
+      {
+        "label": "PB1 Register",
+        "link_to": "PB1 Register",
+        "type": "Report"
+      }
+    ],
+    "cards": [],
+    "custom_blocks": [],
+    "links": [],
+    "charts": [],
+    "quick_lists": [],
+    "number_cards": []
   }
 ]

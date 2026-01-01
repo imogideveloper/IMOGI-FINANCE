@@ -1,0 +1,141 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "field:company",
+  "creation": "2024-01-01 00:00:00.000000",
+  "doctype": "DocType",
+  "editable_grid": 0,
+  "engine": "InnoDB",
+  "field_order": [
+    "company",
+    "tax_settings_section",
+    "ppn_input_account",
+    "ppn_output_account",
+    "pb1_payable_account",
+    "pph_section",
+    "pph_accounts",
+    "tolerance_idr",
+    "rounding_precision",
+    "coretax_section",
+    "coretax_settings_input",
+    "coretax_settings_output"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1,
+      "unique": 1
+    },
+    {
+      "fieldname": "tax_settings_section",
+      "fieldtype": "Section Break",
+      "label": "PPN & PB1 Accounts"
+    },
+    {
+      "fieldname": "ppn_input_account",
+      "fieldtype": "Link",
+      "label": "PPN Input Account",
+      "options": "Account"
+    },
+    {
+      "fieldname": "ppn_output_account",
+      "fieldtype": "Link",
+      "label": "PPN Output Account",
+      "options": "Account"
+    },
+    {
+      "fieldname": "pb1_payable_account",
+      "fieldtype": "Link",
+      "label": "PB1 Payable Account",
+      "options": "Account"
+    },
+    {
+      "collapsible": 1,
+      "fieldname": "pph_section",
+      "fieldtype": "Section Break",
+      "label": "PPh Payable Accounts"
+    },
+    {
+      "fieldname": "pph_accounts",
+      "fieldtype": "Table",
+      "label": "PPh Accounts",
+      "options": "Tax Profile PPh Account"
+    },
+    {
+      "default": 10,
+      "fieldname": "tolerance_idr",
+      "fieldtype": "Currency",
+      "label": "Tolerance (IDR)"
+    },
+    {
+      "default": 2,
+      "fieldname": "rounding_precision",
+      "fieldtype": "Int",
+      "label": "Rounding Precision"
+    },
+    {
+      "fieldname": "coretax_section",
+      "fieldtype": "Section Break",
+      "label": "CoreTax Export Defaults"
+    },
+    {
+      "fieldname": "coretax_settings_input",
+      "fieldtype": "Link",
+      "label": "CoreTax Input VAT Settings",
+      "options": "CoreTax Export Settings"
+    },
+    {
+      "fieldname": "coretax_settings_output",
+      "fieldtype": "Link",
+      "label": "CoreTax Output VAT Settings",
+      "options": "CoreTax Export Settings"
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "is_submittable": 0,
+  "issingle": 0,
+  "links": [],
+  "modified": "2024-01-01 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Imogi Finance",
+  "name": "Tax Profile",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "read": 1,
+      "report": 1,
+      "role": "Tax Reviewer",
+      "share": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

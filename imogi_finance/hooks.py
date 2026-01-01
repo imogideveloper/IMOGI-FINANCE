@@ -147,9 +147,22 @@ jinja = {
 
 doc_events = {
     "Purchase Invoice": {
+        "validate": [
+            "imogi_finance.tax_operations.validate_tax_period_lock",
+        ],
         "before_submit": "imogi_finance.events.purchase_invoice.validate_before_submit",
         "on_submit": "imogi_finance.events.purchase_invoice.on_submit",
         "on_cancel": "imogi_finance.events.purchase_invoice.on_cancel",
+    },
+    "Sales Invoice": {
+        "validate": [
+            "imogi_finance.tax_operations.validate_tax_period_lock",
+        ]
+    },
+    "Expense Request": {
+        "validate": [
+            "imogi_finance.tax_operations.validate_tax_period_lock",
+        ]
     },
     "Payment Entry": {
         "validate": [

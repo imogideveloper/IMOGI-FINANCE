@@ -1,0 +1,154 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "format:TXPAY-{period_year}-{period_month}-{######}",
+  "creation": "2024-01-01 00:00:00.000000",
+  "doctype": "DocType",
+  "editable_grid": 0,
+  "engine": "InnoDB",
+  "field_order": [
+    "company",
+    "tax_type",
+    "period_month",
+    "period_year",
+    "date_from",
+    "date_to",
+    "source_closing",
+    "tax_profile",
+    "posting_date",
+    "payable_account",
+    "payment_account",
+    "amount",
+    "journal_entry"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "default": "PPN",
+      "fieldname": "tax_type",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Tax Type",
+      "options": "PPN\nPPh\nPB1",
+      "reqd": 1
+    },
+    {
+      "default": "1",
+      "fieldname": "period_month",
+      "fieldtype": "Select",
+      "label": "Period Month",
+      "options": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12",
+      "reqd": 1
+    },
+    {
+      "default": "2024",
+      "fieldname": "period_year",
+      "fieldtype": "Int",
+      "label": "Period Year",
+      "reqd": 1
+    },
+    {
+      "fieldname": "date_from",
+      "fieldtype": "Date",
+      "label": "Date From",
+      "read_only": 1
+    },
+    {
+      "fieldname": "date_to",
+      "fieldtype": "Date",
+      "label": "Date To",
+      "read_only": 1
+    },
+    {
+      "fieldname": "source_closing",
+      "fieldtype": "Link",
+      "label": "Source Tax Period Closing",
+      "options": "Tax Period Closing"
+    },
+    {
+      "fieldname": "tax_profile",
+      "fieldtype": "Link",
+      "label": "Tax Profile",
+      "options": "Tax Profile"
+    },
+    {
+      "fieldname": "posting_date",
+      "fieldtype": "Date",
+      "label": "Payment Posting Date"
+    },
+    {
+      "fieldname": "payable_account",
+      "fieldtype": "Link",
+      "label": "Payable Account",
+      "options": "Account"
+    },
+    {
+      "fieldname": "payment_account",
+      "fieldtype": "Link",
+      "label": "Payment Account",
+      "options": "Account"
+    },
+    {
+      "fieldname": "amount",
+      "fieldtype": "Currency",
+      "label": "Amount"
+    },
+    {
+      "fieldname": "journal_entry",
+      "fieldtype": "Link",
+      "label": "Journal Entry",
+      "options": "Journal Entry",
+      "read_only": 1
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "is_submittable": 0,
+  "issingle": 0,
+  "links": [],
+  "modified": "2024-01-01 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Imogi Finance",
+  "name": "Tax Payment Batch",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "read": 1,
+      "report": 1,
+      "role": "Tax Reviewer",
+      "share": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

@@ -1,0 +1,200 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "format:TXCL-{period_year}-{period_month}-{######}",
+  "creation": "2024-01-01 00:00:00.000000",
+  "doctype": "DocType",
+  "editable_grid": 0,
+  "engine": "InnoDB",
+  "field_order": [
+    "company",
+    "period_month",
+    "period_year",
+    "date_from",
+    "date_to",
+    "status",
+    "tax_profile",
+    "section_totals",
+    "input_vat_total",
+    "output_vat_total",
+    "vat_net",
+    "pph_total",
+    "pb1_total",
+    "register_snapshot",
+    "section_exports",
+    "coretax_settings_input",
+    "coretax_settings_output",
+    "coretax_input_export",
+    "coretax_output_export"
+  ],
+  "fields": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1
+    },
+    {
+      "default": "1",
+      "fieldname": "period_month",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Period Month",
+      "options": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12",
+      "reqd": 1
+    },
+    {
+      "default": "2024",
+      "fieldname": "period_year",
+      "fieldtype": "Int",
+      "in_list_view": 1,
+      "label": "Period Year",
+      "reqd": 1
+    },
+    {
+      "fieldname": "date_from",
+      "fieldtype": "Date",
+      "label": "Date From",
+      "read_only": 1
+    },
+    {
+      "fieldname": "date_to",
+      "fieldtype": "Date",
+      "label": "Date To",
+      "read_only": 1
+    },
+    {
+      "default": "Draft",
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Draft\nReviewed\nApproved\nClosed",
+      "reqd": 1
+    },
+    {
+      "fieldname": "tax_profile",
+      "fieldtype": "Link",
+      "label": "Tax Profile",
+      "options": "Tax Profile"
+    },
+    {
+      "fieldname": "section_totals",
+      "fieldtype": "Section Break",
+      "label": "Totals"
+    },
+    {
+      "fieldname": "input_vat_total",
+      "fieldtype": "Currency",
+      "label": "Input VAT Total",
+      "read_only": 1
+    },
+    {
+      "fieldname": "output_vat_total",
+      "fieldtype": "Currency",
+      "label": "Output VAT Total",
+      "read_only": 1
+    },
+    {
+      "fieldname": "vat_net",
+      "fieldtype": "Currency",
+      "label": "VAT Net (Output - Input)",
+      "read_only": 1
+    },
+    {
+      "fieldname": "pph_total",
+      "fieldtype": "Currency",
+      "label": "PPh Total",
+      "read_only": 1
+    },
+    {
+      "fieldname": "pb1_total",
+      "fieldtype": "Currency",
+      "label": "PB1 Total",
+      "read_only": 1
+    },
+    {
+      "fieldname": "register_snapshot",
+      "fieldtype": "Code",
+      "label": "Register Snapshot (JSON)",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_exports",
+      "fieldtype": "Section Break",
+      "label": "CoreTax Exports"
+    },
+    {
+      "fieldname": "coretax_settings_input",
+      "fieldtype": "Link",
+      "label": "CoreTax Input Settings",
+      "options": "CoreTax Export Settings"
+    },
+    {
+      "fieldname": "coretax_settings_output",
+      "fieldtype": "Link",
+      "label": "CoreTax Output Settings",
+      "options": "CoreTax Export Settings"
+    },
+    {
+      "fieldname": "coretax_input_export",
+      "fieldtype": "Attach",
+      "label": "CoreTax Input Export",
+      "read_only": 1
+    },
+    {
+      "fieldname": "coretax_output_export",
+      "fieldtype": "Attach",
+      "label": "CoreTax Output Export",
+      "read_only": 1
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "is_submittable": 1,
+  "issingle": 0,
+  "links": [],
+  "modified": "2024-01-01 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Imogi Finance",
+  "name": "Tax Period Closing",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "cancel": 1,
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "submit": 1,
+      "write": 1
+    },
+    {
+      "cancel": 1,
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts Manager",
+      "share": 1,
+      "submit": 1,
+      "write": 1
+    },
+    {
+      "read": 1,
+      "report": 1,
+      "role": "Tax Reviewer",
+      "share": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}
