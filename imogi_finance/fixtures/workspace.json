@@ -11,7 +11,7 @@
     "is_hidden": 0,
     "hide_custom": 0,
     "content_type": "Blocks",
-    "content": "[{\"id\":\"hdr1\",\"type\":\"header\",\"data\":{\"text\":\"Expense & Approval\",\"col\":12}},{\"id\":\"s1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Expense Request\",\"col\":3}},{\"id\":\"s2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Approval Settings\",\"col\":3}},{\"id\":\"spacer1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"hdr2\",\"type\":\"header\",\"data\":{\"text\":\"Linked Documents\",\"col\":12}},{\"id\":\"c1\",\"type\":\"card\",\"data\":{\"col\":6,\"links\":[{\"label\":\"Purchase Invoice (Linked)\",\"link_to\":\"/app/purchase-invoice?imogi_expense_request!=null\",\"type\":\"URL\"},{\"label\":\"Payment Entry (Linked)\",\"link_to\":\"/app/payment-entry?imogi_expense_request!=null\",\"type\":\"URL\"},{\"label\":\"Asset (Linked)\",\"link_to\":\"/app/asset?imogi_expense_request!=null\",\"type\":\"URL\"}]}},{\"id\":\"spacer2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"hdr3\",\"type\":\"header\",\"data\":{\"text\":\"DocTypes\",\"col\":12}},{\"id\":\"d1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Finance Control Settings\",\"col\":3}},{\"id\":\"d2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"BCA Bank Statement Import\",\"col\":3}},{\"id\":\"d3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Tax Invoice OCR Settings\",\"col\":3}},{\"id\":\"d4\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Tax Profile\",\"col\":3}},{\"id\":\"d5\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Receipt Design\",\"col\":3}},{\"id\":\"d6\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Tax Payment Batch\",\"col\":3}},{\"id\":\"d7\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Tax Period Closing\",\"col\":3}},{\"id\":\"d8\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer Receipt\",\"col\":3}},{\"id\":\"d9\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer Receipt Item\",\"col\":3}},{\"id\":\"d10\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer Receipt Payment\",\"col\":3}},{\"id\":\"d11\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer Receipt Stamp Log\",\"col\":3}},{\"id\":\"d12\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Digital Stamp Template\",\"col\":3}}]",
+    "content": "[{\"id\": \"hdr1\", \"type\": \"header\", \"data\": {\"text\": \"Expense & Approval\", \"col\": 12}}, {\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Expense Request\", \"col\": 3}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Approval Settings\", \"col\": 3}}, {\"id\": \"spacer1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr2\", \"type\": \"header\", \"data\": {\"text\": \"Linked Documents\", \"col\": 12}}, {\"id\": \"c1\", \"type\": \"card\", \"data\": {\"col\": 6, \"links\": [{\"label\": \"Purchase Invoice (Linked)\", \"link_to\": \"/app/purchase-invoice?imogi_expense_request!=null\", \"type\": \"URL\"}, {\"label\": \"Payment Entry (Linked)\", \"link_to\": \"/app/payment-entry?imogi_expense_request!=null\", \"type\": \"URL\"}, {\"label\": \"Asset (Linked)\", \"link_to\": \"/app/asset?imogi_expense_request!=null\", \"type\": \"URL\"}]}}, {\"id\": \"spacer2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr3\", \"type\": \"header\", \"data\": {\"text\": \"DocTypes\", \"col\": 12}}, {\"id\": \"d1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Finance Control Settings\", \"col\": 3}}, {\"id\": \"d2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"BCA Bank Statement Import\", \"col\": 3}}, {\"id\": \"d3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Invoice OCR Settings\", \"col\": 3}}, {\"id\": \"d4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Profile\", \"col\": 3}}, {\"id\": \"d5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Receipt Design\", \"col\": 3}}, {\"id\": \"d6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Payment Batch\", \"col\": 3}}, {\"id\": \"d7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Period Closing\", \"col\": 3}}, {\"id\": \"d8\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Customer Receipt\", \"col\": 3}}, {\"id\": \"d9\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Customer Receipt Item\", \"col\": 3}}, {\"id\": \"d10\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Customer Receipt Payment\", \"col\": 3}}, {\"id\": \"d11\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Customer Receipt Stamp Log\", \"col\": 3}}, {\"id\": \"d12\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Digital Stamp Template\", \"col\": 3}}, {\"id\": \"spacer_tax_1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"tax_hdr1\", \"type\": \"header\", \"data\": {\"text\": \"Closings & Payments\", \"col\": 12}}, {\"id\": \"tax_s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Period Closing\", \"col\": 3}}, {\"id\": \"tax_s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Payment Batch\", \"col\": 3}}, {\"id\": \"tax_hdr2\", \"type\": \"header\", \"data\": {\"text\": \"Registers\", \"col\": 12}}, {\"id\": \"tax_s3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"VAT Input Register (Verified)\", \"col\": 3}}, {\"id\": \"tax_s4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"VAT Output Register (Verified)\", \"col\": 3}}, {\"id\": \"tax_s5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Withholding Register\", \"col\": 3}}, {\"id\": \"tax_s6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"PB1 Register\", \"col\": 3}}, {\"id\": \"tax_hdr3\", \"type\": \"header\", \"data\": {\"text\": \"Needs Review\", \"col\": 12}}, {\"id\": \"tax_c1\", \"type\": \"card\", \"data\": {\"col\": 6, \"links\": [{\"label\": \"Purchase Invoices (Tax Needs Review)\", \"link_to\": \"/app/purchase-invoice?ti_verification_status=Needs+Review\", \"type\": \"URL\"}, {\"label\": \"Expense Requests (Tax Needs Review)\", \"link_to\": \"/app/expense-request?ti_verification_status=Needs+Review\", \"type\": \"URL\"}, {\"label\": \"Sales Invoices (Tax Needs Review)\", \"link_to\": \"/app/sales-invoice?out_fp_status=Needs+Review\", \"type\": \"URL\"}]}}]",
     "shortcuts": [
       {
         "label": "Expense Request",
@@ -96,38 +96,6 @@
       {
         "label": "Digital Stamp Template",
         "link_to": "Digital Stamp Template",
-        "type": "DocType"
-      }
-    ],
-    "cards": [],
-    "custom_blocks": [],
-    "links": [],
-    "charts": [],
-    "quick_lists": [],
-    "number_cards": []
-  },
-  {
-    "doctype": "Workspace",
-    "name": "Tax Operations",
-    "title": "Tax Operations",
-    "label": "Tax Operations",
-    "icon": "tax",
-    "module": "Imogi Finance",
-    "public": 1,
-    "sequence": 20,
-    "is_hidden": 0,
-    "hide_custom": 0,
-    "content_type": "Blocks",
-    "content": "[{\"id\":\"hdr1\",\"type\":\"header\",\"data\":{\"text\":\"Closings & Payments\",\"col\":12}},{\"id\":\"s1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Tax Period Closing\",\"col\":3}},{\"id\":\"s2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Tax Payment Batch\",\"col\":3}},{\"id\":\"hdr2\",\"type\":\"header\",\"data\":{\"text\":\"Registers\",\"col\":12}},{\"id\":\"s3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"VAT Input Register (Verified)\",\"col\":3}},{\"id\":\"s4\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"VAT Output Register (Verified)\",\"col\":3}},{\"id\":\"s5\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Withholding Register\",\"col\":3}},{\"id\":\"s6\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"PB1 Register\",\"col\":3}},{\"id\":\"hdr3\",\"type\":\"header\",\"data\":{\"text\":\"Needs Review\",\"col\":12}},{\"id\":\"c1\",\"type\":\"card\",\"data\":{\"col\":6,\"links\":[{\"label\":\"Purchase Invoices (Tax Needs Review)\",\"link_to\":\"/app/purchase-invoice?ti_verification_status=Needs+Review\",\"type\":\"URL\"},{\"label\":\"Expense Requests (Tax Needs Review)\",\"link_to\":\"/app/expense-request?ti_verification_status=Needs+Review\",\"type\":\"URL\"},{\"label\":\"Sales Invoices (Tax Needs Review)\",\"link_to\":\"/app/sales-invoice?out_fp_status=Needs+Review\",\"type\":\"URL\"}]}}]",
-    "shortcuts": [
-      {
-        "label": "Tax Period Closing",
-        "link_to": "Tax Period Closing",
-        "type": "DocType"
-      },
-      {
-        "label": "Tax Payment Batch",
-        "link_to": "Tax Payment Batch",
         "type": "DocType"
       },
       {
