@@ -1,0 +1,45 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "field:template_name",
+  "creation": "2024-01-01 00:00:00.000000",
+  "default_view": "List",
+  "doctype": "DocType",
+  "editable_grid": 0,
+  "engine": "InnoDB",
+  "field_order": [
+    "template_name",
+    "provider",
+    "is_active",
+    "stamp_denomination",
+    "stamp_image",
+    "verification_url_pattern",
+    "default_width_mm",
+    "default_height_mm",
+    "default_opacity_pct"
+  ],
+  "fields": [
+    { "fieldname": "template_name", "fieldtype": "Data", "label": "Template Name", "reqd": 1 },
+    { "fieldname": "provider", "fieldtype": "Data", "label": "Provider" },
+    { "default": "1", "fieldname": "is_active", "fieldtype": "Check", "label": "Is Active" },
+    { "fieldname": "stamp_denomination", "fieldtype": "Currency", "label": "Stamp Denomination" },
+    { "fieldname": "stamp_image", "fieldtype": "Attach Image", "label": "Stamp Image" },
+    { "fieldname": "verification_url_pattern", "fieldtype": "Data", "label": "Verification URL Pattern" },
+    { "fieldname": "default_width_mm", "fieldtype": "Int", "label": "Default Width (mm)" },
+    { "fieldname": "default_height_mm", "fieldtype": "Int", "label": "Default Height (mm)" },
+    { "fieldname": "default_opacity_pct", "fieldtype": "Int", "label": "Default Opacity (%)", "default": "100" }
+  ],
+  "index_web_pages_for_search": 1,
+  "links": [],
+  "modified": "2024-01-01 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Imogi Finance",
+  "name": "Digital Stamp Template",
+  "owner": "Administrator",
+  "permissions": [
+    { "role": "System Manager", "create": 1, "read": 1, "write": 1, "delete": 1, "email": 1, "print": 1, "report": 1, "share": 1 }
+  ],
+  "show_name_in_global_search": 1,
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

@@ -1,0 +1,140 @@
+{% set design = frappe.get_doc("Receipt Design", doc.receipt_design) if doc.receipt_design else frappe._dict({
+  "custom_wording_title": "KUITANSI",
+  "custom_wording_body": "Telah diterima dari {{ doc.customer }} sejumlah {{ frappe.utils.fmt_money(doc.total_amount) }}.",
+  "show_detail_table": 1,
+  "compact_layout": 0,
+  "stamp_mode_default": "Physical",
+  "stamp_position": "Top Right",
+  "stamp_width_mm": 40,
+  "stamp_height_mm": 50,
+  "digital_stamp_opacity_pct": 100,
+  "digital_stamp_scale_pct": 100,
+  "show_qr": 0
+}) %}
+{% set template = frappe.get_doc("Digital Stamp Template", doc.digital_stamp_template) if doc.digital_stamp_template else None %}
+{% set stamp_image = doc.digital_stamp_image or (template.stamp_image if template else None) or design.digital_stamp_image %}
+{% set verification_url = build_verification_url((template.verification_url_pattern if template else design.digital_stamp_url_pattern), doc.digital_stamp_reference) %}
+{% set stamp_class = (design.stamp_position or "Top Right").lower().replace(" ", "-") %}
+{% set stamp_style = "width:%smm;height:%smm;" % (design.stamp_width_mm or 40, design.stamp_height_mm or 50) %}
+{% if design.stamp_position == "Custom Absolute" %}
+  {% set stamp_style = stamp_style + "position:absolute;top:%smm;left:%smm;" % (design.stamp_custom_top_mm or 0, design.stamp_custom_left_mm or 0) %}
+{% endif %}
+
+<style>
+  .receipt-container { position: relative; font-size: 10pt; }
+  .receipt-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .receipt-title { font-size: 16pt; font-weight: bold; letter-spacing: 1px; }
+  .receipt-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .receipt-table th, .receipt-table td { border: 1px solid #ccc; padding: 6px; }
+  .stamp-box { border: 1px dashed #777; text-align: center; font-size: 9pt; color: #555; position: absolute; }
+  .stamp-top-right { top: 0; right: 0; }
+  .stamp-top-left { top: 0; left: 0; }
+  .stamp-bottom-right { bottom: 0; right: 0; }
+  .stamp-bottom-left { bottom: 0; left: 0; }
+  .stamp-watermark { position: absolute; top: 40%; left: 10%; right: 10%; text-align: center; font-size: 18pt; color: rgba(180,0,0,0.35); transform: rotate(-18deg); font-weight: bold; }
+  .signature-block { margin-top: 24px; text-align: right; }
+  .signature-line { margin-top: 60px; border-top: 1px solid #555; display: inline-block; min-width: 160px; }
+</style>
+
+<div class="receipt-container">
+  {% if doc.stamp_mode == "Digital" and doc.digital_stamp_status != "Issued" %}
+    <div class="stamp-watermark">MATERAI DIGITAL BELUM TERBIT</div>
+  {% endif %}
+  <div class="receipt-header">
+    <div>
+      <div class="receipt-title">{{ design.custom_wording_title or "KUITANSI" }}</div>
+      <div><strong>No:</strong> {{ doc.name }}</div>
+      <div><strong>Tanggal:</strong> {{ frappe.utils.format_date(doc.posting_date) }}</div>
+      <div><strong>Pelanggan:</strong> {{ doc.customer }}</div>
+      {% if doc.customer_reference_no %}<div><strong>Customer Ref:</strong> {{ doc.customer_reference_no }}</div>{% endif %}
+    </div>
+    <div style="text-align:right">
+      {% if doc.company %}<div><strong>{{ doc.company }}</strong></div>{% endif %}
+      <div><strong>Total:</strong> {{ frappe.utils.fmt_money(doc.total_amount) }}</div>
+      <div><strong>Terbilang:</strong> {{ terbilang_id(doc.total_amount) }}</div>
+    </div>
+  </div>
+
+  <div>
+    {{ frappe.render_template(design.custom_wording_body or "", {'doc': doc, 'frappe': frappe}) if design.custom_wording_body else '' }}
+  </div>
+
+  {% if design.show_detail_table %}
+  <table class="receipt-table">
+    <thead>
+      <tr>
+        <th style="width:40%">Referensi</th>
+        <th style="width:20%">Tanggal</th>
+        <th style="width:20%">Jumlah Ditagih</th>
+        <th style="width:20%">Outstanding</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in doc.items %}
+      <tr>
+        <td>{{ row.sales_invoice or row.sales_order }}</td>
+        <td>{{ frappe.utils.format_date(row.reference_date) }}</td>
+        <td style="text-align:right">{{ frappe.utils.fmt_money(row.amount_to_collect) }}</td>
+        <td style="text-align:right">{{ frappe.utils.fmt_money(row.reference_outstanding) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <table class="receipt-table" style="margin-top:12px;">
+    <tbody>
+      <tr>
+        <th style="width:70%">Keterangan</th>
+        <th style="width:30%">Jumlah</th>
+      </tr>
+      <tr>
+        <td>{{ doc.remarks or "Pembayaran sesuai referensi." }}</td>
+        <td style="text-align:right">{{ frappe.utils.fmt_money(doc.total_amount) }}</td>
+      </tr>
+      <tr>
+        <td><strong>Total Dibayar</strong></td>
+        <td style="text-align:right">{{ frappe.utils.fmt_money(doc.paid_amount) }}</td>
+      </tr>
+      <tr>
+        <td><strong>Sisa Outstanding</strong></td>
+        <td style="text-align:right">{{ frappe.utils.fmt_money(doc.outstanding_amount) }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="signature-block">
+    {% if design.signature_image %}
+      <div><img src="{{ design.signature_image }}" style="max-height:80px"></div>
+    {% endif %}
+    <div class="signature-line"></div>
+    {% if design.signer_name %}<div>{{ design.signer_name }}</div>{% endif %}
+    {% if design.signer_role %}<div style="color:#777">{{ design.signer_role }}</div>{% endif %}
+  </div>
+
+  {% if doc.stamp_mode != "None" %}
+    <div class="stamp-box stamp-{{ stamp_class }}" style="{{ stamp_style }}">
+      {% if doc.stamp_mode == "Physical" %}
+        <div style="margin-top:40%">Area Materai Fisik</div>
+      {% elif design.show_qr or design.stamp_mode_default == "Digital QR" %}
+        {% set qr_code_image = None %}
+        {% if verification_url and frappe.utils.get_qr_code is defined %}
+          {% set qr_code_image = frappe.utils.get_qr_code(verification_url, 200) %}
+        {% endif %}
+        {% if qr_code_image %}
+          <img src="{{ qr_code_image }}" style="width:100%;height:100%;object-fit:contain;opacity:{{ (design.digital_stamp_opacity_pct or 100)/100 }};">
+        {% endif %}
+        <div style="font-size:8pt;word-break:break-all;">{{ verification_url or doc.digital_stamp_reference }}</div>
+      {% else %}
+        {% if stamp_image %}
+          <img src="{{ stamp_image }}" style="width:100%;height:100%;object-fit:contain;opacity:{{ (design.digital_stamp_opacity_pct or 100)/100 }};">
+        {% else %}
+          <div style="margin-top:30%">Materai Digital</div>
+        {% endif %}
+        {% if verification_url %}
+          <div style="font-size:8pt;word-break:break-all;">{{ verification_url }}</div>
+        {% endif %}
+      {% endif %}
+    </div>
+  {% endif %}
+</div>

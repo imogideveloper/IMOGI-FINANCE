@@ -1,0 +1,47 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "creation": "2024-01-01 00:00:00.000000",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "payment_entry",
+    "paid_amount",
+    "posting_date"
+  ],
+  "fields": [
+    {
+      "fieldname": "payment_entry",
+      "fieldtype": "Link",
+      "label": "Payment Entry",
+      "options": "Payment Entry",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "paid_amount",
+      "fieldtype": "Currency",
+      "label": "Paid Amount",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "posting_date",
+      "fieldtype": "Date",
+      "label": "Posting Date",
+      "read_only": 1,
+      "in_list_view": 1
+    }
+  ],
+  "idx": 0,
+  "in_create": 0,
+  "links": [],
+  "modified": "2024-01-01 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Imogi Finance",
+  "name": "Customer Receipt Payment",
+  "owner": "Administrator",
+  "permissions": [],
+  "quick_entry": 1,
+  "track_changes": 1
+}

@@ -76,10 +76,12 @@ doctype_list_js = {
 # ----------
 
 # add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "imogi_finance.utils.jinja_methods",
-# 	"filters": "imogi_finance.utils.jinja_filters"
-# }
+jinja = {
+    "methods": [
+        "imogi_finance.receipt_control.utils.terbilang_id",
+        "imogi_finance.receipt_control.utils.build_verification_url",
+    ]
+}
 
 # Installation
 # ------------
@@ -145,8 +147,20 @@ doc_events = {
         "on_cancel": "imogi_finance.events.purchase_invoice.on_cancel",
     },
     "Payment Entry": {
-        "on_submit": "imogi_finance.events.payment_entry.on_submit",
-        "on_cancel": "imogi_finance.events.payment_entry.on_cancel",
+        "validate": [
+            "imogi_finance.receipt_control.payment_entry_hooks.validate_customer_receipt_link",
+        ],
+        "before_submit": [
+            "imogi_finance.receipt_control.payment_entry_hooks.validate_customer_receipt_link",
+        ],
+        "on_submit": [
+            "imogi_finance.events.payment_entry.on_submit",
+            "imogi_finance.receipt_control.payment_entry_hooks.record_payment_entry",
+        ],
+        "on_cancel": [
+            "imogi_finance.events.payment_entry.on_cancel",
+            "imogi_finance.receipt_control.payment_entry_hooks.remove_payment_entry",
+        ],
     },
     "Asset": {
         "on_submit": "imogi_finance.events.asset.on_submit",
@@ -263,9 +277,24 @@ fixtures = [
             "Purchase Invoice-imogi_request_type",
             "Purchase Invoice-imogi_pph_type",
             "Payment Entry-imogi_expense_request",
+            "Payment Entry-customer_receipt",
             "Asset-imogi_expense_request",
         ]]],
     },
     {"dt": "Workspace", "filters": [["name", "=", "IMOGI FINANCE"]]},
     {"dt": "Workflow", "filters": [["name", "=", "Expense Request Workflow"]]},
+    {
+        "dt": "Role",
+        "filters": [
+            [
+                "name",
+                "in",
+                [
+                    "Receipt Maker",
+                    "Receipt Approver",
+                    "Receipt Auditor",
+                ],
+            ]
+        ],
+    },
 ]

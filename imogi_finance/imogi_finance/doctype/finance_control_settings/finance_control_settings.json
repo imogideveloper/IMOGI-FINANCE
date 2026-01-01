@@ -1,0 +1,123 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "prompt",
+  "creation": "2024-01-01 00:00:00.000000",
+  "default_view": "Form",
+  "doctype": "DocType",
+  "editable_grid": 0,
+  "engine": "InnoDB",
+  "field_order": [
+    "section_receipt",
+    "enable_customer_receipt",
+    "receipt_mode",
+    "allow_mixed_payment",
+    "default_receipt_design",
+    "column_stamp",
+    "enable_digital_stamp",
+    "digital_stamp_policy",
+    "digital_stamp_threshold_amount",
+    "allow_physical_stamp_fallback",
+    "digital_stamp_provider",
+    "provider_mode"
+  ],
+  "fields": [
+    {
+      "fieldname": "section_receipt",
+      "fieldtype": "Section Break",
+      "label": "Customer Receipt Control"
+    },
+    {
+      "default": "0",
+      "fieldname": "enable_customer_receipt",
+      "fieldtype": "Check",
+      "label": "Enable Customer Receipt"
+    },
+    {
+      "default": "OFF",
+      "fieldname": "receipt_mode",
+      "fieldtype": "Select",
+      "label": "Receipt Mode",
+      "options": "OFF\nOptional\nMandatory Strict"
+    },
+    {
+      "default": "0",
+      "fieldname": "allow_mixed_payment",
+      "fieldtype": "Check",
+      "label": "Allow Mixed Payment"
+    },
+    {
+      "fieldname": "default_receipt_design",
+      "fieldtype": "Link",
+      "label": "Default Receipt Design",
+      "options": "Receipt Design"
+    },
+    {
+      "fieldname": "column_stamp",
+      "fieldtype": "Column Break"
+    },
+    {
+      "default": "0",
+      "fieldname": "enable_digital_stamp",
+      "fieldtype": "Check",
+      "label": "Enable Digital Stamp"
+    },
+    {
+      "default": "Optional",
+      "fieldname": "digital_stamp_policy",
+      "fieldtype": "Select",
+      "label": "Digital Stamp Policy",
+      "options": "Optional\nMandatory by Threshold\nMandatory Always"
+    },
+    {
+      "default": "0",
+      "fieldname": "digital_stamp_threshold_amount",
+      "fieldtype": "Currency",
+      "label": "Digital Stamp Threshold Amount"
+    },
+    {
+      "default": "0",
+      "fieldname": "allow_physical_stamp_fallback",
+      "fieldtype": "Check",
+      "label": "Allow Physical Stamp Fallback"
+    },
+    {
+      "fieldname": "digital_stamp_provider",
+      "fieldtype": "Select",
+      "label": "Digital Stamp Provider",
+      "options": "Privy\nPeruri\nMekari\nCustom Manual Upload"
+    },
+    {
+      "fieldname": "provider_mode",
+      "fieldtype": "Select",
+      "label": "Provider Mode",
+      "options": "API Auto\nManual Upload"
+    }
+  ],
+  "hide_toolbar": 0,
+  "index_web_pages_for_search": 1,
+  "issingle": 1,
+  "links": [],
+  "modified": "2024-01-01 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Imogi Finance",
+  "name": "Finance Control Settings",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "show_name_in_global_search": 0,
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

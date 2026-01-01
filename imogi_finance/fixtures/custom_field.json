@@ -53,5 +53,17 @@
     "label": "Expense Request",
     "options": "Expense Request",
     "allow_on_submit": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Payment Entry-customer_receipt",
+    "dt": "Payment Entry",
+    "fieldname": "customer_receipt",
+    "fieldtype": "Link",
+    "insert_after": "reference_no",
+    "label": "Customer Receipt",
+    "options": "Customer Receipt",
+    "allow_on_submit": 1,
+    "description": "Controlled customer receipt reference"
   }
 ]

@@ -1,0 +1,187 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "field:design_name",
+  "creation": "2024-01-01 00:00:00.000000",
+  "default_view": "List",
+  "doctype": "DocType",
+  "editable_grid": 0,
+  "engine": "InnoDB",
+  "field_order": [
+    "design_name",
+    "is_active",
+    "show_detail_table",
+    "compact_layout",
+    "custom_wording_title",
+    "custom_wording_body",
+    "section_stamp",
+    "stamp_mode_default",
+    "stamp_position",
+    "stamp_width_mm",
+    "stamp_height_mm",
+    "stamp_custom_top_mm",
+    "stamp_custom_left_mm",
+    "column_stamp_visual",
+    "digital_stamp_image",
+    "digital_stamp_opacity_pct",
+    "digital_stamp_scale_pct",
+    "digital_stamp_url_pattern",
+    "show_qr",
+    "section_signature",
+    "signer_name",
+    "signer_role",
+    "signature_image",
+    "company_stamp_image"
+  ],
+  "fields": [
+    {
+      "fieldname": "design_name",
+      "fieldtype": "Data",
+      "in_global_search": 1,
+      "label": "Design Name",
+      "reqd": 1
+    },
+    {
+      "default": "1",
+      "fieldname": "is_active",
+      "fieldtype": "Check",
+      "label": "Is Active"
+    },
+    {
+      "default": "1",
+      "fieldname": "show_detail_table",
+      "fieldtype": "Check",
+      "label": "Show Detail Table"
+    },
+    {
+      "default": "0",
+      "fieldname": "compact_layout",
+      "fieldtype": "Check",
+      "label": "Compact Layout"
+    },
+    {
+      "default": "KUITANSI",
+      "fieldname": "custom_wording_title",
+      "fieldtype": "Data",
+      "label": "Custom Wording Title"
+    },
+    {
+      "fieldname": "custom_wording_body",
+      "fieldtype": "Small Text",
+      "label": "Custom Wording Body",
+      "description": "Supports Jinja placeholders"
+    },
+    {
+      "fieldname": "section_stamp",
+      "fieldtype": "Section Break",
+      "label": "Stamp Layout"
+    },
+    {
+      "default": "None",
+      "fieldname": "stamp_mode_default",
+      "fieldtype": "Select",
+      "label": "Stamp Mode Default",
+      "options": "None\nPhysical\nDigital Image\nDigital QR"
+    },
+    {
+      "default": "Top Right",
+      "fieldname": "stamp_position",
+      "fieldtype": "Select",
+      "label": "Stamp Position",
+      "options": "Top Right\nTop Left\nBottom Right\nBottom Left\nCustom Absolute"
+    },
+    {
+      "default": "40",
+      "fieldname": "stamp_width_mm",
+      "fieldtype": "Int",
+      "label": "Stamp Width (mm)"
+    },
+    {
+      "default": "50",
+      "fieldname": "stamp_height_mm",
+      "fieldtype": "Int",
+      "label": "Stamp Height (mm)"
+    },
+    {
+      "fieldname": "stamp_custom_top_mm",
+      "fieldtype": "Int",
+      "label": "Stamp Custom Top (mm)"
+    },
+    {
+      "fieldname": "stamp_custom_left_mm",
+      "fieldtype": "Int",
+      "label": "Stamp Custom Left (mm)"
+    },
+    {
+      "fieldname": "column_stamp_visual",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "digital_stamp_image",
+      "fieldtype": "Attach Image",
+      "label": "Digital Stamp Image"
+    },
+    {
+      "default": "100",
+      "fieldname": "digital_stamp_opacity_pct",
+      "fieldtype": "Int",
+      "label": "Digital Stamp Opacity (%)"
+    },
+    {
+      "default": "100",
+      "fieldname": "digital_stamp_scale_pct",
+      "fieldtype": "Int",
+      "label": "Digital Stamp Scale (%)"
+    },
+    {
+      "fieldname": "digital_stamp_url_pattern",
+      "fieldtype": "Data",
+      "label": "Digital Stamp URL Pattern",
+      "description": "Use {{stamp_ref}} placeholder"
+    },
+    {
+      "default": "0",
+      "fieldname": "show_qr",
+      "fieldtype": "Check",
+      "label": "Show QR"
+    },
+    {
+      "fieldname": "section_signature",
+      "fieldtype": "Section Break",
+      "label": "Signature"
+    },
+    {
+      "fieldname": "signer_name",
+      "fieldtype": "Data",
+      "label": "Signer Name"
+    },
+    {
+      "fieldname": "signer_role",
+      "fieldtype": "Data",
+      "label": "Signer Role"
+    },
+    {
+      "fieldname": "signature_image",
+      "fieldtype": "Attach Image",
+      "label": "Signature Image"
+    },
+    {
+      "fieldname": "company_stamp_image",
+      "fieldtype": "Attach Image",
+      "label": "Company Stamp Image"
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "links": [],
+  "modified": "2024-01-01 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Imogi Finance",
+  "name": "Receipt Design",
+  "owner": "Administrator",
+  "permissions": [
+    { "role": "System Manager", "create": 1, "read": 1, "write": 1, "delete": 1, "email": 1, "print": 1, "report": 1, "share": 1 }
+  ],
+  "show_name_in_global_search": 1,
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

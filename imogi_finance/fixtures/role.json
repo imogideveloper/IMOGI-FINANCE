@@ -1,0 +1,20 @@
+[
+  {
+    "doctype": "Role",
+    "name": "Receipt Maker",
+    "role_name": "Receipt Maker",
+    "desk_access": 1
+  },
+  {
+    "doctype": "Role",
+    "name": "Receipt Approver",
+    "role_name": "Receipt Approver",
+    "desk_access": 1
+  },
+  {
+    "doctype": "Role",
+    "name": "Receipt Auditor",
+    "role_name": "Receipt Auditor",
+    "desk_access": 1
+  }
+]

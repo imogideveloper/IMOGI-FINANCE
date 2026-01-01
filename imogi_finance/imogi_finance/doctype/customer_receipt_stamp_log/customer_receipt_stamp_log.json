@@ -1,0 +1,30 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "creation": "2024-01-01 00:00:00.000000",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "action",
+    "timestamp",
+    "user",
+    "provider_response"
+  ],
+  "fields": [
+    { "fieldname": "action", "fieldtype": "Data", "label": "Action", "in_list_view": 1 },
+    { "fieldname": "timestamp", "fieldtype": "Datetime", "label": "Timestamp", "in_list_view": 1 },
+    { "fieldname": "user", "fieldtype": "Data", "label": "User" },
+    { "fieldname": "provider_response", "fieldtype": "Small Text", "label": "Provider Response" }
+  ],
+  "idx": 0,
+  "links": [],
+  "modified": "2024-01-01 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Imogi Finance",
+  "name": "Customer Receipt Stamp Log",
+  "owner": "Administrator",
+  "permissions": [],
+  "quick_entry": 1,
+  "track_changes": 1
+}

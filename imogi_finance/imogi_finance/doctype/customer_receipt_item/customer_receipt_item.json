@@ -1,0 +1,63 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "creation": "2024-01-01 00:00:00.000000",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "sales_invoice",
+    "sales_order",
+    "reference_date",
+    "reference_outstanding",
+    "amount_to_collect"
+  ],
+  "fields": [
+    {
+      "fieldname": "sales_invoice",
+      "fieldtype": "Link",
+      "label": "Sales Invoice",
+      "options": "Sales Invoice",
+      "in_list_view": 1,
+      "columns": 2
+    },
+    {
+      "fieldname": "sales_order",
+      "fieldtype": "Link",
+      "label": "Sales Order",
+      "options": "Sales Order",
+      "in_list_view": 1,
+      "columns": 2
+    },
+    {
+      "fieldname": "reference_date",
+      "fieldtype": "Date",
+      "label": "Reference Date",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "reference_outstanding",
+      "fieldtype": "Currency",
+      "label": "Reference Outstanding",
+      "read_only": 1
+    },
+    {
+      "fieldname": "amount_to_collect",
+      "fieldtype": "Currency",
+      "label": "Amount to Collect",
+      "reqd": 1,
+      "in_list_view": 1
+    }
+  ],
+  "idx": 0,
+  "in_create": 0,
+  "links": [],
+  "modified": "2024-01-01 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Imogi Finance",
+  "name": "Customer Receipt Item",
+  "owner": "Administrator",
+  "permissions": [],
+  "quick_entry": 1,
+  "track_changes": 1
+}
