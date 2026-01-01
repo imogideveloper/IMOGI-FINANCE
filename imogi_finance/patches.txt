@@ -5,3 +5,4 @@
 [post_model_sync]
 # Patches added in this section will be executed after doctypes are migrated
 imogi_finance.patches.post_model_sync.update_workspace_sidebar_categories
+imogi_finance.patches.post_model_sync.ensure_coretax_export_settings
