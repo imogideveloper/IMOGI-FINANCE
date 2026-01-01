@@ -164,7 +164,8 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
 
     settings = get_settings()
     if (
-        settings.get("require_verification_before_create_pi_from_expense_request")
+        settings.get("enable_tax_invoice_ocr")
+        and settings.get("require_verification_before_create_pi_from_expense_request")
         and getattr(request, "ti_verification_status", "") != "Verified"
     ):
         frappe.throw(
