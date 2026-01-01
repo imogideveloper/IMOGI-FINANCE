@@ -1,7 +1,7 @@
 {
   "actions": [],
   "allow_rename": 0,
-  "autoname": "format:ER-{######}",
+  "autoname": "format:ER-{YYYY}-{######}",
   "creation": "",
   "docstatus": 0,
   "doctype": "DocType",

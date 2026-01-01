@@ -6,14 +6,15 @@
     "document_type": "Expense Request",
     "is_active": 1,
     "module": "Imogi Finance",
-    "override_status": 0,
+    "override_status": 1,
     "workflow_state_field": "workflow_state",
     "docstatus": 0,
     "actions": [
       { "action": "Submit", "allowed": "All" },
       { "action": "Approve", "allowed": "Expense Approver" },
       { "action": "Reject", "allowed": "Expense Approver" },
-      { "action": "Close", "allowed": "Expense Approver" }
+      { "action": "Close", "allowed": "Expense Approver" },
+      { "action": "Reopen", "allowed": "System Manager" }
     ],
     "states": [
       {
@@ -44,25 +45,25 @@
         "doctype": "Workflow Document State",
         "state": "Approved",
         "doc_status": "1",
-        "allow_edit": "System Manager"
+        "allow_edit": ""
       },
       {
         "doctype": "Workflow Document State",
         "state": "Rejected",
         "doc_status": "1",
-        "allow_edit": "System Manager"
+        "allow_edit": ""
       },
       {
         "doctype": "Workflow Document State",
         "state": "Linked",
         "doc_status": "1",
-        "allow_edit": "System Manager"
+        "allow_edit": ""
       },
       {
         "doctype": "Workflow Document State",
         "state": "Closed",
         "doc_status": "1",
-        "allow_edit": "System Manager"
+        "allow_edit": ""
       }
     ],
     "transitions": [
@@ -140,6 +141,24 @@
         "state": "Linked",
         "next_state": "Closed",
         "allowed": "Expense Approver"
+      },
+      {
+        "doctype": "Workflow Transition",
+        "action": "Reopen",
+        "state": "Rejected",
+        "next_state": "Draft",
+        "allowed": "System Manager",
+        "doc_status": "0",
+        "allow_self_approval": 0
+      },
+      {
+        "doctype": "Workflow Transition",
+        "action": "Reopen",
+        "state": "Closed",
+        "next_state": "Pending Level 1",
+        "allowed": "System Manager",
+        "doc_status": "1",
+        "allow_self_approval": 0
       }
     ]
   },
