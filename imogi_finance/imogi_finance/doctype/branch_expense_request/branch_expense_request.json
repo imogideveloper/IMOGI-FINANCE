@@ -18,9 +18,18 @@
     "purpose",
     "currency",
     "fiscal_year",
+    "taxes_section",
+    "is_ppn_applicable",
+    "ppn_template",
+    "column_break_tax",
+    "is_pph_applicable",
+    "pph_type",
+    "pph_base_amount",
     "items_section",
     "items",
     "column_break_totals",
+    "amount",
+    "expense_account",
     "total_amount",
     "budget_check_status",
     "budget_check_message",
@@ -99,6 +108,49 @@
       "reqd": 1
     },
     {
+      "collapsible": 1,
+      "fieldname": "taxes_section",
+      "fieldtype": "Section Break",
+      "label": "\ud83e\ude9e Taxes (PPN & PPh)"
+    },
+    {
+      "default": "0",
+      "fieldname": "is_ppn_applicable",
+      "fieldtype": "Check",
+      "label": "Apply PPN (VAT)"
+    },
+    {
+      "depends_on": "eval:doc.is_ppn_applicable==1",
+      "fieldname": "ppn_template",
+      "fieldtype": "Link",
+      "label": "PPN Template",
+      "mandatory_depends_on": "eval:doc.is_ppn_applicable==1",
+      "options": "Purchase Taxes and Charges Template"
+    },
+    {
+      "fieldname": "column_break_tax",
+      "fieldtype": "Column Break"
+    },
+    {
+      "default": "0",
+      "fieldname": "is_pph_applicable",
+      "fieldtype": "Check",
+      "label": "Apply PPh (Withholding Tax)"
+    },
+    {
+      "depends_on": "eval:doc.is_pph_applicable==1",
+      "fieldname": "pph_type",
+      "fieldtype": "Link",
+      "label": "PPh Type",
+      "options": "Tax Withholding Category"
+    },
+    {
+      "depends_on": "eval:doc.is_pph_applicable==1",
+      "fieldname": "pph_base_amount",
+      "fieldtype": "Currency",
+      "label": "PPh Base Amount"
+    },
+    {
       "collapsible": 0,
       "fieldname": "items_section",
       "fieldtype": "Section Break",
@@ -114,6 +166,23 @@
     {
       "fieldname": "column_break_totals",
       "fieldtype": "Column Break"
+    },
+    {
+      "bold": 1,
+      "description": "Sum of item amounts.",
+      "fieldname": "amount",
+      "fieldtype": "Currency",
+      "in_list_view": 1,
+      "label": "Total Amount",
+      "read_only": 1
+    },
+    {
+      "description": "Auto-filled when all items share the same account.",
+      "fieldname": "expense_account",
+      "fieldtype": "Link",
+      "label": "Expense Account",
+      "options": "Account",
+      "read_only": 1
     },
     {
       "bold": 1,
