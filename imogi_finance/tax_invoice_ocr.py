@@ -443,6 +443,9 @@ def run_ocr(docname: str, doctype: str):
     if not cint(settings.get("enable_tax_invoice_ocr", 0)):
         frappe.throw(_("Tax Invoice OCR is disabled. Enable it in Tax Invoice OCR Settings."))
 
+    provider = settings.get("ocr_provider", "Manual Only")
+    _validate_provider_settings(provider, settings)
+
     doc = frappe.get_doc(doctype, docname)
     _enqueue_ocr(doc, doctype)
     return {"queued": True}
