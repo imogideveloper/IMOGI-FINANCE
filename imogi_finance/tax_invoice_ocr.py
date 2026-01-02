@@ -268,10 +268,13 @@ def _validate_provider_settings(provider: str, settings: dict[str, Any]) -> None
                 raise ValidationError(
                     _("Google Vision project ID is required when using a regional endpoint. Please update Tax Invoice OCR Settings.")
                 )
-            if not settings.get("google_vision_location"):
+            location = settings.get("google_vision_location")
+            if not location:
                 raise ValidationError(
                     _("Google Vision location is required when using a regional endpoint. Please update Tax Invoice OCR Settings.")
                 )
+            if location not in {"us", "eu"}:
+                raise ValidationError(_("Google Vision location must be 'us' or 'eu' for regional endpoints."))
         return
 
     if provider == "Tesseract":
@@ -314,6 +317,8 @@ def _build_google_vision_url(settings: dict[str, Any]) -> str:
             raise ValidationError(
                 _("Google Vision project ID and location are required when using a regional endpoint. Please update Tax Invoice OCR Settings.")
             )
+        if location not in {"us", "eu"}:
+            raise ValidationError(_("Google Vision location must be 'us' or 'eu' for regional endpoints."))
         path = f"/v1/projects/{project_id}/locations/{location}/files:annotate"
     elif not path or path == "/":
         path = "/v1/files:annotate"
