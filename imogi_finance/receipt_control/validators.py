@@ -28,11 +28,11 @@ class ReceiptInfo:
     customer: str
     company: str
     receipt_purpose: str
-    branch: Optional[str] = None
     total_amount: Decimal
     paid_amount: Decimal
     status: str
     docstatus: int
+    branch: Optional[str] = None
     items: List[ReceiptItem] = field(default_factory=list)
     outstanding_amount: Optional[Decimal] = None
 
@@ -58,8 +58,8 @@ class PaymentEntryInfo:
     customer_receipt: Optional[str]
     customer: Optional[str]
     company: Optional[str]
-    branch: Optional[str] = None
     paid_amount: Decimal
+    branch: Optional[str] = None
     references: List[PaymentReference] = field(default_factory=list)
     party_type: Optional[str] = None
     payment_type: Optional[str] = None

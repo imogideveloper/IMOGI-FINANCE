@@ -71,6 +71,7 @@ def _fake_budget_result(available):
 
 
 def _build_request(monkeypatch, *, available_map):
+    frappe.throw = _throw
     monkeypatch.setattr(branch_expense_request, "get_settings", lambda: _settings(), raising=False)
     monkeypatch.setattr(
         branch_expense_request.service,

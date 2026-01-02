@@ -89,10 +89,15 @@ def get_settings() -> dict[str, Any]:
     if not frappe.db:
         return DEFAULT_SETTINGS.copy()
 
-    settings = frappe._dict(DEFAULT_SETTINGS.copy())
-    record = frappe.db.get_singles_dict(SETTINGS_DOCTYPE) or {}
-    settings.update(record)
-    return settings
+    settings_map = DEFAULT_SETTINGS.copy()
+    getter = getattr(getattr(frappe, "db", None), "get_singles_dict", None)
+    record = getter(SETTINGS_DOCTYPE) if callable(getter) else {}
+    record = record or {}
+    settings_map.update(record)
+    settings_obj = frappe._dict(settings_map)
+    if not hasattr(settings_obj, "get"):
+        settings_obj.get = lambda key, default=None: getattr(settings_obj, key, default)
+    return settings_obj
 
 
 def normalize_npwp(npwp: str | None) -> str | None:
