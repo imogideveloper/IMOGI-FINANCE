@@ -108,3 +108,36 @@ def test_google_vision_ocr_uses_full_text_when_filtered_blocks_miss_details(monk
     parsed, _ = parse_faktur_pajak_text(text)
     assert parsed["dpp"] == 874478.0
     assert parsed["ppn"] == 104937.0
+
+
+def test_parse_faktur_pajak_text_reads_amounts_on_following_line():
+    text = """
+    Dasar Pengenaan Pajak
+    17.148,00
+    Jumlah PPN (Pajak Pertambahan Nilai)
+    15,00
+    """
+
+    parsed, _ = parse_faktur_pajak_text(text)
+
+    assert parsed["dpp"] == 17148.0
+    assert parsed["ppn"] == 15.0
+
+
+def test_parse_faktur_pajak_text_prefers_largest_currency_amounts_when_partial():
+    text = """
+    Pengusaha Kena Pajak:
+    Nama : PT PARTIAL OCR
+    NPWP: 012345678901234
+    Pembeli Barang Kena Pajak:
+    Nama CUSTOMER
+    NPWP: 001122334455667
+    Jalan Sudirman No. 15 RT 05 RW 09
+    953.976,00
+    104.937,00
+    """
+
+    parsed, _ = parse_faktur_pajak_text(text)
+
+    assert parsed["dpp"] == 953976.0
+    assert parsed["ppn"] == 104937.0

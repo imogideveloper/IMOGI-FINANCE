@@ -301,11 +301,34 @@ def _extract_first_after_label(section_lines: list[str], label: str) -> str | No
 
 
 def _find_amount_after_label(text: str, label: str) -> float | None:
-    pattern = re.compile(rf"{re.escape(label)}\s*[:\-]?\s*(?P<amount>[\d.,]+)", re.IGNORECASE)
-    match = pattern.search(text or "")
-    if not match:
+    def _extract_amount(line: str) -> float | None:
+        amount_match = AMOUNT_REGEX.search(line or "")
+        if amount_match:
+            return _sanitize_amount(_parse_idr_amount(amount_match.group("amount")))
+        number_match = NUMBER_REGEX.search(line or "")
+        if number_match:
+            return _sanitize_amount(_parse_idr_amount(number_match.group("number")))
         return None
-    return _sanitize_amount(_parse_idr_amount(match.group("amount")))
+
+    pattern = re.compile(rf"{re.escape(label)}\s*[:\-]?\s*(?P<value>.*)", re.IGNORECASE)
+    lines = (text or "").splitlines()
+    for idx, line in enumerate(lines):
+        match = pattern.search(line)
+        if not match:
+            continue
+
+        inline_amount = _extract_amount(match.group("value") or "")
+        if inline_amount is not None:
+            return inline_amount
+
+        for next_line in lines[idx + 1 :]:
+            if not next_line.strip():
+                continue
+            next_amount = _extract_amount(next_line)
+            if next_amount is not None:
+                return next_amount
+            break
+    return None
 
 
 def _pick_best_npwp(candidates: list[str]) -> str | None:
@@ -416,39 +439,51 @@ def parse_faktur_pajak_text(text: str) -> tuple[dict[str, Any], float]:
     buyer_section_text = "\n".join(buyer_section)
     buyer_npwp = _extract_npwp_with_label(buyer_section_text) or _extract_npwp_from_text(buyer_section_text)
 
-    amounts = [_parse_idr_amount(m.group("amount")) for m in AMOUNT_REGEX.finditer(text or "")]
+    amounts = [_sanitize_amount(_parse_idr_amount(m.group("amount"))) for m in AMOUNT_REGEX.finditer(text or "")]
+    amounts = [amt for amt in amounts if amt is not None]
+    labeled_dpp = _find_amount_after_label(text or "", "Dasar Pengenaan Pajak")
+    labeled_ppn = _find_amount_after_label(text or "", "Jumlah PPN")
+
     if len(amounts) >= 6:
         tail_amounts = amounts[-6:]
         matches["dpp"] = tail_amounts[3]
         matches["ppn"] = tail_amounts[4]
         confidence += 0.2
-    else:
-        labeled_dpp = _find_amount_after_label(text or "", "Dasar Pengenaan Pajak")
-        labeled_ppn = _find_amount_after_label(text or "", "Jumlah PPN")
+    elif labeled_dpp is not None or labeled_ppn is not None:
         if labeled_dpp is not None:
             matches["dpp"] = labeled_dpp
         if labeled_ppn is not None:
             matches["ppn"] = labeled_ppn
-        if labeled_dpp is not None or labeled_ppn is not None:
-            confidence += 0.2
-        else:
-            numbers = [m.group("number") for m in NUMBER_REGEX.finditer(text or "")]
-            parsed_numbers: list[float] = []
-            for raw in numbers[:10]:
-                digits_only = raw.replace(".", "").replace(",", "")
-                if len(digits_only) > 15:
-                    continue
-                value = raw.replace(".", "").replace(",", ".")
-                try:
-                    parsed_numbers.append(flt(value))
-                except Exception:
-                    continue
+        confidence += 0.2
+    elif len(amounts) >= 2:
+        sorted_amounts = sorted(amounts)
+        matches["dpp"] = sorted_amounts[-1]
+        matches["ppn"] = sorted_amounts[-2]
+        confidence += 0.2
+    elif amounts:
+        matches["dpp"] = amounts[-1]
+        confidence += 0.1
+    else:
+        numbers = [m.group("number") for m in NUMBER_REGEX.finditer(text or "")]
+        parsed_numbers: list[float] = []
+        for raw in numbers[:10]:
+            digits_only = raw.replace(".", "").replace(",", "")
+            if len(digits_only) > 15:
+                continue
+            value = raw.replace(".", "").replace(",", ".")
+            try:
+                parsed = _sanitize_amount(flt(value))
+            except Exception:
+                continue
+            if parsed is None:
+                continue
+            parsed_numbers.append(parsed)
 
-            if parsed_numbers:
-                matches["dpp"] = max(parsed_numbers)
-                if len(parsed_numbers) > 1:
-                    matches["ppn"] = sorted(parsed_numbers)[-2]
-                confidence += 0.2
+        if parsed_numbers:
+            matches["dpp"] = max(parsed_numbers)
+            if len(parsed_numbers) > 1:
+                matches["ppn"] = sorted(parsed_numbers)[-2]
+            confidence += 0.2
 
     ppn_rate = None
     ppn_rate_match = PPN_RATE_REGEX.search(text or "")
