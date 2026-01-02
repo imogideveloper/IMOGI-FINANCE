@@ -374,7 +374,12 @@ fixtures = [
             [
                 "name",
                 "in",
-                ["Expense Request Workflow", "Administrative Payment Voucher Workflow", "Transfer Application Workflow"],
+                [
+                    "Expense Request Workflow",
+                    "Administrative Payment Voucher Workflow",
+                    "Transfer Application Workflow",
+                    "Branch Expense Request Workflow",
+                ],
             ]
         ],
     },
