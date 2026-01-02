@@ -9,6 +9,8 @@
   "engine": "InnoDB",
   "field_order": [
     "fp_no",
+    "tax_invoice_type",
+    "tax_invoice_type_description",
     "fp_date",
     "tax_invoice_pdf",
     "section_ocr",
@@ -34,6 +36,19 @@
       "label": "Tax Invoice Number",
       "reqd": 1,
       "unique": 1
+    },
+    {
+      "fieldname": "tax_invoice_type",
+      "fieldtype": "Link",
+      "label": "Tax Invoice Type",
+      "options": "Tax Invoice Type",
+      "read_only": 1
+    },
+    {
+      "fieldname": "tax_invoice_type_description",
+      "fieldtype": "Small Text",
+      "label": "Jenis Faktur Pajak",
+      "read_only": 1
     },
     {
       "fieldname": "fp_date",
