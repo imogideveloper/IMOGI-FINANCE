@@ -22,6 +22,11 @@ frappe.utils = types.SimpleNamespace(
 )
 sys.modules.setdefault("frappe.utils", frappe.utils)
 sys.modules.setdefault("frappe.utils.formatters", types.SimpleNamespace(format_value=lambda v, *_a, **_k: v))
+frappe.utils.background_jobs = types.SimpleNamespace(get_info=lambda **_kwargs: [])
+sys.modules.setdefault("frappe.utils.background_jobs", frappe.utils.background_jobs)
+frappe.model = types.SimpleNamespace(document=types.SimpleNamespace(Document=type("Document", (), {})))
+sys.modules.setdefault("frappe.model", frappe.model)
+sys.modules.setdefault("frappe.model.document", frappe.model.document)
 ValidationError = type("ValidationError", (Exception,), {})
 frappe.exceptions = types.SimpleNamespace(ValidationError=ValidationError)
 sys.modules.setdefault("frappe.exceptions", frappe.exceptions)
@@ -30,7 +35,13 @@ sys.modules.setdefault("frappe.exceptions", frappe.exceptions)
 from imogi_finance import accounting  # noqa: E402
 from imogi_finance.events import purchase_invoice  # noqa: E402
 from imogi_finance import tax_invoice_ocr  # noqa: E402
-from imogi_finance.tax_invoice_ocr import verify_tax_invoice  # noqa: E402
+from imogi_finance.tax_invoice_ocr import get_tax_invoice_ocr_monitoring, verify_tax_invoice  # noqa: E402
+from imogi_finance.imogi_finance.doctype.tax_invoice_ocr_monitoring import (  # noqa: E402
+    tax_invoice_ocr_monitoring,
+)
+from imogi_finance.imogi_finance.doctype.tax_invoice_ocr_monitoring.tax_invoice_ocr_monitoring import (  # noqa: E402
+    TaxInvoiceOCRMonitoring,
+)
 
 
 class ThrowCalled(Exception):
@@ -117,6 +128,7 @@ def test_create_purchase_invoice_requires_verified_tax_invoice(monkeypatch):
             "require_verification_before_create_pi_from_expense_request": 1,
         },
     )
+    monkeypatch.setattr(accounting, "resolve_branch", lambda **_kwargs: None, raising=False)
 
     def fake_throw(msg, title=None):
         raise ThrowCalled(msg)
@@ -160,6 +172,7 @@ def test_create_purchase_invoice_allows_when_ocr_disabled(monkeypatch):
             "require_verification_before_create_pi_from_expense_request": 1,
         },
     )
+    monkeypatch.setattr(accounting, "resolve_branch", lambda **_kwargs: None, raising=False)
 
     created_items = []
 
@@ -216,6 +229,7 @@ def test_create_purchase_invoice_ignores_string_zero(monkeypatch):
             "require_verification_before_create_pi_from_expense_request": 1,
         },
     )
+    monkeypatch.setattr(accounting, "resolve_branch", lambda **_kwargs: None, raising=False)
 
     created_items = []
 
@@ -237,6 +251,99 @@ def test_create_purchase_invoice_ignores_string_zero(monkeypatch):
     assert result == "PI-NEW"
     assert request.pending_purchase_invoice == "PI-NEW"
     assert not request.linked_purchase_invoice
+
+
+def test_monitor_tax_invoice_ocr_returns_doc_and_job_info(monkeypatch):
+    doc = types.SimpleNamespace(
+        name="PI-1",
+        ti_fp_no="010203",
+        ti_fp_npwp="123",
+        ti_fp_ppn=11,
+        ti_fp_dpp=100,
+        ti_fp_ppn_type="Standard",
+        ti_verification_status="Needs Review",
+        ti_verification_notes="error here",
+        ti_duplicate_flag=0,
+        ti_npwp_match=1,
+        ti_ocr_status="Queued",
+        ti_ocr_confidence=0.5,
+        ti_ocr_raw_json=None,
+        ti_tax_invoice_pdf="/files/ti.pdf",
+    )
+
+    monkeypatch.setattr(frappe, "get_doc", lambda *_args, **_kwargs: doc)
+    monkeypatch.setattr(
+        tax_invoice_ocr,
+        "get_settings",
+        lambda: {"ocr_provider": "Manual Only", "ocr_max_retry": 2},
+    )
+
+    job_name = "tax-invoice-ocr-Purchase Invoice-PI-1"
+    expected_job_name = job_name
+
+    def fake_get_info(job_name=None, **_kwargs):
+        assert job_name == expected_job_name
+        return {
+            "job_name": job_name,
+            "queue": "long",
+            "status": "queued",
+            "exc_info": None,
+            "kwargs": {"name": doc.name},
+        }
+
+    monkeypatch.setattr(tax_invoice_ocr, "get_info", fake_get_info)
+
+    result = get_tax_invoice_ocr_monitoring("PI-1", "Purchase Invoice")
+
+    assert result["job"]["name"] == job_name
+    assert result["doc"]["ocr_status"] == "Queued"
+    assert result["provider"] == "Manual Only"
+
+
+def test_monitor_doctype_refresh_status_updates_fields(monkeypatch):
+    monitor = TaxInvoiceOCRMonitoring()
+    monitor.target_doctype = "Purchase Invoice"
+    monitor.target_name = "PI-1"
+
+    expected_job_name = "tax-invoice-ocr-Purchase Invoice-PI-1"
+
+    def fake_monitoring(name, doctype):
+        assert name == "PI-1"
+        assert doctype == "Purchase Invoice"
+        return {
+            "job_name": expected_job_name,
+            "provider": "Manual Only",
+            "max_retry": 2,
+            "doc": {
+                "ocr_status": "Processing",
+                "verification_status": "Needs Review",
+                "ocr_confidence": 0.55,
+                "notes": "Queueing",
+                "fp_no": "010203",
+                "npwp": "123",
+                "tax_invoice_pdf": "/files/ti.pdf",
+                "ocr_raw_json_present": True,
+            },
+            "job": {
+                "queue": "long",
+                "status": "started",
+                "exc_info": None,
+                "kwargs": {"name": "PI-1"},
+                "enqueued_at": "2024-01-01 00:00:00",
+                "started_at": "2024-01-01 00:00:10",
+                "ended_at": None,
+            },
+        }
+
+    monkeypatch.setattr(tax_invoice_ocr_monitoring, "get_tax_invoice_ocr_monitoring", fake_monitoring)
+
+    result = monitor.refresh_status()
+
+    assert monitor.job_name == expected_job_name
+    assert monitor.ocr_status == "Processing"
+    assert monitor.ocr_confidence == 0.55
+    assert monitor.job_kwargs.strip().startswith("{")
+    assert result["job"]["status"] == "started"
 
 
 def test_duplicate_detection_marks_flag(monkeypatch):

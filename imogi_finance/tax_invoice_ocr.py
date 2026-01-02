@@ -10,6 +10,7 @@ import frappe
 from frappe import _
 from frappe.exceptions import ValidationError
 from frappe.utils import cint, flt, get_site_path
+from frappe.utils.background_jobs import get_info
 from frappe.utils.formatters import format_value
 
 SETTINGS_DOCTYPE = "Tax Invoice OCR Settings"
@@ -444,3 +445,78 @@ def run_ocr(docname: str, doctype: str):
     doc = frappe.get_doc(doctype, docname)
     _enqueue_ocr(doc, doctype)
     return {"queued": True}
+
+
+def _pick_job_info(job_name: str) -> dict[str, Any] | None:
+    try:
+        jobs = get_info(job_name=job_name)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Tax Invoice OCR monitor get_info failed")
+        return None
+
+    if isinstance(jobs, dict):
+        return jobs
+    if not isinstance(jobs, (list, tuple)):
+        return None
+
+    for job in jobs:
+        if not isinstance(job, dict):
+            continue
+        if job.get("job_name") == job_name or job.get("name") == job_name:
+            return job
+
+    return jobs[0] if jobs else None
+
+
+def _format_job_info(job_info: dict[str, Any] | None, job_name: str) -> dict[str, Any] | None:
+    if not job_info:
+        return None
+
+    def pick(*keys):
+        for key in keys:
+            if key in job_info:
+                return job_info.get(key)
+        return None
+
+    return {
+        "name": pick("job_name", "name") or job_name,
+        "queue": pick("queue"),
+        "status": pick("status", "state"),
+        "exc_info": pick("exc_info", "error"),
+        "kwargs": pick("kwargs"),
+        "enqueued_at": pick("enqueued_at"),
+        "started_at": pick("started_at"),
+        "ended_at": pick("ended_at", "finished_at"),
+    }
+
+
+def get_tax_invoice_ocr_monitoring(docname: str, doctype: str) -> dict[str, Any]:
+    if doctype not in FIELD_MAP:
+        raise ValidationError(_("Doctype {0} is not supported for Tax Invoice OCR.").format(doctype))
+
+    settings = get_settings()
+    doc = frappe.get_doc(doctype, docname)
+    pdf_field = _get_fieldname(doctype, "tax_invoice_pdf")
+    job_name = f"tax-invoice-ocr-{doctype}-{docname}"
+    job_info = _format_job_info(_pick_job_info(job_name), job_name)
+
+    doc_info = {
+        "name": docname,
+        "doctype": doctype,
+        "ocr_status": _get_value(doc, doctype, "ocr_status"),
+        "verification_status": _get_value(doc, doctype, "status"),
+        "ocr_confidence": _get_value(doc, doctype, "ocr_confidence"),
+        "notes": _get_value(doc, doctype, "notes"),
+        "fp_no": _get_value(doc, doctype, "fp_no"),
+        "npwp": _get_value(doc, doctype, "npwp"),
+        "tax_invoice_pdf": getattr(doc, pdf_field, None),
+        "ocr_raw_json_present": bool(_get_value(doc, doctype, "ocr_raw_json")),
+    }
+
+    return {
+        "doc": doc_info,
+        "job": job_info,
+        "job_name": job_name,
+        "provider": settings.get("ocr_provider"),
+        "max_retry": settings.get("ocr_max_retry"),
+    }
