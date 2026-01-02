@@ -1234,7 +1234,7 @@ def verify_tax_invoice(doc: Any, *, doctype: str, force: bool = False) -> dict[s
     fp_no = _get_value(doc, doctype, "fp_no")
     if fp_no:
         fp_digits = re.sub(r"\D", "", str(fp_no))
-        if len(fp_digits) != 16:
+        if len(fp_digits) != 17:
             notes.append(_("Tax invoice number must be exactly 16 digits."))
     company = getattr(doc, "company", None)
     if not company:
