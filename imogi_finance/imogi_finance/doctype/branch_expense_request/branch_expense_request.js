@@ -35,6 +35,15 @@ function update_item_amount(frm, cdt, cdn) {
 }
 
 function update_totals(frm) {
-	const total = (frm.doc.items || []).reduce((acc, row) => acc + flt(row.amount || 0), 0);
+	const accounts = new Set();
+	const total = (frm.doc.items || []).reduce((acc, row) => {
+		if (row.expense_account) {
+			accounts.add(row.expense_account);
+		}
+		return acc + flt(row.amount || 0);
+	}, 0);
+
 	frm.set_value("total_amount", total);
+	frm.set_value("amount", total);
+	frm.set_value("expense_account", accounts.size === 1 ? [...accounts][0] : null);
 }

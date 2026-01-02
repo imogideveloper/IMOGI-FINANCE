@@ -20,13 +20,15 @@ def _throw(message=None, *args, **kwargs):
 frappe.throw = _throw
 frappe.get_cached_value = lambda *args, **kwargs: "IDR"
 frappe.get_attr = lambda path: (lambda posting_date, company=None, as_dict=False: {"name": "FY-2024"})
-frappe.db = types.SimpleNamespace(get_value=lambda *args, **kwargs: None)
+frappe.db = types.SimpleNamespace(get_value=lambda *args, **kwargs: None, exists=lambda *args, **kwargs: False)
 
 frappe.utils = types.SimpleNamespace(
+    cint=lambda value, *args, **kwargs: int(value),
     flt=lambda value, *args, **kwargs: float(value),
     nowdate=lambda: "2024-03-01",
     get_first_day=lambda value: value,
     get_last_day=lambda value: value,
+    get_site_path=lambda *args, **kwargs: "/tmp",
 )
 sys.modules["frappe.utils"] = frappe.utils
 
@@ -95,6 +97,46 @@ def _build_request(monkeypatch, *, available_map):
         types.SimpleNamespace(qty=1, rate=600, amount=600, cost_center="CC-OVR", expense_account="5110", project=None),
     ]
     return doc
+
+
+def test_validate_sets_amount_and_expense_account(monkeypatch):
+    doc = _build_request(monkeypatch, available_map={"CC-OK": 500, "CC-OVR": 500})
+
+    doc.validate()
+
+    assert doc.amount == 700
+    assert doc.expense_account == "5110"
+    assert doc.expense_accounts == ("5110",)
+
+
+def test_validate_requires_ppn_template(monkeypatch):
+    doc = _build_request(monkeypatch, available_map={"CC-OK": 500, "CC-OVR": 500})
+    doc.is_ppn_applicable = 1
+    doc.ppn_template = None
+
+    with pytest.raises(_Throw):
+        doc.validate()
+
+
+def test_validate_requires_pph_base_amount(monkeypatch):
+    doc = _build_request(monkeypatch, available_map={"CC-OK": 500, "CC-OVR": 500})
+    doc.is_pph_applicable = 1
+    doc.pph_type = "PPh 23"
+    doc.pph_base_amount = None
+
+    with pytest.raises(_Throw):
+        doc.validate()
+
+
+def test_validate_requires_item_pph_base(monkeypatch):
+    doc = _build_request(monkeypatch, available_map={"CC-OK": 500, "CC-OVR": 500})
+    doc.is_pph_applicable = 0
+    doc.pph_type = "PPh 23"
+    doc.items[0].is_pph_applicable = 1
+    doc.items[0].pph_base_amount = None
+
+    with pytest.raises(_Throw):
+        doc.validate()
 
 
 def test_budget_check_over_budget_blocks_submit(monkeypatch):

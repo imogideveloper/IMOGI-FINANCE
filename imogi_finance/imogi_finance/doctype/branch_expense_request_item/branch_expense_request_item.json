@@ -13,6 +13,8 @@
     "amount",
     "cost_center",
     "expense_account",
+    "is_pph_applicable",
+    "pph_base_amount",
     "project",
     "budget_result",
     "budget_available",
@@ -64,6 +66,17 @@
       "fieldtype": "Link",
       "label": "Expense Account",
       "options": "Account"
+    },
+    {
+      "default": "0",
+      "fieldname": "is_pph_applicable",
+      "fieldtype": "Check",
+      "label": "Apply PPh"
+    },
+    {
+      "fieldname": "pph_base_amount",
+      "fieldtype": "Currency",
+      "label": "PPh Base Amount"
     },
     {
       "fieldname": "project",
