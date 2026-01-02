@@ -270,12 +270,18 @@ def _enqueue_ocr(doc: Any, doctype: str):
     pdf_field = _get_fieldname(doctype, "tax_invoice_pdf")
     _validate_pdf_size(getattr(doc, pdf_field, None), cint(settings.get("ocr_file_max_mb", 10)))
 
-    doc.db_set(_get_fieldname(doctype, "ocr_status"), "Processing")
+    doc.db_set(
+        {
+            _get_fieldname(doctype, "ocr_status"): "Queued",
+            _get_fieldname(doctype, "notes"): None,
+        }
+    )
     provider = settings.get("ocr_provider", "Manual Only")
 
     def _job(name: str, target_doctype: str):
         target_doc = frappe.get_doc(target_doctype, name)
         try:
+            target_doc.db_set(_get_fieldname(target_doctype, "ocr_status"), "Processing")
             text, raw_json, confidence = ocr_extract_text_from_pdf(
                 getattr(target_doc, pdf_field), provider
             )
