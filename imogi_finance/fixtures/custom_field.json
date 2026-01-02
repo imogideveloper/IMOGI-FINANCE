@@ -107,7 +107,8 @@
     "label": "OCR Status",
     "options": "Not Started\nQueued\nProcessing\nDone\nFailed",
     "default": "Not Started",
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "read_only": 1
   },
   {
     "doctype": "Custom Field",
@@ -117,7 +118,9 @@
     "fieldtype": "Float",
     "insert_after": "ti_ocr_status",
     "label": "OCR Confidence",
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "read_only": 1,
+    "depends_on": "eval:frappe.user.has_role('System Manager') || frappe.user.has_role('Accounts Manager')"
   },
   {
     "doctype": "Custom Field",
@@ -127,7 +130,9 @@
     "fieldtype": "Code",
     "insert_after": "ti_ocr_confidence",
     "label": "OCR Raw JSON",
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "read_only": 1,
+    "depends_on": "eval:frappe.user.has_role('System Manager') || frappe.user.has_role('Accounts Manager')"
   },
   {
     "doctype": "Custom Field",
@@ -231,7 +236,8 @@
     "insert_after": "ti_verification_notes",
     "label": "Duplicate Tax Invoice",
     "read_only": 1,
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "depends_on": "eval:frappe.user.has_role('System Manager') || frappe.user.has_role('Accounts Manager')"
   },
   {
     "doctype": "Custom Field",
@@ -242,7 +248,8 @@
     "insert_after": "ti_duplicate_flag",
     "label": "NPWP Match",
     "read_only": 1,
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "depends_on": "eval:frappe.user.has_role('System Manager') || frappe.user.has_role('Accounts Manager')"
   },
   {
     "doctype": "Custom Field",
@@ -272,7 +279,8 @@
     "label": "OCR Status",
     "options": "Not Started\nQueued\nProcessing\nDone\nFailed",
     "default": "Not Started",
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "read_only": 1
   },
   {
     "doctype": "Custom Field",
@@ -282,7 +290,9 @@
     "fieldtype": "Float",
     "insert_after": "ti_ocr_status",
     "label": "OCR Confidence",
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "read_only": 1,
+    "depends_on": "eval:frappe.user.has_role('System Manager') || frappe.user.has_role('Accounts Manager')"
   },
   {
     "doctype": "Custom Field",
@@ -292,7 +302,9 @@
     "fieldtype": "Code",
     "insert_after": "ti_ocr_confidence",
     "label": "OCR Raw JSON",
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "read_only": 1,
+    "depends_on": "eval:frappe.user.has_role('System Manager') || frappe.user.has_role('Accounts Manager')"
   },
   {
     "doctype": "Custom Field",
@@ -396,7 +408,8 @@
     "insert_after": "ti_verification_notes",
     "label": "Duplicate Tax Invoice",
     "read_only": 1,
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "depends_on": "eval:frappe.user.has_role('System Manager') || frappe.user.has_role('Accounts Manager')"
   },
   {
     "doctype": "Custom Field",
@@ -407,7 +420,8 @@
     "insert_after": "ti_duplicate_flag",
     "label": "NPWP Match",
     "read_only": 1,
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "depends_on": "eval:frappe.user.has_role('System Manager') || frappe.user.has_role('Accounts Manager')"
   },
   {
     "doctype": "Custom Field",
@@ -437,7 +451,8 @@
     "label": "OCR Status",
     "options": "Not Started\nQueued\nProcessing\nDone\nFailed",
     "default": "Not Started",
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "read_only": 1
   },
   {
     "doctype": "Custom Field",
@@ -447,7 +462,9 @@
     "fieldtype": "Float",
     "insert_after": "ti_ocr_status",
     "label": "OCR Confidence",
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "read_only": 1,
+    "depends_on": "eval:frappe.user.has_role('System Manager') || frappe.user.has_role('Accounts Manager')"
   },
   {
     "doctype": "Custom Field",
@@ -457,7 +474,9 @@
     "fieldtype": "Code",
     "insert_after": "ti_ocr_confidence",
     "label": "OCR Raw JSON",
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "read_only": 1,
+    "depends_on": "eval:frappe.user.has_role('System Manager') || frappe.user.has_role('Accounts Manager')"
   },
   {
     "doctype": "Custom Field",
@@ -561,7 +580,8 @@
     "insert_after": "ti_verification_notes",
     "label": "Duplicate Tax Invoice",
     "read_only": 1,
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "depends_on": "eval:frappe.user.has_role('System Manager') || frappe.user.has_role('Accounts Manager')"
   },
   {
     "doctype": "Custom Field",
@@ -572,7 +592,8 @@
     "insert_after": "ti_duplicate_flag",
     "label": "NPWP Match",
     "read_only": 1,
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "depends_on": "eval:frappe.user.has_role('System Manager') || frappe.user.has_role('Accounts Manager')"
   },
   {
     "doctype": "Custom Field",
@@ -602,7 +623,8 @@
     "label": "OCR Status",
     "options": "Not Started\nQueued\nProcessing\nDone\nFailed",
     "default": "Not Started",
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "read_only": 1
   },
   {
     "doctype": "Custom Field",
@@ -612,7 +634,9 @@
     "fieldtype": "Float",
     "insert_after": "out_fp_ocr_status",
     "label": "OCR Confidence",
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "read_only": 1,
+    "depends_on": "eval:frappe.user.has_role('System Manager') || frappe.user.has_role('Accounts Manager')"
   },
   {
     "doctype": "Custom Field",
@@ -622,7 +646,9 @@
     "fieldtype": "Code",
     "insert_after": "out_fp_ocr_confidence",
     "label": "OCR Raw JSON",
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "read_only": 1,
+    "depends_on": "eval:frappe.user.has_role('System Manager') || frappe.user.has_role('Accounts Manager')"
   },
   {
     "doctype": "Custom Field",
@@ -726,7 +752,8 @@
     "insert_after": "out_fp_verification_notes",
     "label": "Duplicate Tax Invoice",
     "read_only": 1,
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "depends_on": "eval:frappe.user.has_role('System Manager') || frappe.user.has_role('Accounts Manager')"
   },
   {
     "doctype": "Custom Field",
@@ -737,7 +764,8 @@
     "insert_after": "out_fp_duplicate_flag",
     "label": "NPWP Match",
     "read_only": 1,
-    "allow_on_submit": 1
+    "allow_on_submit": 1,
+    "depends_on": "eval:frappe.user.has_role('System Manager') || frappe.user.has_role('Accounts Manager')"
   },
   {
     "doctype": "Custom Field",
