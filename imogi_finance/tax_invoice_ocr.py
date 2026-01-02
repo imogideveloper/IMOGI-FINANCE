@@ -165,7 +165,7 @@ NPWP_LABEL_REGEX = re.compile(r"NPWP\s*[:\-]?\s*(?P<npwp>[\d.\-\s]{10,})", re.IG
 TAX_INVOICE_REGEX = re.compile(r"(?P<fp>\d{2,3}[.-]?\d{2,3}[.-]?\d{1,2}[.-]?\d{8})")
 DATE_REGEX = re.compile(r"(?P<date>\d{1,2}[\-/]\d{1,2}[\-/]\d{2,4})")
 NUMBER_REGEX = re.compile(r"(?P<number>\d+[.,\d]*)")
-AMOUNT_REGEX = re.compile(r"(?P<amount>\d{1,3}(?:\.\d{3})*,\d{2})")
+AMOUNT_REGEX = re.compile(r"(?P<amount>\d{1,3}(?:[.,]\d{3})*[.,]\d{2})")
 FAKTUR_NO_LABEL_REGEX = re.compile(
     r"Kode\s+dan\s+Nomor\s+Seri\s+Faktur\s+Pajak\s*[:\-]?\s*(?P<fp>[\d.\-]{10,})",
     re.IGNORECASE,
@@ -249,8 +249,17 @@ def _extract_section(text: str, start_label: str, end_label: str | None = None) 
 
 
 def _parse_idr_amount(value: str) -> float:
-    cleaned = value.replace(".", "").replace(",", ".")
-    return flt(cleaned)
+    cleaned = (value or "").strip()
+    last_dot = cleaned.rfind(".")
+    last_comma = cleaned.rfind(",")
+    if last_dot == -1 and last_comma == -1:
+        return flt(cleaned)
+
+    decimal_index = max(last_dot, last_comma)
+    integer_part = re.sub(r"[.,]", "", cleaned[:decimal_index])
+    decimal_part = cleaned[decimal_index + 1 :]
+    normalized = f"{integer_part}.{decimal_part}"
+    return flt(normalized)
 
 
 def _sanitize_amount(value: Any, *, max_abs: float = 9_999_999_999_999.99) -> float | None:
