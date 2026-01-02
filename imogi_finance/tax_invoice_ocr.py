@@ -7,6 +7,7 @@ import re
 import subprocess
 from datetime import datetime
 from typing import Any
+from urllib.parse import urlparse
 
 import frappe
 from frappe import _
@@ -37,6 +38,8 @@ DEFAULT_SETTINGS = {
     "use_tax_rule_effective_date": 1,
     "google_vision_api_key": None,
     "google_vision_endpoint": "https://vision.googleapis.com/v1/files:annotate",
+    "google_vision_project_id": None,
+    "google_vision_location": None,
     "tesseract_cmd": None,
 }
 
@@ -232,6 +235,18 @@ def _validate_provider_settings(provider: str, settings: dict[str, Any]) -> None
             raise ValidationError(_("Google Vision API Key is not configured. Please update Tax Invoice OCR Settings."))
         if not settings.get("google_vision_endpoint"):
             raise ValidationError(_("Google Vision endpoint is not configured. Please update Tax Invoice OCR Settings."))
+
+        parsed = urlparse(settings.get("google_vision_endpoint"))
+        is_regional = parsed.netloc.startswith(("eu-vision.googleapis.com", "us-vision.googleapis.com"))
+        if is_regional:
+            if not settings.get("google_vision_project_id"):
+                raise ValidationError(
+                    _("Google Vision project ID is required when using a regional endpoint. Please update Tax Invoice OCR Settings.")
+                )
+            if not settings.get("google_vision_location"):
+                raise ValidationError(
+                    _("Google Vision location is required when using a regional endpoint. Please update Tax Invoice OCR Settings.")
+                )
         return
 
     if provider == "Tesseract":
@@ -255,6 +270,36 @@ def _load_pdf_content_base64(file_url: str) -> tuple[str, str]:
     return local_path, content
 
 
+def _build_google_vision_url(settings: dict[str, Any]) -> str:
+    endpoint = settings.get("google_vision_endpoint") or DEFAULT_SETTINGS["google_vision_endpoint"]
+    api_key = settings.get("google_vision_api_key")
+    project_id = settings.get("google_vision_project_id")
+    location = settings.get("google_vision_location")
+
+    parsed = urlparse(endpoint)
+    if not parsed.scheme or not parsed.netloc:
+        raise ValidationError(_("Google Vision endpoint is invalid. Please update Tax Invoice OCR Settings."))
+
+    netloc = parsed.netloc
+    path = parsed.path or ""
+
+    is_regional = netloc.startswith(("eu-vision.googleapis.com", "us-vision.googleapis.com"))
+    if is_regional and "projects/" not in path:
+        if not project_id or not location:
+            raise ValidationError(
+                _("Google Vision project ID and location are required when using a regional endpoint. Please update Tax Invoice OCR Settings.")
+            )
+        path = f"/v1/projects/{project_id}/locations/{location}/files:annotate"
+    elif not path or path == "/":
+        path = "/v1/files:annotate"
+
+    url = f"{parsed.scheme}://{netloc}{path}"
+    if api_key:
+        separator = "&" if "?" in url else "?"
+        url = f"{url}{separator}key={api_key}"
+    return url
+
+
 def _google_vision_ocr(file_url: str, settings: dict[str, Any]) -> tuple[str, dict[str, Any], float]:
     try:
         import requests
@@ -262,8 +307,7 @@ def _google_vision_ocr(file_url: str, settings: dict[str, Any]) -> tuple[str, di
         raise ValidationError(_("Google Vision OCR requires the requests package: {0}").format(exc))
 
     local_path, content = _load_pdf_content_base64(file_url)
-    endpoint = settings.get("google_vision_endpoint") or DEFAULT_SETTINGS["google_vision_endpoint"]
-    api_key = settings.get("google_vision_api_key")
+    endpoint = _build_google_vision_url(settings)
     language = settings.get("ocr_language") or "id"
     max_pages = max(cint(settings.get("ocr_max_pages", 2)), 1)
 
@@ -285,9 +329,8 @@ def _google_vision_ocr(file_url: str, settings: dict[str, Any]) -> tuple[str, di
     if max_pages and "files:annotate" in endpoint:
         request_body["requests"][0]["pages"] = list(range(max_pages))
 
-    url = f"{endpoint}?key={api_key}"
     try:
-        response = requests.post(url, json=request_body, timeout=45)
+        response = requests.post(endpoint, json=request_body, timeout=45)
     except Exception as exc:
         raise ValidationError(_("Failed to call Google Vision OCR: {0}").format(exc))
 
