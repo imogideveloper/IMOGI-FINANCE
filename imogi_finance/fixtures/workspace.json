@@ -126,4 +126,52 @@
     "quick_lists": [],
     "number_cards": []
   }
+,
+  {
+    "doctype": "Workspace",
+    "name": "Budget Control",
+    "title": "Budget Control",
+    "label": "Budget Control",
+    "icon": "money",
+    "module": "Imogi Finance",
+    "public": 1,
+    "sequence": 20,
+    "is_hidden": 0,
+    "hide_custom": 0,
+    "content_type": "Blocks",
+    "content": "[{\"id\": \"hdr1\", \"type\": \"header\", \"data\": {\"text\": \"Budget Controls\", \"col\": 12}}, {\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Budget Control Settings\", \"col\": 3}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Budget Control Entry\", \"col\": 3}}, {\"id\": \"s3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Additional Budget Request\", \"col\": 3}}, {\"id\": \"s4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Budget Reclass Request\", \"col\": 3}}, {\"id\": \"s5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Internal Charge Request\", \"col\": 3}}]",
+    "shortcuts": [
+      {
+        "label": "Budget Control Settings",
+        "link_to": "Budget Control Settings",
+        "type": "DocType"
+      },
+      {
+        "label": "Budget Control Entry",
+        "link_to": "Budget Control Entry",
+        "type": "DocType"
+      },
+      {
+        "label": "Additional Budget Request",
+        "link_to": "Additional Budget Request",
+        "type": "DocType"
+      },
+      {
+        "label": "Budget Reclass Request",
+        "link_to": "Budget Reclass Request",
+        "type": "DocType"
+      },
+      {
+        "label": "Internal Charge Request",
+        "link_to": "Internal Charge Request",
+        "type": "DocType"
+      }
+    ],
+    "cards": [],
+    "custom_blocks": [],
+    "links": [],
+    "charts": [],
+    "quick_lists": [],
+    "number_cards": []
+  }
 ]
