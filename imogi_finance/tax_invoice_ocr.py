@@ -137,6 +137,26 @@ NPWP_REGEX = re.compile(r"(?P<npwp>\d{2}\.\d{3}\.\d{3}\.\d-\d{3}\.\d{3}|\d{15,20
 TAX_INVOICE_REGEX = re.compile(r"(?P<fp>\d{2,3}[.-]?\d{2,3}[.-]?\d{1,2}[.-]?\d{8})")
 DATE_REGEX = re.compile(r"(?P<date>\d{1,2}[\-/]\d{1,2}[\-/]\d{2,4})")
 NUMBER_REGEX = re.compile(r"(?P<number>\d+[.,\d]*)")
+AMOUNT_REGEX = re.compile(r"(?P<amount>\d{1,3}(?:\.\d{3})*,\d{2})")
+FAKTUR_NO_LABEL_REGEX = re.compile(
+    r"Kode\s+dan\s+Nomor\s+Seri\s+Faktur\s+Pajak\s*[:\-]?\s*(?P<fp>[\d.\-]{10,})",
+    re.IGNORECASE,
+)
+INDO_DATE_REGEX = re.compile(r"(?P<day>\d{1,2})\s+(?P<month>[A-Za-z]+)\s+(?P<year>\d{4})")
+INDO_MONTHS = {
+    "januari": 1,
+    "februari": 2,
+    "maret": 3,
+    "april": 4,
+    "mei": 5,
+    "juni": 6,
+    "juli": 7,
+    "agustus": 8,
+    "september": 9,
+    "oktober": 10,
+    "november": 11,
+    "desember": 12,
+}
 
 
 def _get_fieldname(doctype: str, key: str) -> str:
@@ -164,47 +184,100 @@ def _set_value(doc: Any, doctype: str, key: str, value: Any) -> None:
     setattr(doc, fieldname, value)
 
 
+def _extract_section(text: str, start_label: str, end_label: str | None = None) -> str:
+    if not text:
+        return ""
+    lower_text = text.lower()
+    start_index = lower_text.find(start_label.lower())
+    if start_index < 0:
+        return text
+    if end_label:
+        end_index = lower_text.find(end_label.lower(), start_index)
+        if end_index > start_index:
+            return text[start_index:end_index]
+    return text[start_index:]
+
+
+def _parse_idr_amount(value: str) -> float:
+    cleaned = value.replace(".", "").replace(",", ".")
+    return flt(cleaned)
+
+
+def _parse_date_from_text(text: str) -> str | None:
+    date_match = DATE_REGEX.search(text or "")
+    if date_match:
+        raw_date = date_match.group("date")
+        for fmt in ("%d-%m-%Y", "%d/%m/%Y", "%d-%m-%y", "%d/%m/%y"):
+            try:
+                return datetime.strptime(raw_date, fmt).date().isoformat()
+            except Exception:
+                continue
+
+    indo_match = INDO_DATE_REGEX.search(text or "")
+    if indo_match:
+        try:
+            day = int(indo_match.group("day"))
+            month_name = indo_match.group("month").strip().lower()
+            year = int(indo_match.group("year"))
+            month = INDO_MONTHS.get(month_name)
+            if month:
+                return datetime(year, month, day).date().isoformat()
+        except Exception:
+            return None
+    return None
+
+
 def parse_faktur_pajak_text(text: str) -> tuple[dict[str, Any], float]:
     matches: dict[str, Any] = {}
     confidence = 0.0
 
-    npwp_match = NPWP_REGEX.search(text or "")
+    faktur_match = FAKTUR_NO_LABEL_REGEX.search(text or "")
+    if faktur_match:
+        matches["fp_no"] = faktur_match.group("fp").replace(".", "").replace("-", "")
+        confidence += 0.3
+    else:
+        fp_match = TAX_INVOICE_REGEX.search(text or "")
+        if fp_match:
+            matches["fp_no"] = fp_match.group("fp").replace(".", "").replace("-", "")
+            confidence += 0.25
+
+    pkp_section = _extract_section(text or "", "Pengusaha Kena Pajak", "Pembeli")
+    npwp_match = NPWP_REGEX.search(pkp_section or "")
     if npwp_match:
         matches["npwp"] = normalize_npwp(npwp_match.group("npwp"))
         confidence += 0.25
+    else:
+        npwp_match = NPWP_REGEX.search(text or "")
+        if npwp_match:
+            matches["npwp"] = normalize_npwp(npwp_match.group("npwp"))
+            confidence += 0.2
 
-    fp_match = TAX_INVOICE_REGEX.search(text or "")
-    if fp_match:
-        matches["fp_no"] = fp_match.group("fp").replace(".", "").replace("-", "")
-        confidence += 0.25
+    parsed_date = _parse_date_from_text(text or "")
+    if parsed_date:
+        matches["fp_date"] = parsed_date
+        confidence += 0.15
 
-    date_match = DATE_REGEX.search(text or "")
-    if date_match:
-        try:
-            parsed = datetime.strptime(date_match.group("date"), "%d-%m-%Y")
-        except Exception:
-            try:
-                parsed = datetime.strptime(date_match.group("date"), "%d/%m/%Y")
-            except Exception:
-                parsed = None
-        if parsed:
-            matches["fp_date"] = parsed.date().isoformat()
-            confidence += 0.15
-
-    numbers = [m.group("number") for m in NUMBER_REGEX.finditer(text or "")]
-    parsed_numbers: list[float] = []
-    for raw in numbers[:6]:
-        value = raw.replace(".", "").replace(",", ".")
-        try:
-            parsed_numbers.append(flt(value))
-        except Exception:
-            continue
-
-    if parsed_numbers:
-        matches["dpp"] = max(parsed_numbers)
-        if len(parsed_numbers) > 1:
-            matches["ppn"] = sorted(parsed_numbers)[-2]
+    amounts = [_parse_idr_amount(m.group("amount")) for m in AMOUNT_REGEX.finditer(text or "")]
+    if len(amounts) >= 6:
+        tail_amounts = amounts[-6:]
+        matches["dpp"] = tail_amounts[3]
+        matches["ppn"] = tail_amounts[4]
         confidence += 0.2
+    else:
+        numbers = [m.group("number") for m in NUMBER_REGEX.finditer(text or "")]
+        parsed_numbers: list[float] = []
+        for raw in numbers[:6]:
+            value = raw.replace(".", "").replace(",", ".")
+            try:
+                parsed_numbers.append(flt(value))
+            except Exception:
+                continue
+
+        if parsed_numbers:
+            matches["dpp"] = max(parsed_numbers)
+            if len(parsed_numbers) > 1:
+                matches["ppn"] = sorted(parsed_numbers)[-2]
+            confidence += 0.2
 
     matches.setdefault("ppn_type", get_settings().get("default_ppn_type", "Standard"))
 
