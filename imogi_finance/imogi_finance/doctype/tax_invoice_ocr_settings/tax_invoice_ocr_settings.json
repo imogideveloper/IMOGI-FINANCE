@@ -13,6 +13,8 @@
     "ocr_provider",
     "google_vision_api_key",
     "google_vision_endpoint",
+    "google_vision_project_id",
+    "google_vision_location",
     "tesseract_cmd",
     "ocr_language",
     "ocr_max_pages",
@@ -65,6 +67,20 @@
       "fieldname": "google_vision_endpoint",
       "fieldtype": "Data",
       "label": "Google Vision Endpoint",
+      "depends_on": "eval:doc.ocr_provider==\"Google Vision\""
+    },
+    {
+      "description": "Project ID for Google Vision when using regional endpoints (eu/us).",
+      "fieldname": "google_vision_project_id",
+      "fieldtype": "Data",
+      "label": "Google Vision Project ID",
+      "depends_on": "eval:doc.ocr_provider==\"Google Vision\""
+    },
+    {
+      "description": "Location/region (e.g. eu or us) for Google Vision when using regional endpoints.",
+      "fieldname": "google_vision_location",
+      "fieldtype": "Data",
+      "label": "Google Vision Location",
       "depends_on": "eval:doc.ocr_provider==\"Google Vision\""
     },
     {
