@@ -198,6 +198,10 @@ def validate_tax_period_lock(doc: Document, posting_date_field: str = "posting_d
         cost_center = getattr(doc, "cost_center", None)
         if cost_center:
             company = frappe.db.get_value("Cost Center", cost_center, "company")
+    
+    # ✅ FIX: Jika company tidak ditemukan, skip validasi
+    if not company:
+        return
 
     posting_date = (
         getattr(doc, posting_date_field, None)
@@ -205,7 +209,7 @@ def validate_tax_period_lock(doc: Document, posting_date_field: str = "posting_d
         or getattr(doc, "bill_date", None)
     )
     
-    # ✅ Additional safety check before calling _has_locked_period
+    # ✅ FIX: Jika posting_date tidak ditemukan, skip validasi
     if not posting_date:
         return
     
