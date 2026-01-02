@@ -91,7 +91,7 @@ jinja = {
 # Installation
 # ------------
 
-# before_install = "imogi_finance.install.before_install"
+before_install = "imogi_finance.install.before_install"
 # after_install = "imogi_finance.install.after_install"
 after_install = "imogi_finance.utils.ensure_coretax_export_doctypes"
 
