@@ -629,6 +629,18 @@ def _google_vision_ocr(file_url: str, settings: dict[str, Any]) -> tuple[str, di
             cleaned_lines.append(re.sub(r"[│─—|+_=]+", " ", stripped))
         return "\n".join(cleaned_lines)
 
+    def _needs_full_text_fallback(text: str) -> bool:
+        if not text or not text.strip():
+            return True
+        lower = text.lower()
+        key_markers = ("pembeli", "penerima jasa", "dasar pengenaan pajak", "jumlah ppn")
+        if any(marker in lower for marker in key_markers):
+            return False
+        # If we did not capture at least two currency amounts, we likely missed the summary table.
+        if len(AMOUNT_REGEX.findall(text)) >= 2:
+            return False
+        return True
+
     try:
         import requests
     except Exception as exc:  # pragma: no cover - guard for missing optional dependency
@@ -687,6 +699,7 @@ def _google_vision_ocr(file_url: str, settings: dict[str, Any]) -> tuple[str, di
     texts: list[str] = []
     confidence_values: list[float] = []
     min_block_conf = flt(settings.get("ocr_min_confidence", 0.0)) or 0.0
+    full_text_candidates: list[str] = []
 
     for entry in _iter_entries(responses):
         block_texts = _iter_block_text(entry)
@@ -699,6 +712,11 @@ def _google_vision_ocr(file_url: str, settings: dict[str, Any]) -> tuple[str, di
         if filtered_blocks:
             texts.extend([text for text, _ in filtered_blocks])
             confidence_values.extend([conf for _, conf in filtered_blocks])
+            full_text = (entry.get("fullTextAnnotation") or {}).get("text")
+            if full_text:
+                processed_full = _strip_border_artifacts((full_text or "").strip())
+                if processed_full:
+                    full_text_candidates.append(processed_full)
             continue
 
         # fallback to legacy full text if filtering produced nothing
@@ -708,7 +726,10 @@ def _google_vision_ocr(file_url: str, settings: dict[str, Any]) -> tuple[str, di
             if text_annotations:
                 full_text = text_annotations[0].get("description")
         if full_text:
-            texts.append(full_text)
+            processed_full = _strip_border_artifacts((full_text or "").strip())
+            if processed_full:
+                full_text_candidates.append(processed_full)
+                texts.append(processed_full)
             pages = (entry.get("fullTextAnnotation") or {}).get("pages") or []
             for page in pages:
                 if "confidence" in page:
@@ -718,6 +739,13 @@ def _google_vision_ocr(file_url: str, settings: dict[str, Any]) -> tuple[str, di
                         continue
 
     text = _strip_border_artifacts("\n".join(texts).strip())
+
+    # If the filtered text is missing key markers or amounts, merge in the full text candidates captured earlier.
+    if _needs_full_text_fallback(text) and full_text_candidates:
+        fallback_text = "\n".join(full_text_candidates).strip()
+        if fallback_text and fallback_text not in text:
+            text = "\n".join([text, fallback_text]).strip()
+
     if not text:
         # Fallback: use any available fullTextAnnotation/textAnnotations text if block filtering produced nothing
         for entry in _iter_entries(responses):
