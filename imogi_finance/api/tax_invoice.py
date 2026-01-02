@@ -3,7 +3,7 @@ from __future__ import annotations
 import frappe
 from frappe import _
 
-from imogi_finance.tax_invoice_ocr import run_ocr, verify_tax_invoice
+from imogi_finance.tax_invoice_ocr import get_tax_invoice_ocr_monitoring, run_ocr, verify_tax_invoice
 
 
 @frappe.whitelist()
@@ -52,3 +52,9 @@ def verify_sales_invoice_tax_invoice(si_name: str, force: bool = False):
     doc = frappe.get_doc("Sales Invoice", si_name)
     frappe.only_for(("Accounts Manager", "Accounts User", "System Manager"))
     return verify_tax_invoice(doc, doctype="Sales Invoice", force=bool(force))
+
+
+@frappe.whitelist()
+def monitor_tax_invoice_ocr(docname: str, doctype: str):
+    frappe.only_for(("Accounts Manager", "Accounts User", "System Manager"))
+    return get_tax_invoice_ocr_monitoring(docname, doctype)
