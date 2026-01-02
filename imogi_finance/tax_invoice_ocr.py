@@ -36,10 +36,8 @@ DEFAULT_SETTINGS = {
     "ppn_output_account": None,
     "default_ppn_type": "Standard",
     "use_tax_rule_effective_date": 1,
-    "google_vision_api_key": None,
+    "google_vision_service_account_file": None,
     "google_vision_endpoint": "https://vision.googleapis.com/v1/files:annotate",
-    "google_vision_project_id": None,
-    "google_vision_location": None,
     "tesseract_cmd": None,
 }
 
@@ -231,22 +229,21 @@ def _validate_provider_settings(provider: str, settings: dict[str, Any]) -> None
         raise ValidationError(_("OCR provider not configured. Please select an OCR provider."))
 
     if provider == "Google Vision":
-        api_key = settings.get("google_vision_api_key")
-        if not api_key:
+        service_account_file = settings.get("google_vision_service_account_file")
+        if not service_account_file:
             try:
                 import google.auth  # type: ignore
             except Exception:
                 raise ValidationError(
                     _(
                         "Google Vision credentials are not configured. "
-                        "Provide an API Key or configure Application Default Credentials (service account). "
+                        "Upload a Service Account JSON file or configure Application Default Credentials (service account). "
+                        "API Key is not supported for the selected OCR flow. "
                         "See Google Cloud authentication guidance (e.g. gcloud auth application-default login or GOOGLE_APPLICATION_CREDENTIALS)."
                     )
                 )
-        if not settings.get("google_vision_endpoint"):
-            raise ValidationError(_("Google Vision endpoint is not configured. Please update Tax Invoice OCR Settings."))
-
-        parsed = urlparse(settings.get("google_vision_endpoint"))
+        endpoint = settings.get("google_vision_endpoint") or DEFAULT_SETTINGS["google_vision_endpoint"]
+        parsed = urlparse(endpoint or DEFAULT_SETTINGS["google_vision_endpoint"])
         if not parsed.scheme or not parsed.netloc:
             raise ValidationError(_("Google Vision endpoint is invalid. Please update Tax Invoice OCR Settings."))
 
@@ -308,9 +305,6 @@ def _load_pdf_content_base64(file_url: str) -> tuple[str, str]:
 
 def _build_google_vision_url(settings: dict[str, Any]) -> str:
     endpoint = settings.get("google_vision_endpoint") or DEFAULT_SETTINGS["google_vision_endpoint"]
-    api_key = settings.get("google_vision_api_key")
-    project_id = settings.get("google_vision_project_id")
-    location = settings.get("google_vision_location")
 
     parsed = urlparse(endpoint)
     if not parsed.scheme or not parsed.netloc:
@@ -320,42 +314,64 @@ def _build_google_vision_url(settings: dict[str, Any]) -> str:
     path = parsed.path or ""
 
     is_regional = netloc.startswith(("eu-vision.googleapis.com", "us-vision.googleapis.com"))
-    if is_regional and "projects/" not in path:
-        if not project_id or not location:
-            raise ValidationError(
-                _("Google Vision project ID and location are required when using a regional endpoint. Please update Tax Invoice OCR Settings.")
-            )
-        if location not in {"us", "eu"}:
-            raise ValidationError(_("Google Vision location must be 'us' or 'eu' for regional endpoints."))
-        path = f"/v1/projects/{project_id}/locations/{location}/files:annotate"
-    elif not path or path == "/":
+    if not path or path == "/":
         path = "/v1/files:annotate"
 
     url = f"{parsed.scheme}://{netloc}{path}"
-    if api_key:
-        separator = "&" if "?" in url else "?"
-        url = f"{url}{separator}key={api_key}"
     return url
 
 
-def _get_google_vision_headers(settings: dict[str, Any]) -> dict[str, str]:
-    if settings.get("google_vision_api_key"):
-        return {}
+def _parse_service_account_json(raw_value: str) -> dict[str, Any]:
+    try:
+        return json.loads(raw_value)
+    except Exception:
+        try:
+            decoded = base64.b64decode(raw_value).decode("utf-8")
+            return json.loads(decoded)
+        except Exception:
+            raise ValidationError(_("Google Vision Service Account JSON is invalid. Please check Tax Invoice OCR Settings."))
 
+
+def _load_service_account_info(settings: dict[str, Any]) -> dict[str, Any] | None:
+    file_url = settings.get("google_vision_service_account_file")
+
+    if file_url:
+        local_path = get_site_path(file_url.strip("/"))
+        try:
+            with open(local_path, "r", encoding="utf-8") as handle:
+                content = handle.read()
+        except FileNotFoundError:
+            raise ValidationError(_("Google Vision Service Account file not found: {0}").format(file_url))
+        except OSError as exc:
+            raise ValidationError(_("Could not read Google Vision Service Account file: {0}").format(exc))
+        return _parse_service_account_json(content)
+
+    return None
+
+
+def _get_google_vision_headers(settings: dict[str, Any]) -> dict[str, str]:
+    service_account_info = _load_service_account_info(settings)
     try:
         import google.auth  # type: ignore
         from google.auth.transport.requests import Request  # type: ignore
+        if service_account_info:
+            from google.oauth2 import service_account  # type: ignore
     except Exception:
         raise ValidationError(
             _(
                 "Google Vision credentials are not configured. "
-                "Provide an API Key or configure Application Default Credentials (service account). "
-                "See Google Cloud authentication guidance (e.g. gcloud auth application-default login or GOOGLE_APPLICATION_CREDENTIALS) "
-                "and ensure google-auth is installed."
+                "Install google-auth and provide Service Account JSON, or configure Application Default Credentials (service account). "
+                "API Key is not supported for the selected OCR flow."
             )
         )
 
-    credentials, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+    scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+    credentials = None
+    if service_account_info:
+        credentials = service_account.Credentials.from_service_account_info(service_account_info, scopes=scopes)
+    else:
+        credentials, _ = google.auth.default(scopes=scopes)
+
     if credentials.expired or not credentials.valid:
         credentials.refresh(Request())
 

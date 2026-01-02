@@ -11,10 +11,8 @@
     "section_ocr",
     "enable_tax_invoice_ocr",
     "ocr_provider",
-    "google_vision_api_key",
+    "google_vision_service_account_file",
     "google_vision_endpoint",
-    "google_vision_project_id",
-    "google_vision_location",
     "tesseract_cmd",
     "ocr_language",
     "ocr_max_pages",
@@ -55,32 +53,18 @@
       "options": "Manual Only\nGoogle Vision\nTesseract"
     },
     {
-      "description": "API Key for Google Vision when provider is Google Vision.",
-      "fieldname": "google_vision_api_key",
-      "fieldtype": "Password",
-      "label": "Google Vision API Key",
+      "description": "Upload service account JSON file for Google Vision (required unless ADC is configured).",
+      "fieldname": "google_vision_service_account_file",
+      "fieldtype": "Attach",
+      "label": "Google Vision Service Account File",
       "depends_on": "eval:doc.ocr_provider==\"Google Vision\""
     },
     {
       "default": "https://vision.googleapis.com/v1/files:annotate",
-      "description": "Endpoint for Google Vision File Annotate API.",
+      "description": "Endpoint for Google Vision File Annotate API (fixed to default unless explicitly overridden).",
       "fieldname": "google_vision_endpoint",
       "fieldtype": "Data",
       "label": "Google Vision Endpoint",
-      "depends_on": "eval:doc.ocr_provider==\"Google Vision\""
-    },
-    {
-      "description": "Project ID for Google Vision when using regional endpoints (eu/us).",
-      "fieldname": "google_vision_project_id",
-      "fieldtype": "Data",
-      "label": "Google Vision Project ID",
-      "depends_on": "eval:doc.ocr_provider==\"Google Vision\""
-    },
-    {
-      "description": "Location/region (e.g. eu or us) for Google Vision when using regional endpoints.",
-      "fieldname": "google_vision_location",
-      "fieldtype": "Data",
-      "label": "Google Vision Location",
       "depends_on": "eval:doc.ocr_provider==\"Google Vision\""
     },
     {
