@@ -137,6 +137,7 @@ def normalize_npwp(npwp: str | None) -> str | None:
 
 
 NPWP_REGEX = re.compile(r"(?P<npwp>\d{2}\.\d{3}\.\d{3}\.\d-\d{3}\.\d{3}|\d{15,20})")
+NPWP_LABEL_REGEX = re.compile(r"NPWP\s*[:\-]?\s*(?P<npwp>[\d.\-\s]{10,})", re.IGNORECASE)
 TAX_INVOICE_REGEX = re.compile(r"(?P<fp>\d{2,3}[.-]?\d{2,3}[.-]?\d{1,2}[.-]?\d{8})")
 DATE_REGEX = re.compile(r"(?P<date>\d{1,2}[\-/]\d{1,2}[\-/]\d{2,4})")
 NUMBER_REGEX = re.compile(r"(?P<number>\d+[.,\d]*)")
@@ -227,17 +228,51 @@ def _extract_section_lines(text: str, start_label: str, stop_labels: tuple[str, 
 
     collected: list[str] = []
     for line in lines[start_idx:]:
-        if any(stop.lower() in line.lower() for stop in stop_labels):
+        normalized = line.lower().strip()
+        if any(normalized.startswith(stop.lower()) for stop in stop_labels):
             break
         collected.append(line.strip())
     return collected
 
 
 def _extract_first_after_label(section_lines: list[str], label: str) -> str | None:
+    pattern = re.compile(rf"{re.escape(label)}\s*[:\-]?\s*(?P<value>.+)", re.IGNORECASE)
     for line in section_lines:
-        if label.lower() in line.lower() and ":" in line:
-            return line.split(":", 1)[1].strip()
+        match = pattern.search(line)
+        if match:
+            return match.group("value").strip()
     return None
+
+
+def _find_amount_after_label(text: str, label: str) -> float | None:
+    pattern = re.compile(rf"{re.escape(label)}\s*[:\-]?\s*(?P<amount>[\d.,]+)", re.IGNORECASE)
+    match = pattern.search(text or "")
+    if not match:
+        return None
+    return _sanitize_amount(_parse_idr_amount(match.group("amount")))
+
+
+def _pick_best_npwp(candidates: list[str]) -> str | None:
+    valid = [normalize_npwp((val or "").strip()) for val in candidates if val]
+    valid = [val for val in valid if val]
+    if not valid:
+        return None
+
+    def _score(value: str) -> tuple[int, int, str]:
+        preferred_len = 0 if len(value) in {15, 16} else 1
+        return (preferred_len, len(value), value)
+
+    return sorted(valid, key=_score)[0]
+
+
+def _extract_npwp_from_text(text: str) -> str | None:
+    candidates = [match.group("npwp") for match in NPWP_REGEX.finditer(text or "")]
+    return _pick_best_npwp(candidates)
+
+
+def _extract_npwp_with_label(text: str) -> str | None:
+    candidates = [match.group("npwp") for match in NPWP_LABEL_REGEX.finditer(text or "")]
+    return _pick_best_npwp(candidates)
 
 
 def _extract_address(section_lines: list[str], label: str) -> str | None:
@@ -303,14 +338,14 @@ def parse_faktur_pajak_text(text: str) -> tuple[dict[str, Any], float]:
             confidence += 0.25
 
     pkp_section = _extract_section(text or "", "Pengusaha Kena Pajak", "Pembeli")
-    npwp_match = NPWP_REGEX.search(pkp_section or "")
-    if npwp_match:
-        matches["npwp"] = normalize_npwp(npwp_match.group("npwp"))
+    seller_npwp = _extract_npwp_with_label(pkp_section) or _extract_npwp_from_text(pkp_section)
+    if seller_npwp:
+        matches["npwp"] = seller_npwp
         confidence += 0.25
     else:
-        npwp_match = NPWP_REGEX.search(text or "")
-        if npwp_match:
-            matches["npwp"] = normalize_npwp(npwp_match.group("npwp"))
+        seller_npwp = _extract_npwp_with_label(text) or _extract_npwp_from_text(text)
+        if seller_npwp:
+            matches["npwp"] = seller_npwp
             confidence += 0.2
 
     parsed_date = _parse_date_from_text(text or "")
@@ -322,9 +357,8 @@ def parse_faktur_pajak_text(text: str) -> tuple[dict[str, Any], float]:
     seller_address = _extract_address(seller_section, "Alamat")
     buyer_name = _extract_first_after_label(buyer_section, "Nama")
     buyer_address = _extract_address(buyer_section, "Alamat")
-    buyer_npwp = _extract_first_after_label(buyer_section, "NPWP")
-    if buyer_npwp:
-        buyer_npwp = normalize_npwp(buyer_npwp)
+    buyer_section_text = "\n".join(buyer_section)
+    buyer_npwp = _extract_npwp_with_label(buyer_section_text) or _extract_npwp_from_text(buyer_section_text)
 
     amounts = [_parse_idr_amount(m.group("amount")) for m in AMOUNT_REGEX.finditer(text or "")]
     if len(amounts) >= 6:
@@ -333,20 +367,32 @@ def parse_faktur_pajak_text(text: str) -> tuple[dict[str, Any], float]:
         matches["ppn"] = tail_amounts[4]
         confidence += 0.2
     else:
-        numbers = [m.group("number") for m in NUMBER_REGEX.finditer(text or "")]
-        parsed_numbers: list[float] = []
-        for raw in numbers[:6]:
-            value = raw.replace(".", "").replace(",", ".")
-            try:
-                parsed_numbers.append(flt(value))
-            except Exception:
-                continue
-
-        if parsed_numbers:
-            matches["dpp"] = max(parsed_numbers)
-            if len(parsed_numbers) > 1:
-                matches["ppn"] = sorted(parsed_numbers)[-2]
+        labeled_dpp = _find_amount_after_label(text or "", "Dasar Pengenaan Pajak")
+        labeled_ppn = _find_amount_after_label(text or "", "Jumlah PPN")
+        if labeled_dpp is not None:
+            matches["dpp"] = labeled_dpp
+        if labeled_ppn is not None:
+            matches["ppn"] = labeled_ppn
+        if labeled_dpp is not None or labeled_ppn is not None:
             confidence += 0.2
+        else:
+            numbers = [m.group("number") for m in NUMBER_REGEX.finditer(text or "")]
+            parsed_numbers: list[float] = []
+            for raw in numbers[:10]:
+                digits_only = raw.replace(".", "").replace(",", "")
+                if len(digits_only) > 15:
+                    continue
+                value = raw.replace(".", "").replace(",", ".")
+                try:
+                    parsed_numbers.append(flt(value))
+                except Exception:
+                    continue
+
+            if parsed_numbers:
+                matches["dpp"] = max(parsed_numbers)
+                if len(parsed_numbers) > 1:
+                    matches["ppn"] = sorted(parsed_numbers)[-2]
+                confidence += 0.2
 
     summary = {
         "faktur_pajak": {
