@@ -31,6 +31,7 @@ class ExpenseRequest(Document):
 
     def validate(self):
         self._set_requester_to_creator()
+        self._ensure_status()
         self.validate_amounts()
         self.apply_branch_defaults()
         self.validate_asset_details()
@@ -150,6 +151,16 @@ class ExpenseRequest(Document):
         if getattr(self, "requester", None) in {None, "", "frappe.session.user"}:
             self.requester = frappe.session.user
 
+    def _ensure_status(self):
+        if getattr(self, "status", None):
+            return
+
+        workflow_state = getattr(self, "workflow_state", None)
+        if workflow_state:
+            self.status = workflow_state
+        else:
+            self.status = "Draft"
+
     def before_submit(self):
         """Resolve approval route and set initial workflow state."""
         self.validate_amounts()
@@ -179,6 +190,7 @@ class ExpenseRequest(Document):
         document so workflow maintainers don't need to manage static roles that
         could conflict with routed approvers.
         """
+        self._ensure_status()
         flags = getattr(self, "flags", None)
         if flags is None:
             flags = type("Flags", (), {})()
@@ -619,11 +631,12 @@ class ExpenseRequest(Document):
         )
 
     def get_current_level_key(self) -> str | None:
-        if self.status == "Pending Level 1":
+        status = getattr(self, "status", None)
+        if status == "Pending Level 1":
             return "1"
-        if self.status == "Pending Level 2":
+        if status == "Pending Level 2":
             return "2"
-        if self.status == "Pending Level 3":
+        if status == "Pending Level 3":
             return "3"
         return None
 
