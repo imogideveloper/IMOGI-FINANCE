@@ -9,7 +9,11 @@ import frappe
 def ensure_coretax_export_doctypes() -> None:
 	"""Ensure CoreTax export doctypes exist for linked fields."""
 	missing_doctypes = []
-	for doctype in ("CoreTax Export Settings", "CoreTax Column Mapping"):
+	for doctype in (
+		"CoreTax Export Settings",
+		"CoreTax Column Mapping",
+		"Tax Profile PPh Account",
+	):
 		if not frappe.db.exists("DocType", doctype):
 			missing_doctypes.append(doctype)
 
@@ -18,3 +22,4 @@ def ensure_coretax_export_doctypes() -> None:
 
 	frappe.reload_doc("imogi_finance", "doctype", "coretax_export_settings")
 	frappe.reload_doc("imogi_finance", "doctype", "coretax_column_mapping")
+	frappe.reload_doc("imogi_finance", "doctype", "tax_profile_pph_account")

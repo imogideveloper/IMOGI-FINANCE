@@ -11,3 +11,4 @@ def execute():
 
     frappe.reload_doc("imogi_finance", "doctype", "coretax_export_settings")
     frappe.reload_doc("imogi_finance", "doctype", "coretax_column_mapping")
+    frappe.reload_doc("imogi_finance", "doctype", "tax_profile_pph_account")
