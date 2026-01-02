@@ -41,6 +41,8 @@ DEFAULT_SETTINGS = {
     "tesseract_cmd": None,
 }
 
+ALLOWED_OCR_FIELDS = {"fp_no", "fp_date", "npwp", "dpp", "ppn", "notes"}
+
 FIELD_MAP = {
     "Purchase Invoice": {
         "fp_no": "ti_fp_no",
@@ -203,6 +205,44 @@ def _parse_idr_amount(value: str) -> float:
     return flt(cleaned)
 
 
+def _extract_section_lines(text: str, start_label: str, stop_labels: tuple[str, ...]) -> list[str]:
+    lines = text.splitlines()
+    start_idx = next((idx for idx, line in enumerate(lines) if start_label.lower() in line.lower()), None)
+    if start_idx is None:
+        return []
+
+    collected: list[str] = []
+    for line in lines[start_idx:]:
+        if any(stop.lower() in line.lower() for stop in stop_labels):
+            break
+        collected.append(line.strip())
+    return collected
+
+
+def _extract_first_after_label(section_lines: list[str], label: str) -> str | None:
+    for line in section_lines:
+        if label.lower() in line.lower() and ":" in line:
+            return line.split(":", 1)[1].strip()
+    return None
+
+
+def _extract_address(section_lines: list[str], label: str) -> str | None:
+    address: list[str] = []
+    capture = False
+    for line in section_lines:
+        if label.lower() in line.lower() and ":" in line:
+            capture = True
+            address.append(line.split(":", 1)[1].strip())
+            continue
+        if capture:
+            if not line or any(stop in line.lower() for stop in ("npwp", "nik", "email", "pembeli", "kode")):
+                break
+            address.append(line.strip())
+    if not address:
+        return None
+    return " ".join(part for part in address if part)
+
+
 def _parse_date_from_text(text: str) -> str | None:
     date_match = DATE_REGEX.search(text or "")
     if date_match:
@@ -231,6 +271,13 @@ def parse_faktur_pajak_text(text: str) -> tuple[dict[str, Any], float]:
     matches: dict[str, Any] = {}
     confidence = 0.0
 
+    seller_section = _extract_section_lines(
+        text or "", "Pengusaha Kena Pajak", ("Pembeli Barang Kena Pajak", "Pembeli Barang Kena Pajak/Penerima Jasa Kena Pajak")
+    )
+    buyer_section = _extract_section_lines(
+        text or "", "Pembeli Barang Kena Pajak", ("No.", "Kode Barang", "Nama Barang", "Harga Jual")
+    )
+
     faktur_match = FAKTUR_NO_LABEL_REGEX.search(text or "")
     if faktur_match:
         matches["fp_no"] = faktur_match.group("fp").replace(".", "").replace("-", "")
@@ -257,6 +304,14 @@ def parse_faktur_pajak_text(text: str) -> tuple[dict[str, Any], float]:
         matches["fp_date"] = parsed_date
         confidence += 0.15
 
+    seller_name = _extract_first_after_label(seller_section, "Nama")
+    seller_address = _extract_address(seller_section, "Alamat")
+    buyer_name = _extract_first_after_label(buyer_section, "Nama")
+    buyer_address = _extract_address(buyer_section, "Alamat")
+    buyer_npwp = _extract_first_after_label(buyer_section, "NPWP")
+    if buyer_npwp:
+        buyer_npwp = normalize_npwp(buyer_npwp)
+
     amounts = [_parse_idr_amount(m.group("amount")) for m in AMOUNT_REGEX.finditer(text or "")]
     if len(amounts) >= 6:
         tail_amounts = amounts[-6:]
@@ -279,9 +334,30 @@ def parse_faktur_pajak_text(text: str) -> tuple[dict[str, Any], float]:
                 matches["ppn"] = sorted(parsed_numbers)[-2]
             confidence += 0.2
 
-    matches.setdefault("ppn_type", get_settings().get("default_ppn_type", "Standard"))
+    summary = {
+        "faktur_pajak": {
+            "nomor_seri": matches.get("fp_no"),
+            "pengusaha_kena_pajak": {
+                "nama": seller_name,
+                "npwp": matches.get("npwp"),
+                "alamat": seller_address,
+            },
+            "pembeli": {
+                "nama": buyer_name,
+                "npwp": buyer_npwp,
+                "alamat": buyer_address,
+            },
+        },
+        "ringkasan_pajak": {
+            "dasar_pengenaan_pajak": matches.get("dpp"),
+            "jumlah_ppn": matches.get("ppn"),
+        },
+    }
 
-    return matches, round(min(confidence, 0.95), 2)
+    matches["notes"] = json.dumps(summary, ensure_ascii=False, indent=2)
+
+    filtered_matches = {key: value for key, value in matches.items() if key in ALLOWED_OCR_FIELDS}
+    return filtered_matches, round(min(confidence, 0.95), 2)
 
 
 def _validate_pdf_size(file_url: str, max_mb: int) -> None:
@@ -573,21 +649,33 @@ def ocr_extract_text_from_pdf(file_url: str, provider: str) -> tuple[str, dict[s
 
 
 def _update_doc_after_ocr(
-    doc: Any, doctype: str, parsed: dict[str, Any], confidence: float, raw_json: dict[str, Any] | None = None
+    doc: Any,
+    doctype: str,
+    parsed: dict[str, Any],
+    confidence: float,
+    raw_json: dict[str, Any] | None = None,
 ):
     setattr(doc, _get_fieldname(doctype, "status"), "Needs Review")
     setattr(doc, _get_fieldname(doctype, "ocr_status"), "Done")
     setattr(doc, _get_fieldname(doctype, "ocr_confidence"), confidence)
+
+    allowed_keys = set(FIELD_MAP.get(doctype, FIELD_MAP["Purchase Invoice"]).keys()) & ALLOWED_OCR_FIELDS
     for key, value in parsed.items():
+        if key not in allowed_keys:
+            continue
+
         fieldname = _get_fieldname(doctype, key)
         setattr(doc, fieldname, value)
+
     if raw_json is not None:
         setattr(doc, _get_fieldname(doctype, "ocr_raw_json"), json.dumps(raw_json, indent=2))
+
     doc.save(ignore_permissions=True)
 
 
 def _run_ocr_job(name: str, target_doctype: str, provider: str):
     target_doc = frappe.get_doc(target_doctype, name)
+    settings = get_settings()
     pdf_field = _get_fieldname(target_doctype, "tax_invoice_pdf")
     try:
         target_doc.db_set(_get_fieldname(target_doctype, "ocr_status"), "Processing")
@@ -606,7 +694,11 @@ def _run_ocr_job(name: str, target_doctype: str, provider: str):
             return
         parsed, estimated_confidence = parse_faktur_pajak_text(text or "")
         _update_doc_after_ocr(
-            target_doc, target_doctype, parsed, confidence or estimated_confidence, raw_json
+            target_doc,
+            target_doctype,
+            parsed,
+            confidence or estimated_confidence,
+            raw_json if cint(settings.get("store_raw_ocr_json", 1)) else None,
         )
     except Exception as exc:
         target_doc.db_set(
