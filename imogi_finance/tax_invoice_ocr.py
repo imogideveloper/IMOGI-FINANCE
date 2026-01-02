@@ -282,7 +282,7 @@ def _google_vision_ocr(file_url: str, settings: dict[str, Any]) -> tuple[str, di
     if image_context:
         request_body["requests"][0]["imageContext"] = image_context
 
-    if max_pages:
+    if max_pages and "files:annotate" in endpoint:
         request_body["requests"][0]["pages"] = list(range(max_pages))
 
     url = f"{endpoint}?key={api_key}"
