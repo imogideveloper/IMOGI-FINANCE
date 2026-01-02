@@ -384,6 +384,33 @@ fixtures = [
         ],
     },
     {
+        "dt": "Workflow State",
+        "filters": [
+            [
+                "name",
+                "in",
+                [
+                    "Draft",
+                    "Reopened",
+                    "Pending Level 1",
+                    "Pending Level 2",
+                    "Pending Level 3",
+                    "Approved",
+                    "Rejected",
+                    "Linked",
+                    "Closed",
+                    "Pending Approval",
+                    "Posted",
+                    "Cancelled",
+                    "Finance Review",
+                    "Approved for Transfer",
+                    "Awaiting Bank Confirmation",
+                    "Paid",
+                ],
+            ]
+        ],
+    },
+    {
         "dt": "Role",
         "filters": [
             [
