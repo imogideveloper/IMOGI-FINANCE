@@ -531,6 +531,44 @@ def _get_google_vision_headers(settings: dict[str, Any]) -> dict[str, str]:
 
 
 def _google_vision_ocr(file_url: str, settings: dict[str, Any]) -> tuple[str, dict[str, Any], float]:
+    def _iter_block_text(entry: dict[str, Any]) -> list[tuple[str, float, float, float]]:
+        """Yield (text, y_min, y_max, confidence) for each block with normalized coordinates."""
+        pages = (entry.get("fullTextAnnotation") or {}).get("pages") or []
+        blocks: list[tuple[str, float, float, float]] = []
+
+        for page in pages:
+            for block in page.get("blocks") or []:
+                vertices = (block.get("boundingBox") or {}).get("normalizedVertices") or []
+                ys = [v.get("y", 0) for v in vertices if isinstance(v, dict) and "y" in v]
+                if not ys:
+                    continue
+                y_min, y_max = min(ys), max(ys)
+                block_conf = flt(block.get("confidence", 0))
+
+                texts: list[str] = []
+                for para in block.get("paragraphs") or []:
+                    for word in para.get("words") or []:
+                        symbols = [sym.get("text", "") for sym in (word.get("symbols") or []) if isinstance(sym, dict)]
+                        word_text = "".join(symbols).strip()
+                        if word_text:
+                            texts.append(word_text)
+                if texts:
+                    blocks.append((" ".join(texts), y_min, y_max, block_conf))
+        return blocks
+
+    def _strip_border_artifacts(text: str) -> str:
+        # Remove lines that are mostly border characters
+        border_chars = set("─│—|+═╔╗╚╝•·-_=#[]")
+        cleaned_lines: list[str] = []
+        for line in text.splitlines():
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if len([ch for ch in stripped if ch in border_chars]) >= max(3, int(0.6 * len(stripped))):
+                continue
+            cleaned_lines.append(re.sub(r"[│─—|+_=]+", " ", stripped))
+        return "\n".join(cleaned_lines)
+
     try:
         import requests
     except Exception as exc:  # pragma: no cover - guard for missing optional dependency
@@ -579,24 +617,36 @@ def _google_vision_ocr(file_url: str, settings: dict[str, Any]) -> tuple[str, di
 
     texts: list[str] = []
     confidence_values: list[float] = []
+    min_block_conf = flt(settings.get("ocr_min_confidence", 0.0)) or 0.0
     for entry in responses:
-        full_text = (entry.get("fullTextAnnotation") or {}).get("text")
-        if not full_text:
-            text_annotations = entry.get("textAnnotations") or []
-            if text_annotations:
-                full_text = text_annotations[0].get("description")
-        if full_text:
-            texts.append(full_text)
+        block_texts = _iter_block_text(entry)
+        # keep only header (upper 35%) and footer (lower 35%) to avoid table/border noise
+        filtered_blocks = [
+            (text, conf)
+            for text, y_min, y_max, conf in block_texts
+            if conf >= min_block_conf and (y_max <= 0.35 or y_min >= 0.65)
+        ]
+        if filtered_blocks:
+            texts.extend([text for text, _ in filtered_blocks])
+            confidence_values.extend([conf for _, conf in filtered_blocks])
+        else:
+            # fallback to legacy full text if filtering produced nothing
+            full_text = (entry.get("fullTextAnnotation") or {}).get("text")
+            if not full_text:
+                text_annotations = entry.get("textAnnotations") or []
+                if text_annotations:
+                    full_text = text_annotations[0].get("description")
+            if full_text:
+                texts.append(full_text)
+                pages = (entry.get("fullTextAnnotation") or {}).get("pages") or []
+                for page in pages:
+                    if "confidence" in page:
+                        try:
+                            confidence_values.append(flt(page.get("confidence")))
+                        except Exception:
+                            continue
 
-        pages = (entry.get("fullTextAnnotation") or {}).get("pages") or []
-        for page in pages:
-            if "confidence" in page:
-                try:
-                    confidence_values.append(flt(page.get("confidence")))
-                except Exception:
-                    continue
-
-    text = "\n".join(texts).strip()
+    text = _strip_border_artifacts("\n".join(texts).strip())
     if not text:
         return "", data, 0.0
 
