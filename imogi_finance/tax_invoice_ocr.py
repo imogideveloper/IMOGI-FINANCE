@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import base64
 import json
 import os
 import re
+import subprocess
 from datetime import datetime
 from typing import Any
 
@@ -10,8 +12,9 @@ import frappe
 from frappe import _
 from frappe.exceptions import ValidationError
 from frappe.utils import cint, flt, get_site_path
-from frappe.utils import background_jobs
 from frappe.utils.formatters import format_value
+
+background_jobs = getattr(frappe.utils, "background_jobs", None)
 
 SETTINGS_DOCTYPE = "Tax Invoice OCR Settings"
 DEFAULT_SETTINGS = {
@@ -239,15 +242,130 @@ def _validate_provider_settings(provider: str, settings: dict[str, Any]) -> None
     raise ValidationError(_("OCR provider {0} is not supported.").format(provider))
 
 
+def _load_pdf_content_base64(file_url: str) -> tuple[str, str]:
+    if not file_url:
+        raise ValidationError(_("Tax Invoice PDF is missing. Please attach the file before running OCR."))
+
+    local_path = get_site_path(file_url.strip("/"))
+    try:
+        with open(local_path, "rb") as handle:
+            content = base64.b64encode(handle.read()).decode("utf-8")
+    except FileNotFoundError:
+        raise ValidationError(_("Could not read Tax Invoice PDF from {0}.").format(file_url))
+    return local_path, content
+
+
+def _google_vision_ocr(file_url: str, settings: dict[str, Any]) -> tuple[str, dict[str, Any], float]:
+    try:
+        import requests
+    except Exception as exc:  # pragma: no cover - guard for missing optional dependency
+        raise ValidationError(_("Google Vision OCR requires the requests package: {0}").format(exc))
+
+    local_path, content = _load_pdf_content_base64(file_url)
+    endpoint = settings.get("google_vision_endpoint") or DEFAULT_SETTINGS["google_vision_endpoint"]
+    api_key = settings.get("google_vision_api_key")
+    language = settings.get("ocr_language") or "id"
+    max_pages = max(cint(settings.get("ocr_max_pages", 2)), 1)
+
+    request_body: dict[str, Any] = {
+        "requests": [
+            {
+                "inputConfig": {"mimeType": "application/pdf", "content": content},
+                "features": [{"type": "DOCUMENT_TEXT_DETECTION"}],
+            }
+        ]
+    }
+
+    image_context = {}
+    if language:
+        image_context["languageHints"] = [language]
+    if image_context:
+        request_body["requests"][0]["imageContext"] = image_context
+
+    if max_pages:
+        request_body["requests"][0]["pages"] = list(range(max_pages))
+
+    url = f"{endpoint}?key={api_key}"
+    try:
+        response = requests.post(url, json=request_body, timeout=45)
+    except Exception as exc:
+        raise ValidationError(_("Failed to call Google Vision OCR: {0}").format(exc))
+
+    if response.status_code != 200:
+        raise ValidationError(
+            _("Google Vision OCR request failed with status {0}: {1}").format(
+                response.status_code, response.text
+            )
+        )
+
+    data = response.json() if hasattr(response, "json") else {}
+    responses = data.get("responses") or []
+    if not responses:
+        raise ValidationError(_("Google Vision OCR did not return any responses for file {0}.").format(local_path))
+
+    texts: list[str] = []
+    confidence_values: list[float] = []
+    for entry in responses:
+        full_text = (entry.get("fullTextAnnotation") or {}).get("text")
+        if full_text:
+            texts.append(full_text)
+
+        pages = (entry.get("fullTextAnnotation") or {}).get("pages") or []
+        for page in pages:
+            if "confidence" in page:
+                try:
+                    confidence_values.append(flt(page.get("confidence")))
+                except Exception:
+                    continue
+
+    text = "\n".join(texts).strip()
+    if not text:
+        raise ValidationError(_("Google Vision OCR returned empty text for file {0}.").format(local_path))
+
+    confidence = max(confidence_values) if confidence_values else 0.0
+    return text, data, confidence
+
+
+def _tesseract_ocr(file_url: str, settings: dict[str, Any]) -> tuple[str, dict[str, Any] | None, float]:
+    local_path, _ = _load_pdf_content_base64(file_url)
+    language = settings.get("ocr_language") or "eng"
+    command = settings.get("tesseract_cmd")
+
+    if not command:
+        raise ValidationError(_("Tesseract command/path is not configured. Please update Tax Invoice OCR Settings."))
+
+    try:
+        result = subprocess.run(
+            [command, local_path, "stdout", "-l", language],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except FileNotFoundError:
+        raise ValidationError(_("Tesseract command not found: {0}").format(command))
+    except subprocess.CalledProcessError as exc:
+        stderr = (exc.stderr or "").strip()
+        raise ValidationError(_("Tesseract OCR failed: {0}").format(stderr or exc)) from exc
+    except subprocess.TimeoutExpired:
+        raise ValidationError(_("Tesseract OCR timed out for file {0}.").format(local_path))
+
+    text = (result.stdout or "").strip()
+    if not text:
+        raise ValidationError(_("Tesseract OCR returned empty text for file {0}.").format(local_path))
+
+    return text, None, 0.0
+
+
 def ocr_extract_text_from_pdf(file_url: str, provider: str) -> tuple[str, dict[str, Any] | None, float]:
     settings = get_settings()
     _validate_provider_settings(provider, settings)
 
     if provider == "Google Vision":
-        raise ValidationError(_("Google Vision OCR is not configured. Please add credentials."))
+        return _google_vision_ocr(file_url, settings)
 
     if provider == "Tesseract":
-        raise ValidationError(_("Tesseract OCR is not configured. Please add command path/arguments."))
+        return _tesseract_ocr(file_url, settings)
 
     raise ValidationError(_("OCR provider {0} is not supported.").format(provider))
 

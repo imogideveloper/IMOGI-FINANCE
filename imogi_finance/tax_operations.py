@@ -18,6 +18,24 @@ INPUT_VAT_REPORT = "imogi_finance.imogi_finance.report.vat_input_register_verifi
 OUTPUT_VAT_REPORT = "imogi_finance.imogi_finance.report.vat_output_register_verified.vat_output_register_verified"
 
 
+def _safe_throw(message: str, *, title: str | None = None):
+    marker = getattr(frappe, "ThrowMarker", None)
+    throw_fn = getattr(frappe, "throw", None)
+
+    if callable(throw_fn):
+        try:
+            throw_fn(message, title=title)
+            return
+        except Exception as exc:
+            if marker and not isinstance(exc, marker) and exc.__class__.__name__ != "ThrowCalled":
+                raise marker(message)
+            raise
+
+    if marker:
+        raise marker(message)
+    raise Exception(message)
+
+
 def _get_period_bounds(period_month: int | None, period_year: int | None) -> tuple[date | None, date | None]:
     if not period_month or not period_year:
         return None, None
@@ -204,7 +222,11 @@ def validate_tax_period_lock(doc: Document, posting_date_field: str = "posting_d
     if not company:
         return
 
-    posting_date = doc.get(posting_date_field) or doc.get("request_date") or doc.get("bill_date")
+    posting_date = (
+        getattr(doc, posting_date_field, None)
+        or getattr(doc, "request_date", None)
+        or getattr(doc, "bill_date", None)
+    )
     
     if not posting_date:
         return
@@ -219,10 +241,10 @@ def validate_tax_period_lock(doc: Document, posting_date_field: str = "posting_d
 
     previous = _get_previous_doc(doc)
     if not previous:
-        frappe.throw(
-            _("Tax period is closed for the selected date range (Closing {0}). Please reopen the period or contact a Tax Reviewer.").format(
-                locked_name
-            ),
+        _safe_throw(
+            _(
+                "Tax period is closed for the selected date range (Closing {0}). Please reopen the period or contact a Tax Reviewer."
+            ).format(locked_name),
             title=_("Tax Period Locked"),
         )
 
@@ -235,7 +257,7 @@ def validate_tax_period_lock(doc: Document, posting_date_field: str = "posting_d
     if not changed:
         return
 
-    frappe.throw(
+    _safe_throw(
         _("Cannot modify tax invoice or tax mapping fields because Tax Period Closing {0} is Closed.").format(
             locked_name
         ),

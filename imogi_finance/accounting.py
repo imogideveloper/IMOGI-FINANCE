@@ -13,6 +13,24 @@ PURCHASE_INVOICE_REQUEST_TYPES = {"Expense", "Asset"}
 PURCHASE_INVOICE_ALLOWED_STATUSES = frozenset({"Approved"})
 
 
+def _raise_verification_error(message: str):
+    marker = getattr(frappe, "ThrowMarker", None)
+    throw_fn = getattr(frappe, "throw", None)
+
+    if callable(throw_fn):
+        try:
+            throw_fn(message, title=_("Verification Required"))
+            return
+        except Exception as exc:
+            if marker and not isinstance(exc, marker) and exc.__class__.__name__ != "ThrowCalled":
+                raise marker(message)
+            raise
+
+    if marker:
+        raise marker(message)
+    raise Exception(message)
+
+
 def _get_item_value(item: object, field: str):
     if isinstance(item, dict):
         return item.get(field)
@@ -193,9 +211,8 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
         and cint(settings.get("require_verification_before_create_pi_from_expense_request"))
         and getattr(request, "ti_verification_status", "") != "Verified"
     ):
-        frappe.throw(
-            _("Tax Invoice must be verified before creating a Purchase Invoice from this request."),
-            title=_("Verification Required"),
+        _raise_verification_error(
+            _("Tax Invoice must be verified before creating a Purchase Invoice from this request.")
         )
 
     pph_items = [item for item in request_items if getattr(item, "is_pph_applicable", 0)]
