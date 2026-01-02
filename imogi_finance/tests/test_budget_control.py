@@ -1,16 +1,20 @@
 import sys
 import types
+from datetime import datetime
 
 import pytest
 
 frappe = sys.modules.setdefault("frappe", types.ModuleType("frappe"))
 frappe._ = lambda msg, *args, **kwargs: msg
-frappe.get_roles = lambda: []
+frappe.get_roles = lambda: ["Budget Controller"]
+frappe.get_all = lambda *args, **kwargs: []
+frappe.session = types.SimpleNamespace(user="test-budget-controller")
 frappe.whitelist = lambda *args, **kwargs: (lambda fn: fn)
 frappe.utils = types.SimpleNamespace(
     cint=lambda value: int(value),
     flt=lambda value, *args, **kwargs: float(value),
     get_site_path=lambda *args, **kwargs: "/tmp",
+    now_datetime=lambda: datetime.now(),
 )
 sys.modules["frappe.utils"] = frappe.utils
 frappe.utils.formatters = types.SimpleNamespace(format_value=lambda value, *args, **kwargs: value)
@@ -215,7 +219,7 @@ def test_create_internal_charge_from_expense_request(monkeypatch):
         internal_charge_request=None,
         items=[types.SimpleNamespace(expense_account="5110", amount=250)],
     )
-    frappe.utils = types.SimpleNamespace(nowdate=lambda: "2024-03-01")
+    frappe.utils = types.SimpleNamespace(nowdate=lambda: "2024-03-01", now_datetime=lambda: datetime.now())
     monkeypatch.setattr(frappe, "get_doc", lambda *args, **kwargs: er, raising=False)
     monkeypatch.setattr(frappe, "new_doc", lambda dt: _DummyIC(), raising=False)
     monkeypatch.setattr(utils, "resolve_company_from_cost_center", lambda cc: "TC", raising=False)
@@ -255,3 +259,90 @@ def test_reserve_budget_for_request(monkeypatch):
 
     assert any(row["entry_type"] == "RESERVATION" for row in posted)
     assert er.budget_lock_status == "Locked"
+    assert getattr(er, "budget_workflow_state", None) == "Approved"
+
+
+def test_budget_workflow_state_transitions(monkeypatch):
+    settings = _patch_settings(monkeypatch, enable_budget_lock=1, lock_on_workflow_state="Approved")
+    settings["require_budget_controller_review"] = 1
+
+    comments = []
+    er = types.SimpleNamespace(
+        name="ER-BUDGET-WF",
+        status="Approved",
+        cost_center="CC-200",
+        fiscal_year="2024",
+        project=None,
+        branch=None,
+        allocation_mode="Direct",
+        budget_lock_status=None,
+        budget_workflow_state="Submitted",
+        items=[types.SimpleNamespace(expense_account="5110", amount=150)],
+    )
+    er.db_set = lambda field, value: setattr(er, field, value)
+    er.add_comment = lambda _type, text: comments.append(text)
+
+    consumption_entries = []
+    reservation_entries = []
+
+    monkeypatch.setattr(utils, "resolve_company_from_cost_center", lambda cc: "TC", raising=False)
+    monkeypatch.setattr(utils, "resolve_fiscal_year", lambda fy: "2024", raising=False)
+    monkeypatch.setattr(service, "check_budget_available", lambda dims, amount: service.BudgetCheckResult(True, "ok", available=1000, snapshot={}), raising=False)
+    posted = []
+
+    def _post_entry(entry_type, dims, amount, direction, **kwargs):
+        posted.append({"entry_type": entry_type, "direction": direction, "amount": amount, "ref": kwargs.get("ref_name")})
+        if entry_type == "CONSUMPTION":
+            consumption_entries.append(
+                {
+                    "entry_type": "CONSUMPTION",
+                    "company": dims.company,
+                    "fiscal_year": dims.fiscal_year,
+                    "cost_center": dims.cost_center,
+                    "account": dims.account,
+                    "project": dims.project,
+                    "branch": dims.branch,
+                    "amount": amount,
+                    "direction": direction,
+                }
+            )
+        if entry_type == "RESERVATION":
+            reservation_entries.append(
+                {
+                    "entry_type": "RESERVATION",
+                    "company": dims.company,
+                    "fiscal_year": dims.fiscal_year,
+                    "cost_center": dims.cost_center,
+                    "account": dims.account,
+                    "project": dims.project,
+                    "branch": dims.branch,
+                    "amount": amount,
+                    "direction": direction,
+                }
+            )
+        return "BCE-LOG"
+
+    monkeypatch.setattr(ledger, "post_entry", _post_entry, raising=False)
+
+    def _fake_entries(ref_doctype, ref_name, entry_type=None):
+        if ref_doctype == "Purchase Invoice" and (entry_type in {None, "CONSUMPTION"}):
+            return consumption_entries
+        if ref_doctype == "Expense Request" and entry_type == "RESERVATION":
+            return reservation_entries
+        return []
+
+    monkeypatch.setattr(workflow, "_get_entries_for_ref", _fake_entries, raising=False)
+
+    workflow.reserve_budget_for_request(er, trigger_action="Approve", next_state="Approved")
+    assert er.budget_workflow_state == "Approved"
+
+    pi = types.SimpleNamespace(name="PI-BUDGET", company="TC", posting_date="2024-01-01", expense_request=er.name)
+    workflow.consume_budget_for_purchase_invoice(pi, er)
+    assert er.budget_workflow_state == "Completed"
+
+    workflow.reverse_consumption_for_purchase_invoice(pi, er)
+    assert er.budget_workflow_state == "Approved"
+
+    workflow.release_budget_for_request(er, reason="Reject")
+    assert er.budget_workflow_state == "Rejected"
+    assert any("Budget workflow state changed" in comment for comment in comments)

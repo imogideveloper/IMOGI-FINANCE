@@ -302,7 +302,7 @@ class ExpenseRequest(Document):
         handle_expense_request_workflow(self, action, next_state)
 
     def on_cancel(self):
-        release_budget_for_request(self)
+        release_budget_for_request(self, reason="Cancel")
 
     def validate_reopen_permission(self):
         allowed = self.REOPEN_ALLOWED_ROLES

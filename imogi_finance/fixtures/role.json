@@ -19,6 +19,12 @@
   },
   {
     "doctype": "Role",
+    "name": "Budget Controller",
+    "role_name": "Budget Controller",
+    "desk_access": 1
+  },
+  {
+    "doctype": "Role",
     "name": "Tax Reviewer",
     "role_name": "Tax Reviewer",
     "desk_access": 1
