@@ -12,6 +12,8 @@
     "enable_budget_reclass",
     "enable_additional_budget",
     "enable_internal_charge",
+    "budget_controller_role",
+    "require_budget_controller_review",
     "lock_on_workflow_state",
     "enforce_mode",
     "allow_budget_overrun_role",
@@ -44,6 +46,19 @@
       "label": "Enable Internal Charge",
       "fieldtype": "Check",
       "default": "0"
+    },
+    {
+      "fieldname": "budget_controller_role",
+      "label": "Budget Controller Role",
+      "fieldtype": "Link",
+      "options": "Role",
+      "default": "Budget Controller"
+    },
+    {
+      "fieldname": "require_budget_controller_review",
+      "label": "Require Budget Controller Review",
+      "fieldtype": "Check",
+      "default": "1"
     },
     {
       "fieldname": "lock_on_workflow_state",

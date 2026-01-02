@@ -706,6 +706,18 @@
   },
   {
     "doctype": "Custom Field",
+    "name": "Expense Request-budget_workflow_state",
+    "dt": "Expense Request",
+    "fieldname": "budget_workflow_state",
+    "fieldtype": "Select",
+    "insert_after": "budget_lock_status",
+    "label": "Budget Workflow State",
+    "options": "Draft\nSubmitted\nUnder Review\nApproved\nRejected\nCompleted",
+    "default": "Draft",
+    "read_only": 1
+  },
+  {
+    "doctype": "Custom Field",
     "name": "Expense Request-internal_charge_request",
     "dt": "Expense Request",
     "fieldname": "internal_charge_request",

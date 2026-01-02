@@ -13,6 +13,131 @@ from frappe import _
 from imogi_finance import accounting
 from imogi_finance.budget_control import ledger, service, utils
 
+BUDGET_WORKFLOW_STATES = (
+    "Draft",
+    "Submitted",
+    "Under Review",
+    "Approved",
+    "Rejected",
+    "Completed",
+)
+
+
+def _get_session_user() -> str | None:
+    return getattr(getattr(frappe, "session", None), "user", None)
+
+
+def _safe_now():
+    try:
+        return frappe.utils.now_datetime()
+    except Exception:
+        try:
+            return datetime.now()
+        except Exception:
+            return None
+
+
+def _add_budget_state_comment(expense_request, from_state: str, to_state: str, *, reason: str | None = None):
+    add_comment = getattr(expense_request, "add_comment", None)
+    if not callable(add_comment):
+        return
+
+    timestamp = _safe_now()
+    details = []
+    session_user = _get_session_user()
+    if session_user:
+        details.append(_("User: {0}").format(session_user))
+    if timestamp:
+        details.append(_("At: {0}").format(timestamp))
+    if reason:
+        details.append(_("Reason: {0}").format(reason))
+
+    detail_text = " ".join(details) if details else ""
+    message = _("Budget workflow state changed from {0} to {1}.").format(from_state, to_state)
+    if detail_text:
+        message = "{0} {1}".format(message, detail_text)
+
+    try:
+        add_comment("Comment", message)
+    except Exception:
+        pass
+
+
+def _notify_budget_state_change(expense_request, to_state: str):
+    notifier = getattr(frappe, "publish_realtime", None)
+    if not notifier or not getattr(expense_request, "name", None):
+        return
+
+    try:
+        notifier(
+            event="budget_workflow_update",
+            message={
+                "expense_request": getattr(expense_request, "name", None),
+                "state": to_state,
+                "user": _get_session_user(),
+            },
+        )
+    except Exception:
+        pass
+
+
+def _get_budget_workflow_state(expense_request) -> str:
+    state = getattr(expense_request, "budget_workflow_state", None)
+    return state or "Draft"
+
+
+def _set_budget_workflow_state(expense_request, state: str, *, reason: str | None = None):
+    if state not in BUDGET_WORKFLOW_STATES:
+        return
+
+    current_state = _get_budget_workflow_state(expense_request)
+    if current_state == state:
+        return
+
+    if hasattr(expense_request, "db_set"):
+        try:
+            expense_request.db_set("budget_workflow_state", state)
+        except Exception:
+            pass
+    expense_request.budget_workflow_state = state
+
+    _add_budget_state_comment(expense_request, current_state, state, reason=reason)
+    _notify_budget_state_change(expense_request, state)
+
+
+def _require_budget_controller_role(settings):
+    if not settings.get("require_budget_controller_review"):
+        return None
+
+    required_role = settings.get("budget_controller_role") or "Budget Controller"
+    try:
+        roles = set(frappe.get_roles())
+    except Exception:
+        roles = set()
+
+    if required_role in roles or "System Manager" in roles:
+        return required_role
+
+    frappe.throw(_("Budget Controller role ({0}) is required to review and approve budget operations.").format(required_role))
+
+
+def _record_budget_workflow_event(expense_request, action: str | None, next_state: str | None, target_state: str):
+    current_state = _get_budget_workflow_state(expense_request)
+    if action == "Submit" and current_state in {"Draft", "Rejected"}:
+        _set_budget_workflow_state(expense_request, "Submitted", reason=_("Submitted for budget controller review"))
+        return
+
+    if action == "Reject":
+        _set_budget_workflow_state(expense_request, "Rejected", reason=_("Workflow action rejected"))
+        return
+
+    if action == "Reopen":
+        _set_budget_workflow_state(expense_request, "Draft", reason=_("Reopened for corrections"))
+        return
+
+    if action == "Approve" and next_state == target_state and current_state == "Submitted":
+        _set_budget_workflow_state(expense_request, "Under Review", reason=_("Budget controller review started"))
+
 
 def _get_account_totals(items: Iterable) -> tuple[float, dict[str, float]]:
     total = 0.0
@@ -199,6 +324,14 @@ def reserve_budget_for_request(expense_request, *, trigger_action: str | None = 
     if not slices:
         return
 
+    controller_role = _require_budget_controller_role(settings)
+    reviewer = _get_session_user() or controller_role
+    _set_budget_workflow_state(
+        expense_request,
+        "Under Review",
+        reason=_("Budget validation initiated by {0}.").format(reviewer or _("system")),
+    )
+
     allow_role = settings.get("allow_budget_overrun_role")
     allow_overrun = bool(allow_role and allow_role in frappe.get_roles())
 
@@ -229,9 +362,14 @@ def reserve_budget_for_request(expense_request, *, trigger_action: str | None = 
         if hasattr(expense_request, "db_set"):
             expense_request.db_set("budget_lock_status", status)
         expense_request.budget_lock_status = status
+        _set_budget_workflow_state(
+            expense_request,
+            "Approved",
+            reason=_("Budget {0} during reservation.").format("overrun allowed" if any_overrun else "locked"),
+        )
 
 
-def release_budget_for_request(expense_request):
+def release_budget_for_request(expense_request, *, reason: str | None = None):
     settings = utils.get_settings()
     if not settings.get("enable_budget_lock"):
         return
@@ -262,6 +400,20 @@ def release_budget_for_request(expense_request):
     if hasattr(expense_request, "db_set"):
         expense_request.db_set("budget_lock_status", "Released")
     expense_request.budget_lock_status = "Released"
+    next_budget_state = None
+    if reason == "Reopen":
+        next_budget_state = "Draft"
+    elif reason in {"Reject", "Cancel"}:
+        next_budget_state = "Rejected"
+    elif reason:
+        next_budget_state = "Rejected"
+
+    if next_budget_state:
+        _set_budget_workflow_state(
+            expense_request,
+            next_budget_state,
+            reason=_("Budget release triggered by {0}.").format(reason),
+        )
 
 
 def handle_expense_request_workflow(expense_request, action: str | None, next_state: str | None):
@@ -270,9 +422,10 @@ def handle_expense_request_workflow(expense_request, action: str | None, next_st
         return
 
     target_state = settings.get("lock_on_workflow_state") or "Approved"
+    _record_budget_workflow_event(expense_request, action, next_state, target_state)
 
     if action in {"Reject", "Reopen"} or (next_state and next_state not in {target_state, "Linked"}):
-        release_budget_for_request(expense_request)
+        release_budget_for_request(expense_request, reason=action)
         return
 
     if getattr(expense_request, "status", None) == target_state or next_state == target_state:
@@ -324,6 +477,11 @@ def consume_budget_for_purchase_invoice(purchase_invoice, expense_request=None):
     if hasattr(request, "db_set"):
         request.db_set("budget_lock_status", "Consumed")
     request.budget_lock_status = "Consumed"
+    _set_budget_workflow_state(
+        request,
+        "Completed",
+        reason=_("Budget consumed by Purchase Invoice {0}.").format(getattr(purchase_invoice, "name", None)),
+    )
 
 
 def reverse_consumption_for_purchase_invoice(purchase_invoice, expense_request=None):
@@ -371,6 +529,11 @@ def reverse_consumption_for_purchase_invoice(purchase_invoice, expense_request=N
         if hasattr(request, "db_set"):
             request.db_set("budget_lock_status", "Locked")
         request.budget_lock_status = "Locked"
+        _set_budget_workflow_state(
+            request,
+            "Approved",
+            reason=_("Budget consumption reversed from Purchase Invoice {0}.").format(getattr(purchase_invoice, "name", None)),
+        )
 
 
 def maybe_post_internal_charge_je(purchase_invoice, expense_request=None):
