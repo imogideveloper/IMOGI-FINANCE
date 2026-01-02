@@ -31,6 +31,12 @@ function lockErTaxInvoiceFields(frm) {
   });
 }
 
+function hideErOcrStatus(frm) {
+  if (frm.fields_dict?.ti_ocr_status) {
+    frm.set_df_property('ti_ocr_status', 'hidden', true);
+  }
+}
+
 async function setErUploadQuery(frm) {
   let usedUploads = [];
   let verifiedUploads = [];
@@ -61,6 +67,7 @@ async function setErUploadQuery(frm) {
 
 frappe.ui.form.on('Expense Request', {
   async refresh(frm) {
+    hideErOcrStatus(frm);
     lockErTaxInvoiceFields(frm);
     frm.dashboard.clear_headline();
     await setErUploadQuery(frm);
