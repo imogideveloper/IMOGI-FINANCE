@@ -73,7 +73,7 @@
       "options": "Tax Profile PPh Account"
     },
     {
-      "default": 10,
+      "default": 10000,
       "fieldname": "tolerance_idr",
       "fieldtype": "Currency",
       "label": "Tolerance (IDR)"

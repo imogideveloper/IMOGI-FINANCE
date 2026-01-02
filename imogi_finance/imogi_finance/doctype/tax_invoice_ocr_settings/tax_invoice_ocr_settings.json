@@ -99,7 +99,7 @@
       "label": "OCR Max Retry"
     },
     {
-      "default": 10,
+      "default": 10000,
       "fieldname": "ocr_file_max_mb",
       "fieldtype": "Int",
       "label": "OCR File Max (MB)"

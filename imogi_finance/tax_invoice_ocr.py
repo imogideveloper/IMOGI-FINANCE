@@ -31,7 +31,7 @@ DEFAULT_SETTINGS = {
     "require_verification_before_submit_pi": 1,
     "require_verification_before_create_pi_from_expense_request": 1,
     "npwp_normalize": 1,
-    "tolerance_idr": 10,
+    "tolerance_idr": 10000,
     "block_duplicate_fp_no": 1,
     "ppn_input_account": None,
     "ppn_output_account": None,
