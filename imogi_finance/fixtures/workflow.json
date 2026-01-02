@@ -10,17 +10,38 @@
     "workflow_state_field": "workflow_state",
     "docstatus": 0,
     "actions": [
-      { "action": "Submit", "allowed": "All" },
-      { "action": "Approve", "allowed": "Expense Approver" },
-      { "action": "Reject", "allowed": "Expense Approver" },
-      { "action": "Close", "allowed": "Expense Approver" },
-      { "action": "Reopen", "allowed": "System Manager" }
+      {
+        "action": "Submit",
+        "allowed": "All"
+      },
+      {
+        "action": "Approve",
+        "allowed": "Expense Approver"
+      },
+      {
+        "action": "Reject",
+        "allowed": "Expense Approver"
+      },
+      {
+        "action": "Close",
+        "allowed": "Expense Approver"
+      },
+      {
+        "action": "Reopen",
+        "allowed": "System Manager"
+      }
     ],
     "states": [
       {
         "doctype": "Workflow Document State",
         "state": "Draft",
         "doc_status": "0",
+        "allow_edit": "All"
+      },
+      {
+        "doctype": "Workflow Document State",
+        "state": "Reopened",
+        "doc_status": "1",
         "allow_edit": "All"
       },
       {
@@ -146,9 +167,10 @@
         "doctype": "Workflow Transition",
         "action": "Reopen",
         "state": "Rejected",
-        "next_state": "Draft",
+        "next_state": "Reopened",
         "allowed": "System Manager",
-        "allow_self_approval": 0
+        "allow_self_approval": 0,
+        "doc_status": "1"
       },
       {
         "doctype": "Workflow Transition",
@@ -172,11 +194,26 @@
     "workflow_state_field": "workflow_state",
     "docstatus": 0,
     "actions": [
-      { "action": "Submit for Approval", "allowed": "All" },
-      { "action": "Approve", "allowed": "Accounts Manager" },
-      { "action": "Reject", "allowed": "Accounts Manager" },
-      { "action": "Post", "allowed": "Accounts Manager" },
-      { "action": "Cancel", "allowed": "Accounts Manager" }
+      {
+        "action": "Submit for Approval",
+        "allowed": "All"
+      },
+      {
+        "action": "Approve",
+        "allowed": "Accounts Manager"
+      },
+      {
+        "action": "Reject",
+        "allowed": "Accounts Manager"
+      },
+      {
+        "action": "Post",
+        "allowed": "Accounts Manager"
+      },
+      {
+        "action": "Cancel",
+        "allowed": "Accounts Manager"
+      }
     ],
     "states": [
       {
@@ -270,10 +307,22 @@
     "workflow_state_field": "workflow_state",
     "docstatus": 0,
     "actions": [
-      { "action": "Submit for Review", "allowed": "Accounts User" },
-      { "action": "Approve Transfer", "allowed": "Accounts Manager" },
-      { "action": "Release to Bank", "allowed": "Accounts User" },
-      { "action": "Mark Paid", "allowed": "Accounts Manager" }
+      {
+        "action": "Submit for Review",
+        "allowed": "Accounts User"
+      },
+      {
+        "action": "Approve Transfer",
+        "allowed": "Accounts Manager"
+      },
+      {
+        "action": "Release to Bank",
+        "allowed": "Accounts User"
+      },
+      {
+        "action": "Mark Paid",
+        "allowed": "Accounts Manager"
+      }
     ],
     "states": [
       {

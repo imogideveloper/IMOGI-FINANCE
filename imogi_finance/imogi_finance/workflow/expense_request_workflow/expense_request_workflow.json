@@ -1,10 +1,25 @@
 {
   "actions": [
-    {"action": "Submit", "allowed": "All"},
-    {"action": "Approve", "allowed": "Expense Approver"},
-    {"action": "Reject", "allowed": "Expense Approver"},
-    {"action": "Close", "allowed": "Expense Approver"},
-    {"action": "Reopen", "allowed": "System Manager"}
+    {
+      "action": "Submit",
+      "allowed": "All"
+    },
+    {
+      "action": "Approve",
+      "allowed": "Expense Approver"
+    },
+    {
+      "action": "Reject",
+      "allowed": "Expense Approver"
+    },
+    {
+      "action": "Close",
+      "allowed": "Expense Approver"
+    },
+    {
+      "action": "Reopen",
+      "allowed": "System Manager"
+    }
   ],
   "creation": "",
   "docstatus": 0,
@@ -16,14 +31,51 @@
   "notes": "Roles are intentionally broad; approval enforcement happens in ExpenseRequest.before_workflow_action based on the dynamically resolved route.",
   "override_status": 1,
   "states": [
-    {"state": "Draft", "doc_status": 0, "allow_edit": "All"},
-    {"state": "Pending Level 1", "doc_status": 1, "allow_edit": "All"},
-    {"state": "Pending Level 2", "doc_status": 1, "allow_edit": "All"},
-    {"state": "Pending Level 3", "doc_status": 1, "allow_edit": "All"},
-    {"state": "Approved", "doc_status": 1, "allow_edit": ""},
-    {"state": "Rejected", "doc_status": 1, "allow_edit": ""},
-    {"state": "Linked", "doc_status": 1, "allow_edit": ""},
-    {"state": "Closed", "doc_status": 1, "allow_edit": ""}
+    {
+      "state": "Draft",
+      "doc_status": 0,
+      "allow_edit": "All"
+    },
+    {
+      "state": "Reopened",
+      "doc_status": 1,
+      "allow_edit": "All"
+    },
+    {
+      "state": "Pending Level 1",
+      "doc_status": 1,
+      "allow_edit": "All"
+    },
+    {
+      "state": "Pending Level 2",
+      "doc_status": 1,
+      "allow_edit": "All"
+    },
+    {
+      "state": "Pending Level 3",
+      "doc_status": 1,
+      "allow_edit": "All"
+    },
+    {
+      "state": "Approved",
+      "doc_status": 1,
+      "allow_edit": ""
+    },
+    {
+      "state": "Rejected",
+      "doc_status": 1,
+      "allow_edit": ""
+    },
+    {
+      "state": "Linked",
+      "doc_status": 1,
+      "allow_edit": ""
+    },
+    {
+      "state": "Closed",
+      "doc_status": 1,
+      "allow_edit": ""
+    }
   ],
   "transitions": [
     {
@@ -105,8 +157,8 @@
       "action": "Reopen",
       "allowed": "System Manager",
       "state": "Rejected",
-      "next_state": "Draft",
-      "doc_status": 0
+      "next_state": "Reopened",
+      "doc_status": 1
     },
     {
       "action": "Reopen",
