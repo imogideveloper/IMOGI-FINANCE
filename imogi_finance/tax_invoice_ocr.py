@@ -409,7 +409,7 @@ def _google_vision_ocr(file_url: str, settings: dict[str, Any]) -> tuple[str, di
         request_body["requests"][0]["imageContext"] = image_context
 
     if max_pages and "files:annotate" in endpoint:
-        request_body["requests"][0]["pages"] = list(range(max_pages))
+        request_body["requests"][0]["pages"] = list(range(1, max_pages + 1))
 
     try:
         response = requests.post(endpoint, json=request_body, headers=headers, timeout=45)
