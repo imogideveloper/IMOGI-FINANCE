@@ -67,7 +67,6 @@
       "fieldname": "fp_date",
       "fieldtype": "Date",
       "label": "Tanggal Faktur Pajak",
-      "reqd": 1
     },
     {
       "fieldname": "column_break_basic",
