@@ -300,8 +300,9 @@ def _enqueue_ocr(doc: Any, doctype: str):
     )
     provider = settings.get("ocr_provider", "Manual Only")
 
+    method_path = f"{__name__}._run_ocr_job"
     frappe.enqueue(
-        _run_ocr_job,
+        method_path,
         queue="long",
         job_name=f"tax-invoice-ocr-{doctype}-{doc.name}",
         timeout=300,
