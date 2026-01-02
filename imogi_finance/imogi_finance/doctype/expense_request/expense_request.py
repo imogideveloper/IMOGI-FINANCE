@@ -15,17 +15,29 @@ from imogi_finance.branching import apply_branch, resolve_branch
 from imogi_finance.approval import (
     approval_setting_required_message,
     get_active_setting_meta,
-    get_approval_route,
     log_route_resolution_error,
 )
 from imogi_finance.budget_control.workflow import handle_expense_request_workflow, release_budget_for_request
+from imogi_finance.services.approval_route_service import ApprovalRouteService
+from imogi_finance.services.workflow_service import WorkflowService
 from imogi_finance.tax_invoice_ocr import validate_tax_invoice_upload_link
+from imogi_finance.validators.finance_validator import FinanceValidator
+from imogi_finance.workflows.workflow_engine import WorkflowEngine
+
+
+def get_approval_route(cost_center: str, accounts, amount: float, *, setting_meta=None):
+    """Compatibility wrapper for ApprovalRouteService.get_route used in tests and patches."""
+    return ApprovalRouteService.get_route(cost_center, accounts, amount, setting_meta=setting_meta)
 
 
 class ExpenseRequest(Document):
     """Main expense request document, integrating approval and accounting flows."""
 
     REOPEN_ALLOWED_ROLES = {"System Manager"}
+    _workflow_service = WorkflowService()
+    _workflow_engine = WorkflowEngine(
+        config_path="imogi_finance/imogi_finance/workflow/expense_request_workflow/expense_request_workflow.json"
+    )
 
     def before_insert(self):
         self._set_requester_to_creator()
@@ -45,17 +57,20 @@ class ExpenseRequest(Document):
         self.validate_workflow_action_guard()
 
     def validate_amounts(self):
-        total, expense_accounts = accounting.summarize_request_items(self.get("items"))
+        total, expense_accounts = FinanceValidator.validate_amounts(self.get("items"))
         self.amount = total
         self.expense_accounts = expense_accounts
         self.expense_account = expense_accounts[0] if len(expense_accounts) == 1 else None
 
     def apply_branch_defaults(self):
-        branch = resolve_branch(
-            company=self._get_company(),
-            cost_center=getattr(self, "cost_center", None),
-            explicit_branch=getattr(self, "branch", None),
-        )
+        try:
+            branch = resolve_branch(
+                company=self._get_company(),
+                cost_center=getattr(self, "cost_center", None),
+                explicit_branch=getattr(self, "branch", None),
+            )
+        except Exception:
+            branch = None
         if branch:
             apply_branch(self, branch)
 
@@ -84,32 +99,7 @@ class ExpenseRequest(Document):
                 )
 
     def validate_tax_fields(self):
-        items = self.get("items") or []
-
-        is_ppn_applicable = getattr(self, "is_ppn_applicable", 0)
-        if is_ppn_applicable and not self.ppn_template:
-            frappe.throw(_("Please select a PPN Template when PPN is applicable."))
-
-        item_pph_applicable = [item for item in items if getattr(item, "is_pph_applicable", 0)]
-        is_pph_applicable = getattr(self, "is_pph_applicable", 0) or bool(item_pph_applicable)
-        if is_pph_applicable:
-            if not self.pph_type:
-                frappe.throw(_("Please select a PPh Type when PPh is applicable."))
-
-            if getattr(self, "is_pph_applicable", 0) and not item_pph_applicable:
-                if not self.pph_base_amount or self.pph_base_amount <= 0:
-                    frappe.throw(
-                        _("Please enter a PPh Base Amount greater than zero when PPh is applicable.")
-                    )
-
-            for item in item_pph_applicable:
-                base_amount = getattr(item, "pph_base_amount", None)
-                if not base_amount or base_amount <= 0:
-                    frappe.throw(
-                        _("Please enter a PPh Base Amount greater than zero for item {0}.").format(
-                            getattr(item, "description", None) or getattr(item, "expense_account", None) or item.idx
-                        )
-                    )
+        FinanceValidator.validate_tax_fields(self)
 
     def validate_final_state_immutability(self):
         """Prevent edits to key fields after approval or downstream linkage."""
@@ -198,6 +188,13 @@ class ExpenseRequest(Document):
             flags = type("Flags", (), {})()
             self.flags = flags
         self.flags.workflow_action_allowed = True
+        if action != "Close":
+            self._workflow_engine.guard_action(
+                doc=self,
+                action=action,
+                current_state=self.status,
+                next_state=kwargs.get("next_state"),
+            )
         if action == "Submit":
             self.validate_submit_permission()
             self.validate_reopen_override_resolution()
@@ -691,33 +688,19 @@ class ExpenseRequest(Document):
 
     def sync_status_with_workflow_state(self):
         """Keep status aligned with workflow_state when workflows use a separate field."""
-        workflow_state = getattr(self, "workflow_state", None)
-        if not workflow_state:
-            return
-
-        valid_states = {
-            "Draft",
-            "Pending Level 1",
-            "Pending Level 2",
-            "Pending Level 3",
-            "Approved",
-            "Rejected",
-            "Linked",
-            "Closed",
-        }
-        if workflow_state not in valid_states:
-            return
-
-        current_status = getattr(self, "status", None)
-        if current_status == workflow_state:
-            return
-
-        self.status = workflow_state
-        flags = getattr(self, "flags", None)
-        if flags is None:
-            flags = type("Flags", (), {})()
-            self.flags = flags
-        self.flags.workflow_action_allowed = True
+        self._workflow_service.sync_status(
+            self,
+            valid_states={
+                "Draft",
+                "Pending Level 1",
+                "Pending Level 2",
+                "Pending Level 3",
+                "Approved",
+                "Rejected",
+                "Linked",
+                "Closed",
+            },
+        )
 
     def validate_pending_edit_restrictions(self):
         """Limit who can edit pending requests and add audit breadcrumbs."""
@@ -810,25 +793,7 @@ class ExpenseRequest(Document):
 
     def validate_workflow_action_guard(self):
         """Block status mutations that bypass workflow enforcement."""
-        flags_obj = getattr(self, "flags", None)
-        if flags_obj and getattr(flags_obj, "workflow_action_allowed", False):
-            return
-
-        flags = getattr(frappe, "flags", None)
-        if getattr(flags, "in_patch", False) or getattr(flags, "in_install", False):
-            return
-
-        previous = self._get_previous_doc()
-        if not previous or getattr(previous, "docstatus", None) != getattr(self, "docstatus", None):
-            return
-
-        if getattr(previous, "status", None) == getattr(self, "status", None):
-            return
-
-        frappe.throw(
-            _("Status changes must be performed via workflow actions."),
-            title=_("Not Allowed"),
-        )
+        self._workflow_service.guard_status_changes(self)
 
     @staticmethod
     def _get_value(source, field):
@@ -1112,20 +1077,7 @@ class ExpenseRequest(Document):
             pass
 
     def _record_route_setting_meta(self, setting_meta: dict | None):
-        if not setting_meta:
-            return
-
-        if isinstance(setting_meta, str):
-            self.approval_setting = setting_meta
-            return
-
-        if not isinstance(setting_meta, dict):
-            self.approval_setting = str(setting_meta)
-            return
-
-        self.approval_setting = setting_meta.get("name") or self.approval_setting
-        if setting_meta.get("modified") is not None:
-            self.approval_setting_last_modified = setting_meta.get("modified")
+        ApprovalRouteService.record_setting_meta(self, setting_meta)
 
     def _add_stale_route_comment(self, current_meta: dict, message: str):
         if not getattr(self, "name", None) or not hasattr(self, "add_comment"):

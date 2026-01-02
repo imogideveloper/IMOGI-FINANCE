@@ -1,0 +1,4 @@
+expense_request:
+  config: "imogi_finance/imogi_finance/workflow/expense_request_workflow/expense_request_workflow.json"
+branch_expense_request:
+  config: "imogi_finance/imogi_finance/workflow/branch_expense_request_workflow/branch_expense_request_workflow.json"

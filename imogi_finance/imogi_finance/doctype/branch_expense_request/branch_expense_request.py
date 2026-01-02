@@ -12,6 +12,8 @@ from imogi_finance import accounting
 from imogi_finance.branching import apply_branch, resolve_branch
 from imogi_finance.budget_control import ledger, service
 from imogi_finance.tax_invoice_ocr import validate_tax_invoice_upload_link
+from imogi_finance.validators.finance_validator import FinanceValidator
+from imogi_finance.validators.employee_validator import EmployeeValidator
 from ..branch_expense_request_settings.branch_expense_request_settings import get_settings
 
 
@@ -90,7 +92,7 @@ class BranchExpenseRequest(Document):
         self.status = self.STATUS_CANCELLED
 
     def validate_amounts(self):
-        total, expense_accounts = accounting.summarize_request_items(self.get("items"))
+        total, expense_accounts = FinanceValidator.validate_amounts(self.get("items"))
         self.total_amount = total
         self.amount = total
         self.expense_accounts = expense_accounts
@@ -106,34 +108,7 @@ class BranchExpenseRequest(Document):
             apply_branch(self, branch)
 
     def validate_tax_fields(self):
-        items = self.get("items") or []
-
-        is_ppn_applicable = getattr(self, "is_ppn_applicable", 0)
-        if is_ppn_applicable and not self.ppn_template:
-            frappe.throw(_("Please select a PPN Template when PPN is applicable."))
-
-        item_pph_applicable = [item for item in items if getattr(item, "is_pph_applicable", 0)]
-        is_pph_applicable = getattr(self, "is_pph_applicable", 0) or bool(item_pph_applicable)
-        if is_pph_applicable:
-            if not self.pph_type:
-                frappe.throw(_("Please select a PPh Type when PPh is applicable."))
-
-            if getattr(self, "is_pph_applicable", 0) and not item_pph_applicable:
-                if not self.pph_base_amount or self.pph_base_amount <= 0:
-                    frappe.throw(
-                        _("Please enter a PPh Base Amount greater than zero when PPh is applicable.")
-                    )
-
-            for item in item_pph_applicable:
-                base_amount = getattr(item, "pph_base_amount", None)
-                if not base_amount or base_amount <= 0:
-                    frappe.throw(
-                        _("Please enter a PPh Base Amount greater than zero for item {0}.").format(
-                            getattr(item, "description", None)
-                            or getattr(item, "expense_account", None)
-                            or item.idx
-                        )
-                    )
+        FinanceValidator.validate_tax_fields(self)
 
     def _ensure_enabled(self, settings):
         if getattr(settings, "enable_branch_expense_request", 1):
@@ -198,8 +173,7 @@ class BranchExpenseRequest(Document):
         self.fiscal_year = fiscal.get("name") or fiscal.get("fiscal_year")
 
     def _validate_employee_requirement(self, settings):
-        if getattr(settings, "require_employee", 0) and not getattr(self, "employee", None):
-            frappe.throw(_("Employee is required for Branch Expense Request."))
+        EmployeeValidator.require_employee(self, enabled=getattr(settings, "require_employee", 0))
 
     def _validate_items(self, settings):
         items = self.get("items") or []
