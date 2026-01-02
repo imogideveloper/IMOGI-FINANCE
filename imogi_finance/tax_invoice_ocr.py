@@ -42,7 +42,7 @@ DEFAULT_SETTINGS = {
     "tesseract_cmd": None,
 }
 
-ALLOWED_OCR_FIELDS = {"fp_no", "fp_date", "npwp", "dpp", "ppn", "ppnbm", "notes"}
+ALLOWED_OCR_FIELDS = {"fp_no", "fp_date", "npwp", "dpp", "ppn", "ppnbm", "ppn_type", "notes"}
 
 FIELD_MAP = {
     "Purchase Invoice": {
@@ -162,6 +162,7 @@ def normalize_npwp(npwp: str | None) -> str | None:
 
 NPWP_REGEX = re.compile(r"(?P<npwp>\d{2}\.\d{3}\.\d{3}\.\d-\d{3}\.\d{3}|\d{15,20})")
 NPWP_LABEL_REGEX = re.compile(r"NPWP\s*[:\-]?\s*(?P<npwp>[\d.\-\s]{10,})", re.IGNORECASE)
+PPN_RATE_REGEX = re.compile(r"(?:Tarif\s*)?PPN[^\d%]{0,10}(?P<rate>\d{1,2}(?:[.,]\d+)?)\s*%", re.IGNORECASE)
 TAX_INVOICE_REGEX = re.compile(r"(?P<fp>\d{2,3}[.-]?\d{2,3}[.-]?\d{1,2}[.-]?\d{8})")
 DATE_REGEX = re.compile(r"(?P<date>\d{1,2}[\-/]\d{1,2}[\-/]\d{2,4})")
 NUMBER_REGEX = re.compile(r"(?P<number>\d+[.,\d]*)")
@@ -448,6 +449,22 @@ def parse_faktur_pajak_text(text: str) -> tuple[dict[str, Any], float]:
                 if len(parsed_numbers) > 1:
                     matches["ppn"] = sorted(parsed_numbers)[-2]
                 confidence += 0.2
+
+    ppn_rate = None
+    ppn_rate_match = PPN_RATE_REGEX.search(text or "")
+    if ppn_rate_match:
+        raw_rate = ppn_rate_match.group("rate").replace(",", ".")
+        try:
+            ppn_rate = flt(raw_rate)
+        except Exception:
+            ppn_rate = None
+
+    if ppn_rate is None:
+        ppn_type = DEFAULT_SETTINGS.get("default_ppn_type", "Standard")
+    else:
+        ppn_type = "Standard" if ppn_rate > 0 else "Zero Rated"
+
+    matches["ppn_type"] = ppn_type
 
     summary = {
         "faktur_pajak": {
