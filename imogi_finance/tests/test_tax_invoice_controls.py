@@ -281,7 +281,7 @@ def test_monitor_tax_invoice_ocr_returns_doc_and_job_info(monkeypatch):
     job_name = "tax-invoice-ocr-Purchase Invoice-PI-1"
     expected_job_name = job_name
 
-    def fake_get_info(job_name=None, **_kwargs):
+    def fake_get_job_info(job_name):
         assert job_name == expected_job_name
         return {
             "job_name": job_name,
@@ -291,7 +291,7 @@ def test_monitor_tax_invoice_ocr_returns_doc_and_job_info(monkeypatch):
             "kwargs": {"name": doc.name},
         }
 
-    monkeypatch.setattr(tax_invoice_ocr, "get_info", fake_get_info)
+    monkeypatch.setattr(tax_invoice_ocr, "_get_job_info", fake_get_job_info)
 
     result = get_tax_invoice_ocr_monitoring("PI-1", "Purchase Invoice")
 

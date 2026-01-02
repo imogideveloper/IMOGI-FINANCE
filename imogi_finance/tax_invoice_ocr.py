@@ -10,7 +10,7 @@ import frappe
 from frappe import _
 from frappe.exceptions import ValidationError
 from frappe.utils import cint, flt, get_site_path
-from frappe.utils.background_jobs import get_info
+from frappe.utils import background_jobs
 from frappe.utils.formatters import format_value
 
 SETTINGS_DOCTYPE = "Tax Invoice OCR Settings"
@@ -448,9 +448,21 @@ def run_ocr(docname: str, doctype: str):
     return {"queued": True}
 
 
+def _get_job_info(job_name: str) -> dict[str, Any] | list[dict[str, Any]] | None:
+    get_info = getattr(background_jobs, "get_info", None)
+    if callable(get_info):
+        return get_info(job_name=job_name)
+
+    get_job_info = getattr(background_jobs, "get_job_info", None)
+    if callable(get_job_info):
+        return get_job_info(job_name)
+
+    return None
+
+
 def _pick_job_info(job_name: str) -> dict[str, Any] | None:
     try:
-        jobs = get_info(job_name=job_name)
+        jobs = _get_job_info(job_name)
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Tax Invoice OCR monitor get_info failed")
         return None
