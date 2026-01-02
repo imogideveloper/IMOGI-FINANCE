@@ -449,7 +449,7 @@ def _google_vision_ocr(file_url: str, settings: dict[str, Any]) -> tuple[str, di
 
     text = "\n".join(texts).strip()
     if not text:
-        raise ValidationError(_("Google Vision OCR returned empty text for file {0}.").format(local_path))
+        return "", data, 0.0
 
     confidence = max(confidence_values) if confidence_values else 0.0
     return text, data, confidence
@@ -481,7 +481,7 @@ def _tesseract_ocr(file_url: str, settings: dict[str, Any]) -> tuple[str, dict[s
 
     text = (result.stdout or "").strip()
     if not text:
-        raise ValidationError(_("Tesseract OCR returned empty text for file {0}.").format(local_path))
+        return "", None, 0.0
 
     return text, None, 0.0
 
@@ -518,9 +518,19 @@ def _run_ocr_job(name: str, target_doctype: str, provider: str):
     pdf_field = _get_fieldname(target_doctype, "tax_invoice_pdf")
     try:
         target_doc.db_set(_get_fieldname(target_doctype, "ocr_status"), "Processing")
-        text, raw_json, confidence = ocr_extract_text_from_pdf(
-            getattr(target_doc, pdf_field), provider
-        )
+        file_url = getattr(target_doc, pdf_field)
+        text, raw_json, confidence = ocr_extract_text_from_pdf(file_url, provider)
+        if not (text or "").strip():
+            update_payload = {
+                _get_fieldname(target_doctype, "ocr_status"): "Failed",
+                _get_fieldname(target_doctype, "notes"): _(
+                    "OCR returned empty text for file {0}."
+                ).format(file_url),
+            }
+            if raw_json is not None:
+                update_payload[_get_fieldname(target_doctype, "ocr_raw_json")] = json.dumps(raw_json, indent=2)
+            target_doc.db_set(update_payload)
+            return
         parsed, estimated_confidence = parse_faktur_pajak_text(text or "")
         _update_doc_after_ocr(
             target_doc, target_doctype, parsed, confidence or estimated_confidence, raw_json
