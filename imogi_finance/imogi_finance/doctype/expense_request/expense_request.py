@@ -36,7 +36,13 @@ class ExpenseRequest(Document):
     REOPEN_ALLOWED_ROLES = {"System Manager"}
     _workflow_service = WorkflowService()
     _workflow_engine = WorkflowEngine(
-        config_path="imogi_finance/imogi_finance/workflow/expense_request_workflow/expense_request_workflow.json"
+        config_path=frappe.get_app_path(
+            "imogi_finance",
+            "imogi_finance",
+            "workflow",
+            "expense_request_workflow",
+            "expense_request_workflow.json",
+        )
     )
 
     def before_insert(self):
