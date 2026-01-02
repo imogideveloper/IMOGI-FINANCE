@@ -1,0 +1,55 @@
+{
+  "actions": [
+    {"action": "Submit", "allowed": "All"},
+    {"action": "Approve", "allowed": "Expense Approver"},
+    {"action": "Reject", "allowed": "Expense Approver"},
+    {"action": "Reopen", "allowed": "System Manager"}
+  ],
+  "creation": "",
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "Branch Expense Request",
+  "is_active": 1,
+  "module": "Imogi Finance",
+  "name": "Branch Expense Request Workflow",
+  "notes": "Single-branch approval flow with parent-level approval only.",
+  "override_status": 1,
+  "states": [
+    {"state": "Draft", "doc_status": 0, "allow_edit": "All"},
+    {"state": "Pending Approval", "doc_status": 1, "allow_edit": "All"},
+    {"state": "Approved", "doc_status": 1, "allow_edit": ""},
+    {"state": "Rejected", "doc_status": 1, "allow_edit": ""}
+  ],
+  "transitions": [
+    {
+      "action": "Submit",
+      "allow_self_approval": 0,
+      "allowed": "All",
+      "state": "Draft",
+      "next_state": "Pending Approval",
+      "doc_status": 1
+    },
+    {
+      "action": "Approve",
+      "allowed": "Expense Approver",
+      "state": "Pending Approval",
+      "next_state": "Approved",
+      "doc_status": 1
+    },
+    {
+      "action": "Reject",
+      "allowed": "Expense Approver",
+      "state": "Pending Approval",
+      "next_state": "Rejected",
+      "doc_status": 1
+    },
+    {
+      "action": "Reopen",
+      "allowed": "System Manager",
+      "state": "Rejected",
+      "next_state": "Draft",
+      "doc_status": 0
+    }
+  ],
+  "workflow_state_field": "workflow_state"
+}

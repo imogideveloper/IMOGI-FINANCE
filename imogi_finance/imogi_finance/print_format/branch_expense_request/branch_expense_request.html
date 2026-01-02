@@ -1,0 +1,55 @@
+<div class="print-heading">
+  <h2>{{ _("Branch Expense Request") }}</h2>
+  <p class="text-muted">{{ doc.name }}</p>
+</div>
+
+<div class="row">
+  <div class="col-xs-6">
+    <p><strong>{{ _("Company") }}:</strong> {{ doc.company }}</p>
+    <p><strong>{{ _("Branch") }}:</strong> {{ doc.branch }}</p>
+    <p><strong>{{ _("Posting Date") }}:</strong> {{ frappe.utils.formatdate(doc.posting_date) }}</p>
+  </div>
+  <div class="col-xs-6">
+    <p><strong>{{ _("Requester") }}:</strong> {{ doc.requester }}</p>
+    {% if doc.employee %}
+    <p><strong>{{ _("Employee") }}:</strong> {{ doc.employee }}</p>
+    {% endif %}
+    <p><strong>{{ _("Currency") }}:</strong> {{ doc.currency }}</p>
+  </div>
+</div>
+
+<hr>
+
+<p><strong>{{ _("Purpose") }}:</strong></p>
+<p>{{ doc.purpose or "" }}</p>
+
+<hr>
+
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th width="35%">{{ _("Description") }}</th>
+      <th width="15%" class="text-right">{{ _("Cost Center") }}</th>
+      <th width="10%" class="text-right">{{ _("Qty") }}</th>
+      <th width="10%" class="text-right">{{ _("Rate") }}</th>
+      <th width="15%" class="text-right">{{ _("Amount") }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in doc.items %}
+    <tr>
+      <td>{{ row.description }}</td>
+      <td class="text-right">{{ row.cost_center }}</td>
+      <td class="text-right">{{ frappe.utils.flt(row.qty or 0, 2) }}</td>
+      <td class="text-right">{{ frappe.utils.flt(row.rate or 0, 2) }}</td>
+      <td class="text-right">{{ frappe.utils.flt(row.amount or 0, 2) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <th colspan="4" class="text-right">{{ _("Total") }}</th>
+      <th class="text-right">{{ frappe.utils.flt(doc.total_amount or 0, 2) }}</th>
+    </tr>
+  </tfoot>
+</table>
