@@ -253,6 +253,32 @@ def test_create_purchase_invoice_ignores_string_zero(monkeypatch):
     assert not request.linked_purchase_invoice
 
 
+def test_run_ocr_validates_provider_before_queue(monkeypatch):
+    monkeypatch.setattr(
+        tax_invoice_ocr,
+        "get_settings",
+        lambda: {"enable_tax_invoice_ocr": 1, "ocr_provider": "Manual Only"},
+    )
+
+    called = {"enqueue": False, "get_doc": False}
+
+    def fake_enqueue(*args, **kwargs):
+        called["enqueue"] = True
+
+    def fake_get_doc(*args, **kwargs):
+        called["get_doc"] = True
+        return types.SimpleNamespace(name="PI-1")
+
+    monkeypatch.setattr(frappe, "enqueue", fake_enqueue)
+    monkeypatch.setattr(frappe, "get_doc", fake_get_doc)
+
+    with pytest.raises(tax_invoice_ocr.ValidationError):
+        tax_invoice_ocr.run_ocr("PI-1", "Purchase Invoice")
+
+    assert called["enqueue"] is False
+    assert called["get_doc"] is False
+
+
 def test_monitor_tax_invoice_ocr_returns_doc_and_job_info(monkeypatch):
     doc = types.SimpleNamespace(
         name="PI-1",
