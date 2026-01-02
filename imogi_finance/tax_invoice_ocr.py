@@ -514,6 +514,31 @@ def _normalize_faktur_number(value: str | None) -> str | None:
     return digits
 
 
+def _extract_faktur_number_from_json(raw_json: dict[str, Any] | str | None) -> str | None:
+    if not raw_json:
+        return None
+
+    payload: dict[str, Any] | None = None
+    if isinstance(raw_json, dict):
+        payload = raw_json
+    elif isinstance(raw_json, str):
+        try:
+            payload = json.loads(raw_json)
+        except Exception:
+            payload = None
+
+    if not isinstance(payload, dict):
+        return None
+
+    faktur_pajak = payload.get("faktur_pajak")
+    if isinstance(faktur_pajak, dict):
+        nomor_seri = faktur_pajak.get("nomor_seri")
+        if nomor_seri:
+            return _normalize_faktur_number(str(nomor_seri))
+
+    return None
+
+
 def parse_faktur_pajak_text(text: str) -> tuple[dict[str, Any], float]:
     matches: dict[str, Any] = {}
     confidence = 0.0
@@ -1109,6 +1134,10 @@ def _run_ocr_job(name: str, target_doctype: str, provider: str):
             target_doc.db_set(update_payload)
             return
         parsed, estimated_confidence = parse_faktur_pajak_text(text or "")
+        if not parsed.get("fp_no"):
+            raw_fp_no = _extract_faktur_number_from_json(raw_json)
+            if raw_fp_no:
+                parsed["fp_no"] = raw_fp_no
         _update_doc_after_ocr(
             target_doc,
             target_doctype,
