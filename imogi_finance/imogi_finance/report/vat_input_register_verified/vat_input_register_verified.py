@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import frappe
 from frappe import _
+from frappe.utils import flt
 
 from imogi_finance.tax_invoice_ocr import get_settings
 
@@ -72,18 +73,20 @@ def execute(filters=None):
 
 
 def _get_tax_amount(invoice_name: str, account_filter: str | None) -> float:
-    conditions = {"parent": invoice_name}
-    if account_filter:
-        conditions["account_head"] = account_filter
+    if not account_filter:
+        frappe.msgprint(
+            _("PPN Input Account is not configured. Tax amounts will be shown as 0 until it is set."),
+            alert=True,
+        )
+        return 0
 
     tax_rows = frappe.get_all(
         "Purchase Taxes and Charges",
-        filters=conditions,
+        filters={"parent": invoice_name, "account_head": account_filter},
         fields=[["sum", "tax_amount", "total"]],
     )
 
     if tax_rows and tax_rows[0].get("total") is not None:
-        return tax_rows[0].get("total") or 0
+        return flt(tax_rows[0].get("total"))
 
-    fallback = frappe.db.get_value("Purchase Invoice", invoice_name, "total_taxes_and_charges")
-    return fallback or 0
+    return 0

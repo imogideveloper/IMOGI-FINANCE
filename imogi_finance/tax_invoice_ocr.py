@@ -326,7 +326,11 @@ def verify_tax_invoice(doc: Any, *, doctype: str, force: bool = False) -> dict[s
     notes: list[str] = []
 
     fp_no = _get_value(doc, doctype, "fp_no")
-    company = getattr(doc, "company", None) or getattr(doc, "cost_center", None)
+    company = getattr(doc, "company", None)
+    if not company:
+        cost_center = getattr(doc, "cost_center", None)
+        if cost_center:
+            company = frappe.db.get_value("Cost Center", cost_center, "company")
 
     if cint(settings.get("block_duplicate_fp_no", 1)) and fp_no and company:
         duplicate = _check_duplicate_fp_no(doc.name, fp_no, company, doctype)
