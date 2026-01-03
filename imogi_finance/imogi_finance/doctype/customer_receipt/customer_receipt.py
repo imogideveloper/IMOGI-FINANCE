@@ -14,7 +14,7 @@ from imogi_finance.branching import (
     resolve_branch,
     validate_branch_alignment,
 )
-from imogi_finance.receipt_control.utils import get_receipt_control_settings
+from imogi_finance.receipt_control.utils import get_receipt_control_settings, record_stamp_cost
 
 
 class CustomerReceipt(Document):
@@ -188,8 +188,43 @@ class CustomerReceipt(Document):
         elif not self.stamp_mode:
             self.stamp_mode = "Physical" if settings.allow_physical_stamp_fallback else "None"
 
-        if self.stamp_mode == "Digital" and self.digital_stamp_status == "Issued":
+        stamp_issued = self.stamp_mode == "Digital" and self.digital_stamp_status == "Issued"
+        if stamp_issued and requires_digital and not self._has_stamp_cost_reference():
+            stamp_cost = getattr(settings, "digital_stamp_cost", None) or 10000
+            payment_reference = record_stamp_cost(self.name, stamp_cost)
+            self._update_stamp_log_with_cost(stamp_cost, payment_reference)
+
+        if stamp_issued:
             self.digital_stamp_locked = 1
+
+    def _has_stamp_cost_reference(self) -> bool:
+        return any([row.payment_reference for row in (self.get("digital_stamp_logs") or [])])
+
+    def _update_stamp_log_with_cost(self, stamp_cost: float, payment_reference: str):
+        target_log = None
+        for row in self.get("digital_stamp_logs") or []:
+            if (row.action or "").lower() == "issued" and not row.payment_reference:
+                target_log = row
+                break
+
+        if not target_log and self.get("digital_stamp_logs"):
+            target_log = self.digital_stamp_logs[-1]
+
+        if not target_log:
+            target_log = self.append(
+                "digital_stamp_logs",
+                {
+                    "action": "Issued",
+                    "timestamp": frappe.utils.now_datetime(),
+                    "user": frappe.session.user,
+                },
+            )
+        else:
+            target_log.timestamp = target_log.timestamp or frappe.utils.now_datetime()
+
+        target_log.stamp_cost = stamp_cost
+        target_log.payment_reference = payment_reference
+        target_log.payment_reference_doctype = "Journal Entry"
 
     def get_reference_availability(self) -> Dict[str, Decimal]:
         consumption = self._get_reference_consumption()

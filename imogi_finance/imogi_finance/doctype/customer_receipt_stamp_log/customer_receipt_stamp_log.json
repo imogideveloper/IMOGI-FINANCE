@@ -9,12 +9,35 @@
     "action",
     "timestamp",
     "user",
+    "stamp_cost",
+    "payment_reference_doctype",
+    "payment_reference",
     "provider_response"
   ],
   "fields": [
     { "fieldname": "action", "fieldtype": "Data", "label": "Action", "in_list_view": 1 },
     { "fieldname": "timestamp", "fieldtype": "Datetime", "label": "Timestamp", "in_list_view": 1 },
     { "fieldname": "user", "fieldtype": "Data", "label": "User" },
+    {
+      "default": "10000",
+      "fieldname": "stamp_cost",
+      "fieldtype": "Currency",
+      "label": "Stamp Cost",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "payment_reference_doctype",
+      "fieldtype": "Select",
+      "label": "Payment Reference Type",
+      "options": "\nPayment Entry\nJournal Entry"
+    },
+    {
+      "fieldname": "payment_reference",
+      "fieldtype": "Dynamic Link",
+      "label": "Payment Reference",
+      "options": "payment_reference_doctype",
+      "in_list_view": 1
+    },
     { "fieldname": "provider_response", "fieldtype": "Small Text", "label": "Provider Response" }
   ],
   "idx": 0,

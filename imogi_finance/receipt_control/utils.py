@@ -24,6 +24,9 @@ def get_receipt_control_settings():
             "allow_physical_stamp_fallback": 0,
             "digital_stamp_provider": None,
             "provider_mode": None,
+            "digital_stamp_cost": 10000,
+            "digital_stamp_expense_account": "Biaya Materai Digital",
+            "digital_stamp_payment_account": "Kas/Bank",
         }
     )
     defaults.update(BRANCH_SETTING_DEFAULTS)
@@ -122,6 +125,65 @@ def terbilang_id(amount: float | int | Decimal, suffix: str = "rupiah") -> str:
         words = f"{words} {suffix}".strip()
 
     return words
+
+
+def record_stamp_cost(customer_receipt: str, cost: float | Decimal) -> str:
+    """Create and submit a Journal Entry for the given stamp cost.
+
+    Args:
+        customer_receipt: The Customer Receipt identifier for context.
+        cost: The monetary value of the stamp duty.
+
+    Returns:
+        The name of the submitted Journal Entry.
+    """
+
+    cost_amount = float(cost or 0)
+    if cost_amount <= 0:
+        frappe.throw(_("Stamp cost must be greater than zero."))
+
+    receipt_meta = frappe.db.get_value("Customer Receipt", customer_receipt, ["company", "branch"], as_dict=True)
+    if not receipt_meta:
+        frappe.throw(_("Customer Receipt {0} not found.").format(customer_receipt))
+
+    settings = get_receipt_control_settings()
+    expense_account = getattr(settings, "digital_stamp_expense_account", None)
+    payment_account = getattr(settings, "digital_stamp_payment_account", None)
+    if not expense_account or not payment_account:
+        frappe.throw(_("Please configure digital stamp expense and payment accounts."))
+    for account in (expense_account, payment_account):
+        if not frappe.db.exists("Account", {"name": account, "company": receipt_meta.company}):
+            frappe.throw(_("Account {0} not found for company {1}.").format(account, receipt_meta.company))
+
+    journal_entry = frappe.get_doc(
+        {
+            "doctype": "Journal Entry",
+            "voucher_type": "Journal Entry",
+            "posting_date": frappe.utils.nowdate(),
+            "company": receipt_meta.company,
+            "branch": receipt_meta.get("branch"),
+            "user_remark": _("Stamp duty cost for {0}").format(customer_receipt),
+            "accounts": [
+                {
+                    "account": expense_account,
+                    "debit_in_account_currency": cost_amount,
+                    "reference_type": "Customer Receipt",
+                    "reference_name": customer_receipt,
+                    "branch": receipt_meta.get("branch"),
+                },
+                {
+                    "account": payment_account,
+                    "credit_in_account_currency": cost_amount,
+                    "reference_type": "Customer Receipt",
+                    "reference_name": customer_receipt,
+                    "branch": receipt_meta.get("branch"),
+                },
+            ],
+        }
+    )
+    journal_entry.insert(ignore_permissions=True)
+    journal_entry.submit()
+    return journal_entry.name
 
 
 def build_verification_url(pattern: Optional[str], stamp_ref: Optional[str]) -> Optional[str]:
