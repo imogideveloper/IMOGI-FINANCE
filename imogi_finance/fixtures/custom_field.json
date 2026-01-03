@@ -686,6 +686,41 @@
   },
   {
     "doctype": "Custom Field",
+    "name": "Sales Invoice-synch_status",
+    "dt": "Sales Invoice",
+    "fieldname": "synch_status",
+    "fieldtype": "Select",
+    "insert_after": "out_fp_tax_invoice_upload",
+    "label": "Tax Invoice Sync Status",
+    "options": "Pending Sync\nSynced\nError",
+    "default": "Pending Sync",
+    "allow_on_submit": 1,
+    "read_only": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_fp_npwp",
+    "dt": "Sales Invoice",
+    "fieldname": "out_fp_npwp",
+    "fieldtype": "Data",
+    "insert_after": "out_buyer_tax_id",
+    "label": "Output Tax Invoice NPWP",
+    "allow_on_submit": 1,
+    "read_only": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Sales Invoice-out_fp_tax_invoice_pdf",
+    "dt": "Sales Invoice",
+    "fieldname": "out_fp_tax_invoice_pdf",
+    "fieldtype": "Attach",
+    "insert_after": "out_fp_ppn",
+    "label": "Output Tax Invoice PDF",
+    "allow_on_submit": 1,
+    "read_only": 1
+  },
+  {
+    "doctype": "Custom Field",
     "name": "Payment Entry-transfer_application",
     "dt": "Payment Entry",
     "fieldname": "transfer_application",

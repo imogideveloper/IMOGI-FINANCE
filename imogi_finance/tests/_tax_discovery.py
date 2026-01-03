@@ -69,7 +69,7 @@ FIELDS_BRANCH_ER = {
 FIELDS_SI = {
     "fp_no": "out_fp_no",
     "fp_date": "out_fp_date",
-    "npwp": "out_buyer_tax_id",
+    "npwp": "out_fp_npwp",
     "dpp": "out_fp_dpp",
     "ppn": "out_fp_ppn",
     "ppn_type": "out_fp_ppn_type",
@@ -77,7 +77,7 @@ FIELDS_SI = {
     "notes": "out_fp_verification_notes",
     "duplicate": "out_fp_duplicate_flag",
     "npwp_match": "out_fp_npwp_match",
-    "pdf": "out_fp_pdf",
+    "pdf": "out_fp_tax_invoice_pdf",
     "ocr_status": "out_fp_ocr_status",
     "ocr_confidence": "out_fp_ocr_confidence",
     "ocr_raw_json": "out_fp_ocr_raw_json",

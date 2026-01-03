@@ -14,7 +14,7 @@ def execute(filters=None):
     columns = [
         {"label": _("Posting Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 110},
         {"label": _("Customer"), "fieldname": "customer", "fieldtype": "Link", "options": "Customer", "width": 150},
-        {"label": _("Buyer NPWP"), "fieldname": "out_buyer_tax_id", "fieldtype": "Data", "width": 140},
+        {"label": _("Buyer NPWP"), "fieldname": "out_fp_npwp", "fieldtype": "Data", "width": 140},
         {"label": _("Tax Invoice No"), "fieldname": "out_fp_no", "fieldtype": "Data", "width": 160},
         {"label": _("Tax Invoice Date"), "fieldname": "out_fp_date", "fieldtype": "Date", "width": 110},
         {"label": _("DPP"), "fieldname": "out_fp_dpp", "fieldtype": "Currency", "width": 120},
@@ -50,6 +50,7 @@ def execute(filters=None):
             "customer",
             "company",
             "out_buyer_tax_id",
+            "out_fp_npwp",
             "out_fp_no",
             "out_fp_date",
             "out_fp_dpp",
@@ -65,6 +66,7 @@ def execute(filters=None):
         data.append(
             {
                 **invoice,
+                "out_fp_npwp": invoice.get("out_fp_npwp") or invoice.get("out_buyer_tax_id"),
                 "tax_row_amount": tax_amount,
             }
         )

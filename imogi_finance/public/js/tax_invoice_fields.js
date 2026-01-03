@@ -56,7 +56,7 @@
     'Sales Invoice': {
       fp_no: 'out_fp_no',
       fp_date: 'out_fp_date',
-      npwp: 'out_buyer_tax_id',
+      npwp: 'out_fp_npwp',
       dpp: 'out_fp_dpp',
       ppn: 'out_fp_ppn',
       ppnbm: 'out_fp_ppnbm',
@@ -68,7 +68,7 @@
       ocr_status: 'out_fp_ocr_status',
       ocr_confidence: 'out_fp_ocr_confidence',
       ocr_raw_json: 'out_fp_ocr_raw_json',
-      tax_invoice_pdf: 'out_fp_pdf',
+      tax_invoice_pdf: 'out_fp_tax_invoice_pdf',
     },
     'Tax Invoice OCR Upload': {
       fp_no: 'fp_no',

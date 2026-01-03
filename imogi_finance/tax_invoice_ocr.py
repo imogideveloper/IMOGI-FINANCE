@@ -241,7 +241,10 @@ def _copy_tax_invoice_fields(source_doc: Any, source_doctype: str, target_doc: A
     for key in tax_invoice_fields.iter_copy_keys():
         if key not in source_map or key not in target_map:
             continue
-        _set_value(target_doc, target_doctype, key, _get_value(source_doc, source_doctype, key))
+        value = _get_value(source_doc, source_doctype, key)
+        _set_value(target_doc, target_doctype, key, value)
+        if target_doctype == "Sales Invoice" and key == "npwp":
+            setattr(target_doc, "out_buyer_tax_id", value)
 
 
 def _extract_section(text: str, start_label: str, end_label: str | None = None) -> str:

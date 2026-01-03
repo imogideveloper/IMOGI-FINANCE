@@ -243,6 +243,7 @@ if is_payroll_installed():
 scheduler_events = {
     "daily": [
         "imogi_finance.reporting.tasks.run_daily_reporting",
+        "imogi_finance.services.tax_invoice_service.sync_pending_tax_invoices",
     ],
     "monthly": [
         "imogi_finance.reporting.tasks.run_monthly_reconciliation",
@@ -388,6 +389,9 @@ fixtures = [
             "Sales Invoice-out_fp_verification_notes",
             "Sales Invoice-out_fp_duplicate_flag",
             "Sales Invoice-out_fp_npwp_match",
+            "Sales Invoice-synch_status",
+            "Sales Invoice-out_fp_npwp",
+            "Sales Invoice-out_fp_tax_invoice_pdf",
             "Branch Expense Request-ti_tax_invoice_section",
             "Branch Expense Request-ti_tax_invoice_upload",
             "Branch Expense Request-ti_tax_invoice_data_section",

@@ -17,7 +17,7 @@ const DEFAULT_COPY_KEYS = [
 const DEFAULT_SI_FIELDS = {
   fp_no: 'out_fp_no',
   fp_date: 'out_fp_date',
-  npwp: 'out_buyer_tax_id',
+  npwp: 'out_fp_npwp',
   dpp: 'out_fp_dpp',
   ppn: 'out_fp_ppn',
   ppnbm: 'out_fp_ppnbm',
@@ -29,7 +29,7 @@ const DEFAULT_SI_FIELDS = {
   ocr_status: 'out_fp_ocr_status',
   ocr_confidence: 'out_fp_ocr_confidence',
   ocr_raw_json: 'out_fp_ocr_raw_json',
-  tax_invoice_pdf: 'out_fp_pdf',
+  tax_invoice_pdf: 'out_fp_tax_invoice_pdf',
 };
 const DEFAULT_UPLOAD_FIELDS = {
   fp_no: 'fp_no',
@@ -68,6 +68,9 @@ async function syncSiUpload(frm) {
     }
     updates[targetField] = upload[sourceField] || null;
   });
+  if (updates.out_fp_npwp) {
+    updates.out_buyer_tax_id = updates.out_fp_npwp;
+  }
   await frm.set_value(updates);
 }
 
@@ -83,6 +86,57 @@ function setSiUploadQuery(frm) {
       verification_status: 'Verified',
     },
   }));
+}
+
+async function showTaxInvoiceSyncStatus(frm) {
+  const { message } = await frappe.call({
+    method: 'imogi_finance.services.tax_invoice_service.check_sales_invoice_tax_invoice_status',
+    args: { sales_invoice: frm.doc.name },
+    freeze: true,
+    freeze_message: __('Checking sync status...'),
+  });
+
+  if (!message) {
+    return;
+  }
+
+  const rows = [
+    __('Sales Invoice: {0}', [frm.doc.name]),
+    __('Sync Status: {0}', [message.synch_status || message.status || __('Unknown')]),
+  ];
+
+  if (message.tax_invoice_no) {
+    rows.push(__('Tax Invoice No: {0}', [message.tax_invoice_no]));
+  }
+  if (message.tax_invoice_date) {
+    rows.push(__('Tax Invoice Date: {0}', [message.tax_invoice_date]));
+  }
+  if (message.customer_npwp) {
+    rows.push(__('Customer NPWP: {0}', [message.customer_npwp]));
+  }
+  if (message.invoice_pdf) {
+    rows.push(__('PDF: {0}', [message.invoice_pdf]));
+  }
+  if (message.sync_error) {
+    rows.push(__('Last Error: {0}', [message.sync_error]));
+  }
+
+  frappe.msgprint({
+    title: __('Tax Invoice Sync'),
+    message: rows.join('<br>'),
+    indicator: message.status === 'Synced' ? 'green' : message.status === 'Error' ? 'red' : 'orange',
+  });
+
+  await frm.reload_doc();
+}
+
+function addSyncCheckButton(frm) {
+  if (frm.is_new()) {
+    return;
+  }
+  frm.add_custom_button(__('Cek Sinkronisasi Faktur Pajak'), async () => {
+    await showTaxInvoiceSyncStatus(frm);
+  }, __('Tax Invoice'));
 }
 
 frappe.ui.form.on('Sales Invoice', {
@@ -136,6 +190,7 @@ frappe.ui.form.on('Sales Invoice', {
 
     addOcrButton();
     addUploadButtons();
+    addSyncCheckButton(frm);
   },
 
   async out_fp_tax_invoice_upload(frm) {

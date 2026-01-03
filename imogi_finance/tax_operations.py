@@ -317,7 +317,11 @@ def _get_coretax_required_fields(direction: str) -> dict[str, dict[str, object]]
     document_prefix = "ti" if direction == "Input" else "out"
     dpp_field = f"{document_prefix}_fp_dpp"
     ppn_field = f"{document_prefix}_fp_ppn"
-    npwp_field = f"{document_prefix}_fp_npwp" if direction == "Input" else "out_buyer_tax_id"
+    npwp_fields = (
+        {f"{document_prefix}_fp_npwp"}
+        if direction == "Input"
+        else {"out_fp_npwp", "out_buyer_tax_id"}
+    )
     fp_date_field = f"{document_prefix}_fp_date"
 
     return {
@@ -338,7 +342,7 @@ def _get_coretax_required_fields(direction: str) -> dict[str, dict[str, object]]
         "npwp": {
             "label": "NPWP",
             "label_tokens": ("npwp", "tax id", "taxid"),
-            "document_fields": {npwp_field},
+            "document_fields": npwp_fields,
             "party_fields": {"tax_id", "npwp"},
             "computed_types": set(),
         },
