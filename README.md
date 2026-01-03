@@ -44,8 +44,9 @@ App for managing expenses at IMOGI.
 #### Tax, OCR, & CoreTax Export
 
 - **Tax Invoice OCR**: OCR configuration (provider/size limit/threshold) for Purchase Invoice, Expense Request, and Sales Invoice; parses tax invoice text (NPWP, number/date, DPP/VAT) with NPWP normalization and duplicate flag. Verification status can be enforced as Verified before submitting PI or creating PI from Expense Request.
+- **Tax profile controls**: Each company’s Tax Profile requires PPN input/output, PB1 payable, and PPh payable accounts so registers, closings, and payments post to the right ledgers.
 - **Tax period closure**: Tax Period Closing blocks changes to tax/tax-mapping fields on ER/PI/SI when the period is Closed, except for System Manager/Tax Reviewer roles; validation uses posting date/bill date/request date.
-- **Reporting & exports**: utilities compute snapshots for input/output VAT registers, withholding tax, and PB1; prepare CoreTax export rows (CSV/XLSX) based on mappings; provide Payment Entry/Journal Entry creation for Tax Payment Batch and VAT netting (calculate debit output/credit input/payable).
+- **Reporting & exports**: utilities compute snapshots for input/output VAT registers, withholding tax, and PB1; require CoreTax mappings for DPP, PPN, NPWP, and faktur date before exporting CSV/XLSX rows; provide Payment Entry/Journal Entry creation for Tax Payment Batch and VAT netting (calculate debit output/credit input/payable).
 
 ### Expense Request Workflow Controls & Risks
 
