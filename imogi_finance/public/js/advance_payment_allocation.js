@@ -7,14 +7,7 @@ const allocationUI = {
         }
 
         try {
-            const response = await frappe.call({
-                method: "imogi_finance.advance_payment.api.get_allocations_for_reference",
-                args: {
-                    reference_doctype: frm.doc.doctype,
-                    reference_name: frm.doc.name,
-                },
-            });
-            const rows = response.message || [];
+            const rows = await allocationUI.fetchAllocationsForReference(frm);
             if (!rows.length) {
                 if (frm.dashboard && frm.dashboard.clear) {
                     frm.dashboard.clear();
@@ -22,7 +15,7 @@ const allocationUI = {
                 return;
             }
 
-            const totalAllocated = rows.reduce((acc, row) => acc + frappe.utils.flt(row.allocated_amount), 0);
+            const totalAllocated = allocationUI.getAllocatedTotal(rows);
             if (frm.dashboard) {
                 if (frm.dashboard.clear) {
                     frm.dashboard.clear();
@@ -67,6 +60,21 @@ const allocationUI = {
         }
     },
 
+    async fetchAllocationsForReference(frm) {
+        const response = await frappe.call({
+            method: "imogi_finance.advance_payment.api.get_allocations_for_reference",
+            args: {
+                reference_doctype: frm.doc.doctype,
+                reference_name: frm.doc.name,
+            },
+        });
+        return response.message || [];
+    },
+
+    getAllocatedTotal(rows) {
+        return (rows || []).reduce((acc, row) => acc + frappe.utils.flt(row.allocated_amount), 0);
+    },
+
     addButton(frm, partyInfo) {
         if (!partyInfo.party || frm.doc.docstatus === 2) {
             return;
@@ -88,7 +96,11 @@ const allocationUI = {
     },
 
     async openDialog(frm, partyInfo) {
-        const advances = await allocationUI.fetchAdvances(partyInfo);
+        const [advances, existingAllocations] = await Promise.all([
+            allocationUI.fetchAdvances(partyInfo),
+            allocationUI.fetchAllocationsForReference(frm),
+        ]);
+        const alreadyAllocated = allocationUI.getAllocatedTotal(existingAllocations);
         if (!advances.length) {
             frappe.msgprint(__("No unallocated advances were found for this party."));
             return;
@@ -120,12 +132,14 @@ const allocationUI = {
                 }
 
                 const outstanding = allocationUI.getOutstandingAmount(frm);
+                const remainingOutstanding = allocationUI.getRemainingOutstanding(outstanding, alreadyAllocated);
                 const totalAllocation = allocations.reduce((acc, row) => acc + frappe.utils.flt(row.allocated_amount), 0);
-                if (outstanding != null && totalAllocation - outstanding > 0.005) {
+                if (remainingOutstanding != null && totalAllocation - remainingOutstanding > 0.005) {
                     frappe.throw(
-                        __("Allocations of {0} exceed outstanding amount {1}.", [
+                        __("Allocations of {0} exceed remaining outstanding {1} (already allocated {2}).", [
                             frappe.format_currency(totalAllocation, frm.doc.currency),
-                            frappe.format_currency(outstanding, frm.doc.currency),
+                            frappe.format_currency(remainingOutstanding, frm.doc.currency),
+                            frappe.format_currency(alreadyAllocated, frm.doc.currency),
                         ]),
                     );
                 }
@@ -217,6 +231,14 @@ const allocationUI = {
             return frappe.utils.flt(frm.doc.total_deduction || frm.doc.total_payment || 0);
         }
         return null;
+    },
+
+    getRemainingOutstanding(outstanding, alreadyAllocated) {
+        if (outstanding == null) {
+            return null;
+        }
+        const remaining = frappe.utils.flt(outstanding) - frappe.utils.flt(alreadyAllocated);
+        return Math.max(remaining, 0);
     },
 };
 

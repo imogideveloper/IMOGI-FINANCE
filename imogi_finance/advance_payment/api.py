@@ -110,9 +110,10 @@ def allocate_advances(
         frappe.throw(_("Please choose at least one Advance Payment Entry."))
 
     reference_doc = frappe.get_doc(reference_doctype, reference_name)
+    reference_currency = get_reference_currency(reference_doc)
     resolved_party_type, resolved_party = resolve_reference_party(reference_doc, party_type, party)
     validate_party_inputs(resolved_party_type, resolved_party)
-    validate_reference_allocation_capacity(reference_doc, allocations)
+    validate_reference_allocation_capacity(reference_doc, allocations, reference_currency)
 
     applied_allocations = []
     for allocation in allocations:
@@ -123,6 +124,8 @@ def allocate_advances(
 
         advance_doc: AdvancePaymentEntry = frappe.get_doc("Advance Payment Entry", advance_name)
         validate_advance_for_party(advance_doc, resolved_party_type, resolved_party)
+        validate_allocation_currency(reference_currency, advance_doc)
+        validate_allocation_amount(amount, advance_doc)
 
         if advance_doc.docstatus != 1:
             frappe.throw(_("Advance Payment Entry {0} must be submitted before it can be allocated.").format(advance_doc.name))
@@ -132,7 +135,7 @@ def allocate_advances(
             reference_doctype,
             reference_name,
             amount,
-            reference_currency=getattr(reference_doc, "currency", None),
+            reference_currency=reference_currency,
             reference_exchange_rate=allocation.get("reference_exchange_rate")
             or getattr(reference_doc, "conversion_rate", None)
             or advance_doc.exchange_rate,
@@ -193,6 +196,29 @@ def validate_advance_for_party(advance: AdvancePaymentEntry, party_type: str, pa
         )
 
 
+def validate_allocation_currency(reference_currency: str | None, advance: AdvancePaymentEntry) -> None:
+    if reference_currency and advance.currency and reference_currency != advance.currency:
+        frappe.throw(
+            _("Advance Payment Entry {0} currency is {1}, which does not match the document currency {2}.").format(
+                advance.name,
+                frappe.bold(advance.currency),
+                frappe.bold(reference_currency),
+            )
+        )
+
+
+def validate_allocation_amount(amount: float, advance: AdvancePaymentEntry) -> None:
+    precision = advance.precision("unallocated_amount") or 2
+    if flt(amount, precision) - flt(advance.available_unallocated, precision) > 0.005:
+        frappe.throw(
+            _("Allocated amount of {0} exceeds unallocated balance {1} for Advance Payment Entry {2}.").format(
+                frappe.format_value(amount, {"fieldtype": "Currency", "currency": advance.currency}),
+                frappe.format_value(advance.available_unallocated, {"fieldtype": "Currency", "currency": advance.currency}),
+                advance.name,
+            )
+        )
+
+
 def release_allocations(reference_doctype: str, reference_name: str) -> None:
     links = frappe.get_all(
         "Advance Payment Reference",
@@ -232,19 +258,22 @@ def on_reference_update(doc, method=None):
     refresh_linked_advances(doc.doctype, doc.name)
 
 
-def validate_reference_allocation_capacity(document, allocations: list[dict]) -> None:
+def validate_reference_allocation_capacity(document, allocations: list[dict], reference_currency: str | None = None) -> None:
     outstanding = get_reference_outstanding_amount(document)
     if outstanding is None:
         return
 
+    existing_allocated = get_existing_allocated_amount(document.doctype, document.name)
     total = sum(flt(item.get("allocated_amount")) for item in allocations)
     precision = getattr(document, "precision", lambda *_: 2)("grand_total") or 2
-    if flt(total, precision) - flt(outstanding, precision) > 0.005:
+    remaining_capacity = flt(outstanding, precision) - flt(existing_allocated, precision)
+    if flt(total, precision) - max(remaining_capacity, 0) > 0.005:
         frappe.throw(
-            _("{0} allocations of {1} exceed outstanding amount {2}.").format(
+            _("{0} allocations of {1} exceed remaining outstanding {2} after {3} already allocated.").format(
                 document.doctype,
-                frappe.format_value(total, {"fieldtype": "Currency", "currency": getattr(document, "currency", None)}),
-                frappe.format_value(outstanding, {"fieldtype": "Currency", "currency": getattr(document, "currency", None)}),
+                frappe.format_value(total, {"fieldtype": "Currency", "currency": reference_currency or getattr(document, "currency", None)}),
+                frappe.format_value(remaining_capacity, {"fieldtype": "Currency", "currency": reference_currency or getattr(document, "currency", None)}),
+                frappe.format_value(existing_allocated, {"fieldtype": "Currency", "currency": reference_currency or getattr(document, "currency", None)}),
             )
         )
 
@@ -263,3 +292,22 @@ def get_reference_outstanding_amount(document) -> float | None:
         return flt(getattr(document, "total_deduction", None) or getattr(document, "total_payment", None) or 0)
 
     return None
+
+
+def get_existing_allocated_amount(reference_doctype: str, reference_name: str) -> float:
+    total = frappe.db.sql(
+        """
+        SELECT SUM(ref.allocated_amount)
+        FROM `tabAdvance Payment Reference` ref
+        JOIN `tabAdvance Payment Entry` ape ON ape.name = ref.parent
+        WHERE ref.invoice_doctype = %s
+          AND ref.invoice_name = %s
+          AND ape.docstatus < 2
+        """,
+        (reference_doctype, reference_name),
+    )
+    return flt(total[0][0]) if total else 0.0
+
+
+def get_reference_currency(document) -> str | None:
+    return getattr(document, "currency", None) or getattr(document, "company_currency", None)
