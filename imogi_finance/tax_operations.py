@@ -14,6 +14,8 @@ from frappe.model.document import Document
 from frappe.utils import flt, get_first_day, get_last_day, getdate, nowdate
 from frappe.utils.xlsxutils import make_xlsx
 
+from imogi_finance import tax_invoice_fields
+
 INPUT_VAT_REPORT = "imogi_finance.imogi_finance.report.vat_input_register_verified.vat_input_register_verified"
 OUTPUT_VAT_REPORT = "imogi_finance.imogi_finance.report.vat_output_register_verified.vat_output_register_verified"
 
@@ -151,25 +153,7 @@ def build_register_snapshot(company: str, date_from: date | str | None, date_to:
 
 
 def _get_tax_invoice_fields(doctype: str) -> set[str]:
-    if doctype == "Purchase Invoice" or doctype == "Expense Request":
-        prefix = "ti_"
-    else:
-        prefix = "out_"
-
-    base_fields = {
-        f"{prefix}fp_no",
-        f"{prefix}fp_date",
-        f"{prefix}fp_npwp" if doctype != "Sales Invoice" else "out_buyer_tax_id",
-        f"{prefix}fp_dpp",
-        f"{prefix}fp_ppn",
-        f"{prefix}fp_ppn_type",
-        f"{prefix}verification_status",
-        f"{prefix}verification_notes",
-        f"{prefix}duplicate_flag",
-        f"{prefix}npwp_match",
-        f"{prefix}tax_invoice_pdf" if doctype != "Sales Invoice" else "out_fp_pdf",
-    }
-
+    base_fields = set(tax_invoice_fields.get_tax_invoice_fields(doctype))
     tax_mapping_fields = {"taxes_and_charges", "taxes"}
     if doctype == "Purchase Invoice":
         tax_mapping_fields.update({"apply_tds", "tax_withholding_category"})
