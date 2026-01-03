@@ -31,6 +31,10 @@
     "amount",
     "expense_account",
     "total_amount",
+    "deferred_expense_section",
+    "is_deferred_expense",
+    "deferred_start_date",
+    "deferred_periods",
     "budget_check_status",
     "budget_check_message",
     "status",
@@ -192,6 +196,31 @@
       "in_list_view": 1,
       "label": "Total Amount",
       "read_only": 1
+    },
+    {
+      "collapsible": 1,
+      "collapsible_depends_on": "eval:doc.is_deferred_expense==0",
+      "fieldname": "deferred_expense_section",
+      "fieldtype": "Section Break",
+      "label": "📅 Deferred Expense"
+    },
+    {
+      "default": "0",
+      "fieldname": "is_deferred_expense",
+      "fieldtype": "Check",
+      "label": "Deferred Expense?"
+    },
+    {
+      "depends_on": "eval:doc.is_deferred_expense==1",
+      "fieldname": "deferred_start_date",
+      "fieldtype": "Date",
+      "label": "Deferred Start Date"
+    },
+    {
+      "depends_on": "eval:doc.is_deferred_expense==1",
+      "fieldname": "deferred_periods",
+      "fieldtype": "Int",
+      "label": "Deferred Periods (Months)"
     },
     {
       "default": "Not Checked",

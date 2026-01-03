@@ -11,6 +11,7 @@ from frappe.utils import flt, get_first_day, get_last_day, nowdate
 from imogi_finance import accounting
 from imogi_finance.branching import apply_branch, resolve_branch
 from imogi_finance.budget_control import ledger, service
+from imogi_finance.services.deferred_expense import generate_amortization_schedule
 from imogi_finance.tax_invoice_ocr import validate_tax_invoice_upload_link
 from imogi_finance.validators.finance_validator import FinanceValidator
 from imogi_finance.validators.employee_validator import EmployeeValidator
@@ -59,6 +60,7 @@ class BranchExpenseRequest(Document):
         self._validate_items(settings)
         self.validate_amounts()
         self.validate_tax_fields()
+        self._validate_deferred_expense()
         validate_tax_invoice_upload_link(self, "Branch Expense Request")
         self._update_totals()
         self._run_budget_checks(settings)
@@ -70,6 +72,7 @@ class BranchExpenseRequest(Document):
         self.validate_amounts()
         self.apply_branch_defaults()
         self.validate_tax_fields()
+        self._validate_deferred_expense()
         self._update_totals()
         self._set_fiscal_year()
         if not getattr(self, "branch", None):
@@ -109,6 +112,26 @@ class BranchExpenseRequest(Document):
 
     def validate_tax_fields(self):
         FinanceValidator.validate_tax_fields(self)
+
+    def _validate_deferred_expense(self):
+        if not getattr(self, "is_deferred_expense", 0):
+            return
+
+        if not getattr(self, "deferred_start_date", None):
+            frappe.throw(_("Deferred Start Date is required for Deferred Expense."))
+
+        periods = getattr(self, "deferred_periods", None)
+        if not periods or periods <= 0:
+            frappe.throw(_("Deferred Periods must be greater than zero."))
+
+        schedule = generate_amortization_schedule(
+            getattr(self, "amount", 0) or 0, periods, self.deferred_start_date
+        )
+        flags = getattr(self, "flags", None)
+        if flags is None:
+            flags = type("Flags", (), {})()
+            self.flags = flags
+        self.flags.deferred_amortization_schedule = schedule
 
     def _ensure_enabled(self, settings):
         if getattr(settings, "enable_branch_expense_request", 1):

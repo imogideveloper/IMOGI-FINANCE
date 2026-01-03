@@ -19,6 +19,7 @@ from imogi_finance.approval import (
 )
 from imogi_finance.budget_control.workflow import handle_expense_request_workflow, release_budget_for_request
 from imogi_finance.services.approval_route_service import ApprovalRouteService
+from imogi_finance.services.deferred_expense import generate_amortization_schedule
 from imogi_finance.services.workflow_service import WorkflowService
 from imogi_finance.tax_invoice_ocr import validate_tax_invoice_upload_link
 from imogi_finance.validators.finance_validator import FinanceValidator
@@ -55,6 +56,7 @@ class ExpenseRequest(Document):
         self.apply_branch_defaults()
         self.validate_asset_details()
         self.validate_tax_fields()
+        self.validate_deferred_expense()
         validate_tax_invoice_upload_link(self, "Expense Request")
         self.sync_status_with_workflow_state()
         self.handle_key_field_changes_after_submit()
@@ -106,6 +108,26 @@ class ExpenseRequest(Document):
 
     def validate_tax_fields(self):
         FinanceValidator.validate_tax_fields(self)
+
+    def validate_deferred_expense(self):
+        if not getattr(self, "is_deferred_expense", 0):
+            return
+
+        if not getattr(self, "deferred_start_date", None):
+            frappe.throw(_("Deferred Start Date is required for Deferred Expense."))
+
+        periods = getattr(self, "deferred_periods", None)
+        if not periods or periods <= 0:
+            frappe.throw(_("Deferred Periods must be greater than zero."))
+
+        schedule = generate_amortization_schedule(
+            getattr(self, "amount", 0) or 0, periods, self.deferred_start_date
+        )
+        flags = getattr(self, "flags", None)
+        if flags is None:
+            flags = type("Flags", (), {})()
+            self.flags = flags
+        self.flags.deferred_amortization_schedule = schedule
 
     def validate_final_state_immutability(self):
         """Prevent edits to key fields after approval or downstream linkage."""

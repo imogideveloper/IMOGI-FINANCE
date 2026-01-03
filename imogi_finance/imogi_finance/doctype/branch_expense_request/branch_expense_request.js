@@ -59,6 +59,41 @@ async function setBerUploadQuery(frm) {
 	}));
 }
 
+function maybeAddDeferredExpenseActions(frm) {
+	if (!frm.doc.is_deferred_expense) {
+		return;
+	}
+
+	frm.add_custom_button(__("Show Amortization Schedule"), async () => {
+		if (!frm.doc.deferred_start_date) {
+			frappe.msgprint(__("Deferred Start Date is required to generate the amortization schedule."));
+			return;
+		}
+
+		if (!frm.doc.deferred_periods || frm.doc.deferred_periods <= 0) {
+			frappe.msgprint(__("Deferred Periods must be greater than zero to generate the amortization schedule."));
+			return;
+		}
+
+		const { message } = await frappe.call({
+			method: "imogi_finance.services.deferred_expense.generate_amortization_schedule",
+			args: {
+				amount: frm.doc.amount,
+				periods: frm.doc.deferred_periods,
+				start_date: frm.doc.deferred_start_date,
+			},
+		});
+
+		const schedule = message || [];
+		const pretty = Array.isArray(schedule) ? JSON.stringify(schedule, null, 2) : String(schedule);
+		frappe.msgprint({
+			title: __("Amortization Schedule"),
+			message: `<pre style="white-space: pre-wrap;">${pretty}</pre>`,
+			indicator: "blue",
+		});
+	}, __("Actions"));
+}
+
 frappe.ui.form.on("Branch Expense Request", {
 	onload(frm) {
 		update_totals(frm);
@@ -68,6 +103,7 @@ frappe.ui.form.on("Branch Expense Request", {
 		update_totals(frm);
 		await setBerUploadQuery(frm);
 		await syncBerUpload(frm);
+		maybeAddDeferredExpenseActions(frm);
 		maybeAddOcrButton(frm);
 		maybeAddUploadActions(frm);
 	},

@@ -26,6 +26,10 @@
     "amount",
     "column_break_totals",
     "expense_account",
+    "deferred_expense_section",
+    "is_deferred_expense",
+    "deferred_start_date",
+    "deferred_periods",
     "taxes_section",
     "is_ppn_applicable",
     "ppn_template",
@@ -189,6 +193,31 @@
       "description": "Otomatis terisi jika semua item menggunakan akun yang sama",
       "options": "Account",
       "read_only": 1
+    },
+    {
+      "collapsible": 1,
+      "collapsible_depends_on": "eval:doc.is_deferred_expense==0",
+      "fieldname": "deferred_expense_section",
+      "fieldtype": "Section Break",
+      "label": "📅 Deferred Expense"
+    },
+    {
+      "default": "0",
+      "fieldname": "is_deferred_expense",
+      "fieldtype": "Check",
+      "label": "Deferred Expense?"
+    },
+    {
+      "depends_on": "eval:doc.is_deferred_expense==1",
+      "fieldname": "deferred_start_date",
+      "fieldtype": "Date",
+      "label": "Deferred Start Date"
+    },
+    {
+      "depends_on": "eval:doc.is_deferred_expense==1",
+      "fieldname": "deferred_periods",
+      "fieldtype": "Int",
+      "label": "Deferred Periods (Months)"
     },
     {
       "collapsible": 1,
