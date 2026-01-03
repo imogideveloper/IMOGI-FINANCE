@@ -15,7 +15,9 @@ from imogi_finance.tests._tax_discovery import (
 
 import frappe
 from imogi_finance import accounting, tax_invoice_ocr, tax_operations
+from imogi_finance.imogi_finance.doctype.tax_profile.tax_profile import TaxProfile
 from imogi_finance.events import purchase_invoice
+from imogi_finance.validators import finance_validator
 vat_input_report = import_module(
     "imogi_finance.imogi_finance.report.vat_input_register_verified.vat_input_register_verified"
 )
@@ -334,7 +336,15 @@ def test_t7_coretax_export_includes_verified_only(monkeypatch):
 
     settings = types.SimpleNamespace(
         file_format="CSV",
-        column_mappings=[types.SimpleNamespace(label="Name", source_type="Document Field", source="name")],
+        direction="Input",
+        title="Input Export",
+        column_mappings=[
+            types.SimpleNamespace(label="PPN", source_type="Computed PPN", source=None),
+            types.SimpleNamespace(label="DPP", source_type="Computed DPP", source=None),
+            types.SimpleNamespace(label="NPWP", source_type="Document Field", source=FIELDS_PI["npwp"]),
+            types.SimpleNamespace(label="Tanggal Faktur", source_type="Tax Invoice Date", source=FIELDS_PI["fp_date"]),
+            types.SimpleNamespace(label="Name", source_type="Document Field", source="name"),
+        ],
     )
 
     monkeypatch.setattr(frappe, "get_cached_doc", lambda *_args, **_kwargs: settings)
@@ -343,7 +353,16 @@ def test_t7_coretax_export_includes_verified_only(monkeypatch):
     def fake_get_list(doctype, filters=None, fields=None):
         nonlocal captured_filters
         captured_filters = filters or {}
-        return [AttrDict(name="PI-VERIFIED", supplier="Supp")]
+        return [
+            AttrDict(
+                name="PI-VERIFIED",
+                supplier="Supp",
+                ti_fp_ppn=11,
+                ti_fp_dpp=100,
+                ti_fp_npwp="123",
+                ti_fp_date="2024-01-01",
+            )
+        ]
 
     monkeypatch.setattr(frappe, "get_list", fake_get_list)
 
@@ -364,8 +383,8 @@ def test_t7_coretax_export_includes_verified_only(monkeypatch):
     )
 
     assert captured_filters.get(FIELDS_PI["status"]) == "Verified"
-    assert captured_rows["headers"] == ["Name"]
-    assert captured_rows["rows"] == [["PI-VERIFIED"]]
+    assert captured_rows["headers"] == ["PPN", "DPP", "NPWP", "Tanggal Faktur", "Name"]
+    assert captured_rows["rows"] == [[11, 100, "123", "2024-01-01", "PI-VERIFIED"]]
     assert url == "file-url"
 
 
@@ -490,3 +509,66 @@ def test_t9_locked_tax_period_blocks_changes(monkeypatch):
 
     with pytest.raises(frappe.ThrowMarker):
         tax_operations.validate_tax_period_lock(doc)
+
+
+def test_t10_coretax_export_requires_mandatory_columns(monkeypatch):
+    if not METHODS.get("generate_coretax_export") or not DOCTYPE_TAX_PROFILE:
+        pytest.skip("CoreTax export feature missing; feature gap")
+
+    settings = types.SimpleNamespace(
+        file_format="CSV",
+        direction="Input",
+        title="Incomplete Input Export",
+        column_mappings=[types.SimpleNamespace(label="Name", source_type="Document Field", source="name")],
+    )
+
+    monkeypatch.setattr(frappe, "get_cached_doc", lambda *_args, **_kwargs: settings)
+
+    with pytest.raises(frappe.ThrowMarker):
+        tax_operations.generate_coretax_export(
+            company="Comp",
+            date_from="2024-01-01",
+            date_to="2024-01-31",
+            direction="Input",
+            settings_name="SET-REQ",
+            filename="test",
+        )
+
+
+def test_t11_tax_profile_requires_core_accounts(monkeypatch):
+    monkeypatch.setattr(frappe.db, "exists", lambda *args, **kwargs: False, raising=False)
+    profile = TaxProfile()
+    profile.company = "COMP"
+    profile.name = "COMP"
+    profile.pph_accounts = []
+
+    with pytest.raises(frappe.ThrowMarker):
+        profile.validate()
+
+    profile.ppn_input_account = "1111"
+    profile.ppn_output_account = "2222"
+    profile.ppn_payable_account = "2100"
+    profile.pb1_payable_account = "3333"
+    profile.pph_accounts = [types.SimpleNamespace(payable_account="4444")]
+
+    profile.validate()
+
+
+def test_t12_tax_field_validation_requires_templates_and_pph_type():
+    doc = types.SimpleNamespace(
+        is_ppn_applicable=1,
+        ppn_template=None,
+        is_pph_applicable=1,
+        pph_type=None,
+        pph_base_amount=None,
+        items=[],
+    )
+
+    with pytest.raises(frappe.ThrowMarker):
+        finance_validator.validate_document_tax_fields(doc)
+
+    doc.ppn_template = "PPN-TEMPLATE"
+    doc.pph_type = "PPh 23"
+    doc.pph_base_amount = 100
+
+    finance_validator.validate_document_tax_fields(doc)

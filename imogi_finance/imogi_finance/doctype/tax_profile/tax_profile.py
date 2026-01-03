@@ -17,6 +17,7 @@ class TaxProfile(Document):
 
     def validate(self):
         self._validate_unique_company()
+        self._require_core_accounts()
         self._validate_accounts()
 
     def _validate_unique_company(self):
@@ -28,6 +29,25 @@ class TaxProfile(Document):
             frappe.throw(
                 _("A Tax Profile already exists for company {0} ({1}).").format(self.company, existing),
                 title=_("Duplicate Tax Profile"),
+            )
+
+    def _require_core_accounts(self):
+        missing = []
+        if not getattr(self, "ppn_input_account", None):
+            missing.append(_("PPN Input Account"))
+        if not getattr(self, "ppn_output_account", None):
+            missing.append(_("PPN Output Account"))
+        if not getattr(self, "pb1_payable_account", None):
+            missing.append(_("PB1 Payable Account"))
+        if not getattr(self, "pph_accounts", None):
+            missing.append(_("Withholding Tax (PPh) payable accounts"))
+
+        if missing:
+            frappe.throw(
+                _("Please complete the following on the Tax Profile for {0}: {1}.").format(
+                    self.company or self.name, _(", ").join(missing)
+                ),
+                title=_("Incomplete Tax Profile"),
             )
 
     def _validate_accounts(self):

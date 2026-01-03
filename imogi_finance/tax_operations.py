@@ -318,6 +318,100 @@ def _resolve_mapping_value(mapping, doc: Document, party_doc: Document | None):
     return mapping.default_value
 
 
+def _normalize_label(value: str | None) -> str:
+    return (value or "").strip().lower()
+
+
+def _get_coretax_required_fields(direction: str) -> dict[str, dict[str, object]]:
+    if direction not in {"Input", "Output"}:
+        return {}
+
+    document_prefix = "ti" if direction == "Input" else "out"
+    dpp_field = f"{document_prefix}_fp_dpp"
+    ppn_field = f"{document_prefix}_fp_ppn"
+    npwp_field = f"{document_prefix}_fp_npwp" if direction == "Input" else "out_buyer_tax_id"
+    fp_date_field = f"{document_prefix}_fp_date"
+
+    return {
+        "ppn": {
+            "label": "PPN",
+            "label_tokens": ("ppn", "vat"),
+            "document_fields": {ppn_field},
+            "party_fields": set(),
+            "computed_types": {"Computed PPN"},
+        },
+        "dpp": {
+            "label": "DPP",
+            "label_tokens": ("dpp",),
+            "document_fields": {dpp_field},
+            "party_fields": set(),
+            "computed_types": {"Computed DPP"},
+        },
+        "npwp": {
+            "label": "NPWP",
+            "label_tokens": ("npwp", "tax id", "taxid"),
+            "document_fields": {npwp_field},
+            "party_fields": {"tax_id", "npwp"},
+            "computed_types": set(),
+        },
+        "invoice_date": {
+            "label": "Tax Invoice Date",
+            "label_tokens": ("tanggal", "invoice date", "fp date", "faktur"),
+            "document_fields": {fp_date_field},
+            "party_fields": set(),
+            "computed_types": {"Tax Invoice Date"},
+        },
+    }
+
+
+def _mapping_matches_requirement(mapping, requirement: dict[str, object]) -> bool:
+    label = _normalize_label(getattr(mapping, "label", None))
+    if requirement.get("label_tokens"):
+        tokens = requirement["label_tokens"]
+        if not any(token in label for token in tokens):
+            return False
+
+    source_type = getattr(mapping, "source_type", "")
+    source = getattr(mapping, "source", "")
+
+    if source_type in requirement.get("computed_types", set()):
+        return True
+
+    if source_type == "Document Field":
+        allowed_fields = requirement.get("document_fields", set())
+        return bool(source) and (not allowed_fields or source in allowed_fields)
+
+    if source_type == "Party Field":
+        allowed_fields = requirement.get("party_fields", set())
+        return bool(source) and (not allowed_fields or source in allowed_fields)
+
+    if source_type == "Tax Invoice Date":
+        return bool(source) and source in requirement.get("document_fields", set())
+
+    return False
+
+
+def validate_coretax_required_mappings(settings: Document) -> None:
+    required = _get_coretax_required_fields(getattr(settings, "direction", ""))
+    if not required:
+        frappe.throw(_("CoreTax Export Settings must specify a direction of Input or Output."))
+
+    mappings = getattr(settings, "column_mappings", []) or []
+    missing_labels = []
+    for requirement in required.values():
+        if not any(_mapping_matches_requirement(mapping, requirement) for mapping in mappings):
+            missing_labels.append(requirement["label"])
+
+    if missing_labels:
+        frappe.throw(
+            _("CoreTax Export Settings {0} must include mappings for: {1}.").format(
+                getattr(settings, "title", None) or getattr(settings, "name", None) or _("(untitled)"),
+                ", ".join(missing_labels),
+            ),
+            title=_("CoreTax Mapping Incomplete"),
+        )
+
+
 def generate_coretax_rows(
     invoices: list[Document],
     settings: Document,
@@ -353,6 +447,17 @@ def generate_coretax_export(
     filename: str,
 ) -> str:
     settings = frappe.get_cached_doc("CoreTax Export Settings", settings_name)
+
+    if getattr(settings, "direction", None) and settings.direction != direction:
+        frappe.throw(
+            _("CoreTax Export Settings {0} is configured for {1} direction, not {2}.").format(
+                settings_name, settings.direction, direction
+            ),
+            title=_("CoreTax Direction Mismatch"),
+        )
+
+    validate_coretax_required_mappings(settings)
+
     filters: dict[str, object] = {
         "company": company,
         "docstatus": 1,

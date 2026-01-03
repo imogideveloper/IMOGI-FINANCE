@@ -62,3 +62,8 @@ class FinanceValidator:
                             or getattr(item, "idx", None)
                         )
                     )
+
+
+def validate_document_tax_fields(doc, method=None):
+    """DocEvent wrapper to enforce PPN/PPh requirements on tax-bearing documents."""
+    FinanceValidator.validate_tax_fields(doc)
