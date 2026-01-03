@@ -47,7 +47,7 @@
       "fieldtype": "Select",
       "in_list_view": 1,
       "label": "Tax Type",
-      "options": "PPN\nPPh\nPB1",
+      "options": "PPN\nPPh\nPB1\nBPJS",
       "reqd": 1
     },
     {
