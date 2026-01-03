@@ -27,6 +27,7 @@ def test_bpjs_contributions_fallback_to_gl(monkeypatch):
     assert summary["gl_total"] == 7500.0
     assert summary["rows"] == []
     assert summary["source"] == "GL"
+    assert summary["fallback_reason"] == "payroll_not_installed"
 
 
 def test_salary_component_gl_rows(monkeypatch):
@@ -44,3 +45,18 @@ def test_salary_component_gl_rows(monkeypatch):
 
     assert any(row["account"] == "2100" and row["share"] == "employer" for row in rows)
     assert any(row["account"] == "2200" and row["share"] == "withholding" for row in rows)
+
+
+def test_bpjs_contributions_flags_missing_payroll_rows(monkeypatch):
+    profile = types.SimpleNamespace(bpjs_payable_account="2100")
+    monkeypatch.setattr(payroll_sync, "_get_tax_profile", lambda *_args, **_kwargs: profile)
+    monkeypatch.setattr(payroll_sync, "_get_gl_total", lambda *_args, **_kwargs: 1250.0)
+    monkeypatch.setattr(payroll_sync, "is_payroll_installed", lambda: True)
+    monkeypatch.setattr(payroll_sync, "_get_salary_slips", lambda *_args, **_kwargs: [])
+
+    summary = payroll_sync.get_bpjs_contributions("Comp", "2024-02-01", "2024-02-29")
+
+    assert summary["gl_total"] == 1250.0
+    assert summary["rows"] == []
+    assert summary["source"] == "GL"
+    assert summary["fallback_reason"] == "no_payroll_rows"

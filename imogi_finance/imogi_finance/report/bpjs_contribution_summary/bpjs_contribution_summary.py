@@ -57,9 +57,15 @@ def execute(filters=None):
             }
         )
 
-    if summary.get("source") != "Payroll" or not is_payroll_installed():
+    fallback_reason = summary.get("fallback_reason")
+    if fallback_reason == "payroll_not_installed" and not is_payroll_installed():
         frappe.msgprint(
             _("Payroll Indonesia is not installed; showing Finance GL fallback for BPJS."),
+            alert=True,
+        )
+    elif fallback_reason == "no_payroll_rows":
+        frappe.msgprint(
+            _("No BPJS payroll rows were found; showing Finance GL fallback for BPJS."),
             alert=True,
         )
 
