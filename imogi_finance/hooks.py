@@ -5,6 +5,8 @@ app_description = "App for Manage Expense IMOGI"
 app_email = "imogi.indonesia@gmail.com"
 app_license = "mit"
 
+from imogi_finance.api.payroll_sync import is_payroll_installed
+
 # Apps
 # ------------------
 
@@ -226,6 +228,14 @@ doc_events = {
         "on_cancel": "imogi_finance.advance_payment.api.on_reference_cancel",
     },
 }
+
+if is_payroll_installed():
+    doc_events.setdefault("Salary Slip", {}).update(
+        {
+            "on_submit": "imogi_finance.api.payroll_sync.handle_salary_slip_submit",
+            "on_cancel": "imogi_finance.api.payroll_sync.handle_salary_slip_cancel",
+        }
+    )
 
 # Scheduled Tasks
 # ---------------

@@ -39,6 +39,8 @@ class TaxProfile(Document):
             missing.append(_("PPN Output Account"))
         if not getattr(self, "pb1_payable_account", None):
             missing.append(_("PB1 Payable Account"))
+        if not getattr(self, "bpjs_payable_account", None):
+            missing.append(_("BPJS Payable Account"))
         if not getattr(self, "pph_accounts", None):
             missing.append(_("Withholding Tax (PPh) payable accounts"))
 
@@ -57,6 +59,7 @@ class TaxProfile(Document):
                 self.ppn_input_account,
                 self.ppn_output_account,
                 self.pb1_payable_account,
+                self.bpjs_payable_account,
                 *(row.payable_account for row in self.pph_accounts or [] if row.payable_account),
             ]
             if acct

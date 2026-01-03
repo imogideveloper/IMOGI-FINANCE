@@ -13,6 +13,7 @@
     "ppn_output_account",
     "ppn_payable_account",
     "pb1_payable_account",
+    "bpjs_payable_account",
     "pph_section",
     "pph_accounts",
     "tolerance_idr",
@@ -59,6 +60,13 @@
       "fieldtype": "Link",
       "label": "PB1 Payable Account",
       "options": "Account"
+    },
+    {
+      "fieldname": "bpjs_payable_account",
+      "fieldtype": "Link",
+      "label": "BPJS Payable Account",
+      "options": "Account",
+      "reqd": 1
     },
     {
       "collapsible": 1,

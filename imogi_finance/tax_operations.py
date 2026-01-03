@@ -129,6 +129,9 @@ def build_register_snapshot(company: str, date_from: date | str | None, date_to:
     pb1_account = getattr(profile, "pb1_payable_account", None)
     pb1_total = _get_gl_total(company, [pb1_account], date_from, date_to) if pb1_account else 0.0
 
+    bpjs_account = getattr(profile, "bpjs_payable_account", None)
+    bpjs_total = _get_gl_total(company, [bpjs_account], date_from, date_to) if bpjs_account else 0.0
+
     vat_net = output_total - input_total
 
     return {
@@ -137,6 +140,7 @@ def build_register_snapshot(company: str, date_from: date | str | None, date_to:
         "vat_net": vat_net,
         "pph_total": pph_total,
         "pb1_total": pb1_total,
+        "bpjs_total": bpjs_total,
         "meta": {
             "company": company,
             "date_from": str(date_from) if date_from else None,

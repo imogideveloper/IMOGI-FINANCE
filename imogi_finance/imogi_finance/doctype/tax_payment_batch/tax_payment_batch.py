@@ -8,6 +8,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, nowdate
 
+from imogi_finance.api.payroll_sync import get_bpjs_total
 from imogi_finance.tax_operations import (
     _get_period_bounds,
     compute_tax_totals,
@@ -54,6 +55,8 @@ class TaxPaymentBatch(Document):
             self.payable_account = profile.ppn_payable_account
         elif self.tax_type == "PB1" and profile.get("pb1_payable_account"):
             self.payable_account = profile.pb1_payable_account
+        elif self.tax_type == "BPJS" and profile.get("bpjs_payable_account"):
+            self.payable_account = profile.bpjs_payable_account
         elif self.tax_type == "PPh" and self.pph_type:
             for row in profile.get("pph_accounts", []) or []:
                 if row.pph_type == self.pph_type and row.payable_account:
@@ -86,6 +89,8 @@ class TaxPaymentBatch(Document):
             self.amount = flt(totals.get("pph_total"))
         elif self.tax_type == "PB1":
             self.amount = flt(totals.get("pb1_total"))
+        elif self.tax_type == "BPJS":
+            self.amount = flt(get_bpjs_total(self.company, self.date_from, self.date_to))
 
         if self.amount and self.amount < 0:
             self.amount = 0
