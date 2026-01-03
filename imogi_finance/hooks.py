@@ -45,7 +45,12 @@ app_license = "mit"
 # include js in doctype views
 doctype_js = {
     "Bank Transaction": "public/js/bank_transaction.js",
-    "Purchase Invoice": "public/js/purchase_invoice_tax_invoice.js",
+    "Purchase Invoice": [
+        "public/js/purchase_invoice_tax_invoice.js",
+        "public/js/advance_payment_allocation.js",
+    ],
+    "Expense Claim": "public/js/advance_payment_allocation.js",
+    "Payroll Entry": "public/js/advance_payment_allocation.js",
     "Sales Invoice": "public/js/sales_invoice_tax_invoice.js",
 }
 doctype_list_js = {
@@ -151,10 +156,18 @@ doc_events = {
     "Purchase Invoice": {
         "validate": [
             "imogi_finance.tax_operations.validate_tax_period_lock",
+            "imogi_finance.advance_payment.api.on_reference_update",
         ],
         "before_submit": "imogi_finance.events.purchase_invoice.validate_before_submit",
-        "on_submit": "imogi_finance.events.purchase_invoice.on_submit",
-        "on_cancel": "imogi_finance.events.purchase_invoice.on_cancel",
+        "on_submit": [
+            "imogi_finance.events.purchase_invoice.on_submit",
+            "imogi_finance.advance_payment.api.on_reference_update",
+        ],
+        "on_update_after_submit": "imogi_finance.advance_payment.api.on_reference_update",
+        "on_cancel": [
+            "imogi_finance.events.purchase_invoice.on_cancel",
+            "imogi_finance.advance_payment.api.on_reference_cancel",
+        ],
     },
     "Sales Invoice": {
         "validate": [
@@ -170,6 +183,7 @@ doc_events = {
         "validate": [
             "imogi_finance.receipt_control.payment_entry_hooks.validate_customer_receipt_link",
             "imogi_finance.transfer_application.payment_entry_hooks.validate_transfer_application_link",
+            "imogi_finance.advance_payment.workflow.on_payment_entry_validate",
         ],
         "before_submit": [
             "imogi_finance.receipt_control.payment_entry_hooks.validate_customer_receipt_link",
@@ -178,11 +192,16 @@ doc_events = {
             "imogi_finance.events.payment_entry.on_submit",
             "imogi_finance.receipt_control.payment_entry_hooks.record_payment_entry",
             "imogi_finance.transfer_application.payment_entry_hooks.on_submit",
+            "imogi_finance.advance_payment.workflow.on_payment_entry_submit",
         ],
         "on_cancel": [
             "imogi_finance.events.payment_entry.on_cancel",
             "imogi_finance.receipt_control.payment_entry_hooks.remove_payment_entry",
             "imogi_finance.transfer_application.payment_entry_hooks.on_cancel",
+            "imogi_finance.advance_payment.workflow.on_payment_entry_cancel",
+        ],
+        "on_update_after_submit": [
+            "imogi_finance.advance_payment.workflow.on_payment_entry_update_after_submit",
         ],
     },
     "Asset": {
@@ -193,6 +212,16 @@ doc_events = {
         "before_cancel": "imogi_finance.events.bank_transaction.before_cancel",
         "on_submit": "imogi_finance.transfer_application.matching.handle_bank_transaction",
         "on_update_after_submit": "imogi_finance.transfer_application.matching.handle_bank_transaction",
+    },
+    "Expense Claim": {
+        "on_submit": "imogi_finance.advance_payment.api.on_reference_update",
+        "on_update_after_submit": "imogi_finance.advance_payment.api.on_reference_update",
+        "on_cancel": "imogi_finance.advance_payment.api.on_reference_cancel",
+    },
+    "Payroll Entry": {
+        "on_submit": "imogi_finance.advance_payment.api.on_reference_update",
+        "on_update_after_submit": "imogi_finance.advance_payment.api.on_reference_update",
+        "on_cancel": "imogi_finance.advance_payment.api.on_reference_cancel",
     },
 }
 
