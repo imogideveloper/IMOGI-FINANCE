@@ -17,6 +17,10 @@
       "allowed": "Expense Approver"
     },
     {
+      "action": "Backflow",
+      "allowed": "System Manager"
+    },
+    {
       "action": "Reopen",
       "allowed": "System Manager"
     }
@@ -34,47 +38,56 @@
     {
       "state": "Draft",
       "doc_status": 0,
-      "allow_edit": "All"
+      "allow_edit": "All",
+      "backflow_allowed": false
     },
     {
       "state": "Reopened",
       "doc_status": 1,
-      "allow_edit": "All"
+      "allow_edit": "All",
+      "backflow_allowed": true
     },
     {
-      "state": "Pending Level 1",
+      "state": "Pending Review",
       "doc_status": 1,
-      "allow_edit": "All"
-    },
-    {
-      "state": "Pending Level 2",
-      "doc_status": 1,
-      "allow_edit": "All"
-    },
-    {
-      "state": "Pending Level 3",
-      "doc_status": 1,
-      "allow_edit": "All"
+      "allow_edit": "All",
+      "backflow_allowed": true,
+      "acl": {
+        "roles": ["Expense Approver", "System Manager"],
+        "users": []
+      }
     },
     {
       "state": "Approved",
       "doc_status": 1,
-      "allow_edit": "System Manager"
+      "allow_edit": "System Manager",
+      "backflow_allowed": true,
+      "acl": {
+        "roles": ["System Manager"],
+        "users": []
+      }
     },
     {
       "state": "Rejected",
       "doc_status": 1,
-      "allow_edit": "System Manager"
+      "allow_edit": "System Manager",
+      "backflow_allowed": true,
+      "acl": {
+        "roles": ["System Manager"],
+        "users": []
+      }
     },
     {
       "state": "Linked",
       "doc_status": 1,
-      "allow_edit": "System Manager"
+      "allow_edit": "System Manager",
+      "backflow_allowed": false
     },
     {
       "state": "Closed",
       "doc_status": 1,
-      "allow_edit": "System Manager"
+      "allow_edit": "System Manager",
+      "backflow_allowed": false
     }
   ],
   "transitions": [
@@ -83,66 +96,29 @@
       "allow_self_approval": 0,
       "allowed": "All",
       "state": "Draft",
-      "next_state": "Pending Level 1",
+      "next_state": "Pending Review",
       "doc_status": 1
     },
     {
       "action": "Approve",
       "allowed": "Expense Approver",
-      "state": "Pending Level 1",
-      "next_state": "Pending Level 2",
-      "condition": "doc.level_2_role or doc.level_2_user or doc.level_3_role or doc.level_3_user",
+      "state": "Pending Review",
+      "next_state": "Pending Review",
+      "condition": "doc.has_next_approval_level()",
       "doc_status": 1
     },
     {
       "action": "Approve",
       "allowed": "Expense Approver",
-      "state": "Pending Level 2",
-      "next_state": "Pending Level 3",
-      "condition": "doc.level_3_role or doc.level_3_user",
-      "doc_status": 1
-    },
-    {
-      "action": "Approve",
-      "allowed": "Expense Approver",
-      "state": "Pending Level 3",
+      "state": "Pending Review",
       "next_state": "Approved",
-      "doc_status": 1
-    },
-    {
-      "action": "Approve",
-      "allowed": "Expense Approver",
-      "state": "Pending Level 1",
-      "next_state": "Approved",
-      "condition": "not doc.level_2_role and not doc.level_2_user and not doc.level_3_role and not doc.level_3_user",
-      "doc_status": 1
-    },
-    {
-      "action": "Approve",
-      "allowed": "Expense Approver",
-      "state": "Pending Level 2",
-      "next_state": "Approved",
-      "condition": "not doc.level_3_role and not doc.level_3_user",
+      "condition": "not doc.has_next_approval_level()",
       "doc_status": 1
     },
     {
       "action": "Reject",
       "allowed": "Expense Approver",
-      "state": "Pending Level 1",
-      "next_state": "Rejected",
-      "doc_status": 1
-    },
-    {
-      "action": "Reject",
-      "allowed": "Expense Approver",
-      "state": "Pending Level 2",
-      "next_state": "Rejected",
-      "doc_status": 1
-    },
-    {
-      "action": "Reject",
-      "allowed": "Expense Approver",
-      "state": "Pending Level 3",
+      "state": "Pending Review",
       "next_state": "Rejected",
       "doc_status": 1
     },
@@ -151,6 +127,20 @@
       "allowed": "Expense Approver",
       "state": "Linked",
       "next_state": "Closed",
+      "doc_status": 1
+    },
+    {
+      "action": "Backflow",
+      "allowed": "System Manager",
+      "state": "Approved",
+      "next_state": "Pending Review",
+      "doc_status": 1
+    },
+    {
+      "action": "Backflow",
+      "allowed": "System Manager",
+      "state": "Rejected",
+      "next_state": "Pending Review",
       "doc_status": 1
     },
     {
@@ -164,7 +154,7 @@
       "action": "Reopen",
       "allowed": "System Manager",
       "state": "Closed",
-      "next_state": "Pending Level 1",
+      "next_state": "Pending Review",
       "doc_status": 1
     }
   ],

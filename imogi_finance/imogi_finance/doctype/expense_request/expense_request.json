@@ -66,6 +66,7 @@
     "approval_setting_last_modified",
     "pending_edit_allowed_fields",
     "workflow_state",
+    "current_approval_level",
     "integration_section",
     "linked_purchase_invoice",
     "pending_purchase_invoice",
@@ -451,6 +452,15 @@
       "hidden": 1,
       "label": "Workflow State",
       "options": "Workflow State",
+      "read_only": 1
+    },
+    {
+      "allow_on_submit": 1,
+      "default": "1",
+      "fieldname": "current_approval_level",
+      "fieldtype": "Int",
+      "hidden": 1,
+      "label": "Current Approval Level",
       "read_only": 1
     },
     {

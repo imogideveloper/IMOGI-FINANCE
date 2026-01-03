@@ -28,7 +28,7 @@ Gunakan sebagai panduan saat mengaktifkan flag situs atau mengubah konfigurasi p
 
 - Rute disimpan di dokumen saat submit dan disnapshot ketika Approved untuk validasi Close. Recompute otomatis hanya terjadi ketika:
   - Dokumen di-reopen (rute dihitung ulang dan status direset).
-  - Field kunci berubah pada status Pending (amount, cost center, atau daftar akun biaya) — status turun ke Pending Level 1 dengan rute baru.
+  - Field kunci berubah pada status Pending (amount, cost center, atau daftar akun biaya) — status turun ke Pending Review level 1 dengan rute baru.
 - Perubahan aturan persetujuan di tengah jalan **tidak** langsung diterapkan ke dokumen yang sudah pending jika tidak ada pemicu di atas.
 - Rekomendasi SOP:
   - Formalisasi urutan “ubah konfigurasi → refresh route (reopen terkontrol atau sentuh ulang field kunci secara aman) → lanjutkan approval”.
@@ -38,7 +38,7 @@ Gunakan sebagai panduan saat mengaktifkan flag situs atau mengubah konfigurasi p
 
 ## Hak edit luas saat pending
 
-- Workflow `allow_edit` untuk Pending Level 1–3 disetel ke `All`, sehingga semua pengguna dapat mengubah detail selama docstatus 1. Perubahan field kunci memicu reset ke Pending Level 1, tetapi field lain (mis. deskripsi atau lampiran) dapat berubah tanpa log khusus.
+- Workflow `allow_edit` untuk Pending Review disetel ke `All`, sehingga semua pengguna dapat mengubah detail selama docstatus 1. Perubahan field kunci memicu reset ke Pending Review level 1, tetapi field lain (mis. deskripsi atau lampiran) dapat berubah tanpa log khusus.
 - Rekomendasi:
   - Batasi edit di lingkungan production dengan role/profile tambahan atau custom permission supaya field non-kunci tidak bebas diubah; minimalkan surface area edit untuk non-owner/non-approver sehingga kontrol pemisahan tugas tidak hanya bergantung pada guard di controller.
   - Wajibkan penggunaan komentar/timeline untuk mencatat perubahan mid-flow dan jadikan komentar ini mandatory setiap ada edit saat Pending.
@@ -58,3 +58,11 @@ Gunakan sebagai panduan saat mengaktifkan flag situs atau mengubah konfigurasi p
 - Rekomendasi:
   - Pastikan script atau API call yang memicu aksi terkontrol menetapkan `workflow_action_allowed` (atau `frappe.flags` setara) ketika bypass diperlukan dan sudah disetujui.
   - Dokumentasikan penggunaan bypass di log/audit trail agar reviewer tahu ada perubahan status non-standar.
+
+## Backflow dan hirarki persetujuan dinamis
+
+- Semua state pending digabung menjadi **Pending Review** dengan level ditandai melalui `current_approval_level`. Setel level ke `1` pada submit/reopen/backflow dan naikkan level hanya via aksi Approve.
+- Aksi **Backflow** dan **Reopen** wajib memiliki sesi aktif (`frappe.session.user`) dan alasan tertulis (`backflow_reason`) untuk audit trail. Sistem menolak ketika sesi tidak tersedia.
+- Hanya role dengan hak khusus (mis. System Manager atau manajer yang diset di ACL state) yang boleh menjalankan Backflow/Reopen; state sumber harus menandai `backflow_allowed: true`.
+- Setiap backflow dicatat via logger (`imogi_finance`) dengan informasi user, timestamp, dan alasan. Gunakan alasan yang jelas agar reviewer dapat menelusuri konteks dan memastikan SOP dipatuhi.
+- Aktifkan notifikasi/email untuk perubahan kritis (Backflow/Reopen) dan gunakan `frappe.publish_realtime` bila memungkinkan agar reviewer langsung tahu status kembali ke level 1.

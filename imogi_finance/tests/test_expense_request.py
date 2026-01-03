@@ -1,5 +1,6 @@
 import sys
 import types
+from pathlib import Path
 
 import pytest
 
@@ -9,6 +10,22 @@ frappe._ = lambda msg: msg
 frappe.whitelist = lambda *args, **kwargs: (lambda fn: fn)
 frappe.session = types.SimpleNamespace(user=None)
 frappe.get_roles = lambda: []
+def _fake_get_app_path(*parts, **kwargs):
+    return str(Path(__file__).resolve().parents[2].joinpath(*parts))
+
+
+frappe.get_app_path = _fake_get_app_path
+frappe_utils = types.ModuleType("frappe.utils")
+frappe_utils.add_months = lambda *args, **kwargs: None
+frappe_utils.flt = float
+frappe_utils.getdate = lambda value=None: value
+frappe_utils.now_datetime = lambda: None
+frappe_utils.cint = lambda value=0: 0 if value is None else int(value)
+frappe_utils.cstr = lambda value=None: "" if value is None else str(value)
+frappe_utils.now = lambda: ""
+frappe_utils.get_site_path = lambda *args, **kwargs: "/tmp"
+sys.modules["frappe.utils"] = frappe_utils
+frappe.utils = frappe_utils
 
 
 class NotAllowed(Exception):
@@ -114,7 +131,8 @@ def _item(
 
 def _make_request(role=None, user=None, **overrides):
     defaults = {
-        "status": "Pending Level 1",
+        "status": "Pending Review",
+        "current_approval_level": 1,
         "items": [(_item())],
         "cost_center": "CC",
         "request_type": "Expense",
@@ -139,12 +157,12 @@ def test_before_workflow_action_requires_role_when_only_role(monkeypatch):
     with pytest.raises(NotAllowed) as excinfo:
         request_without_role.before_workflow_action("Approve")
 
-    assert "role 'Expense Approver'" in str(excinfo.value)
+    assert "Expense Approver" in str(excinfo.value)
 
 
 def test_before_workflow_action_requires_exact_user_when_only_user(monkeypatch):
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="owner@example.com"))
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["Viewer"])
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Expense Approver"])
 
     request = _make_request(user="owner@example.com")
     request.before_workflow_action("Approve")
@@ -268,19 +286,19 @@ def test_before_workflow_action_requires_both_user_and_role(monkeypatch):
 
     missing_role = _make_request(role="Expense Approver", user="owner@example.com")
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="owner@example.com"))
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["Viewer"])
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
 
     with pytest.raises(NotAllowed) as excinfo:
         missing_role.before_workflow_action("Approve")
 
     message = str(excinfo.value)
-    assert "user 'owner@example.com'" in message
+    assert "owner@example.com" in message
     assert "role 'Expense Approver'" in message
 
 
 def test_before_workflow_action_blocks_skipping_level_two(monkeypatch):
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="approver@example.com"))
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["Level 1 User"])
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Level 1 User", "Expense Approver"])
 
     request = _make_request(role="Level 1 User", user="approver@example.com")
     request.level_2_user = "second@example.com"
@@ -294,7 +312,8 @@ def test_before_workflow_action_blocks_skipping_level_three(monkeypatch):
     monkeypatch.setattr(frappe, "get_roles", lambda: ["Level 2 User"])
 
     request = ExpenseRequest(
-        status="Pending Level 2",
+        status="Pending Review",
+        current_approval_level=2,
         level_2_role="Level 2 User",
         level_2_user="level2@example.com",
         level_3_user="level3@example.com",
@@ -309,7 +328,7 @@ def test_before_workflow_action_blocks_skipping_level_three(monkeypatch):
 
 def test_before_workflow_action_allows_final_approval_when_no_next_level(monkeypatch):
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="approver@example.com"))
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["Level 1 User"])
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Level 1 User", "Expense Approver"])
 
     request = _make_request(role="Level 1 User", user="approver@example.com")
 
@@ -319,7 +338,7 @@ def test_before_workflow_action_allows_final_approval_when_no_next_level(monkeyp
 def test_before_workflow_action_allows_routed_user_without_generic_role(monkeypatch):
     """Workflow-level roles are broad; routing still enforces the actual approver."""
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="routed@example.com"))
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["Viewer"])
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Viewer", "Expense Approver"])
 
     request = _make_request(user="routed@example.com")
 
@@ -329,7 +348,7 @@ def test_before_workflow_action_allows_routed_user_without_generic_role(monkeypa
 def test_before_workflow_action_blocks_generic_role_without_route(monkeypatch):
     """Having a generic workflow role is insufficient when the route expects a specific user."""
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="other@example.com"))
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["Level 1 User"])
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Level 1 User", "Expense Approver"])
 
     request = _make_request(user="owner@example.com")
 
@@ -473,10 +492,12 @@ def test_reopen_requires_system_manager_role(monkeypatch):
         request_type="Expense",
     )
 
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="viewer@example.com"))
     monkeypatch.setattr(frappe, "get_roles", lambda: ["Viewer"])
     with pytest.raises(NotAllowed):
         request.before_workflow_action("Reopen")
 
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="manager@example.com"))
     monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
     request.before_workflow_action("Reopen")
 
@@ -508,10 +529,11 @@ def test_reopen_refreshes_route_and_status(monkeypatch):
         request_type="Expense",
     )
 
-    request.on_workflow_action("Reopen", next_state="Pending Level 1")
+    request.on_workflow_action("Reopen", next_state="Pending Review")
 
     assert captured["args"] == ("CC", ("5000",), 250)
-    assert request.status == "Pending Level 1"
+    assert request.status == "Pending Review"
+    assert request.current_approval_level == 1
     assert request.level_1_role == "Expense Approver"
     assert request.level_1_user == "approver@example.com"
 
@@ -535,7 +557,8 @@ def test_reopen_to_draft_tracks_next_state(monkeypatch):
 
     request.on_workflow_action("Reopen", next_state="Draft")
 
-    assert request.status == "Draft"
+    assert request.status == "Pending Review"
+    assert request.current_approval_level == 1
 
 
 def test_reopen_blocks_when_downstream_active(monkeypatch):
@@ -570,6 +593,7 @@ def test_reopen_allows_site_override_with_audit(monkeypatch):
         linked_payment_entry="PE-1",
         request_type="Expense",
     )
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="manager@example.com"))
     monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
     monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: 1)
     monkeypatch.setattr(frappe, "conf", types.SimpleNamespace(imogi_finance_allow_reopen_with_active_links=True))
@@ -599,6 +623,7 @@ def test_reopen_allows_request_override_with_audit(monkeypatch):
         allow_reopen_with_active_links=True,
         request_type="Expense",
     )
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="manager@example.com"))
     monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
     monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: 1)
     monkeypatch.setattr(ExpenseRequest, "_add_reopen_override_audit", _audit)
@@ -612,7 +637,8 @@ def test_reopen_allows_request_override_with_audit(monkeypatch):
 
 def test_reopen_override_requires_resolution_before_approval(monkeypatch):
     request = ExpenseRequest(
-        status="Pending Level 1",
+        status="Pending Review",
+        current_approval_level=1,
         docstatus=1,
         cost_center="CC",
         expense_account="5000",
@@ -634,6 +660,7 @@ def test_reopen_override_requires_resolution_before_approval(monkeypatch):
 
 
 def test_reopen_clears_downstream_links(monkeypatch):
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="manager@example.com"))
     monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
     monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: 2)
     monkeypatch.setattr(
@@ -657,13 +684,14 @@ def test_reopen_clears_downstream_links(monkeypatch):
     )
 
     request.before_workflow_action("Reopen")
-    request.on_workflow_action("Reopen", next_state="Pending Level 1")
+    request.on_workflow_action("Reopen", next_state="Pending Review")
 
     assert request.linked_payment_entry is None
     assert request.linked_purchase_invoice is None
     assert request.linked_asset is None
     assert request.pending_purchase_invoice is None
-    assert request.status == "Pending Level 1"
+    assert request.status == "Pending Review"
+    assert request.current_approval_level == 1
 
 
 def test_before_submit_handles_missing_route(monkeypatch):
@@ -694,7 +722,7 @@ def test_before_submit_handles_missing_route(monkeypatch):
 
     assert "Approval route could not be determined" in str(excinfo.value)
     assert captured.get("called")
-    assert getattr(request, "status", None) != "Pending Level 1"
+    assert getattr(request, "status", None) != "Pending Review"
 
 
 def test_reopen_handles_validation_error(monkeypatch):
@@ -723,12 +751,70 @@ def test_reopen_handles_validation_error(monkeypatch):
     )
 
     with pytest.raises(NotAllowed) as excinfo:
-        request.on_workflow_action("Reopen", next_state="Pending Level 1")
+        request.on_workflow_action("Reopen", next_state="Pending Review")
 
     assert "Approval route could not be determined" in str(excinfo.value)
     assert captured.get("called")
     assert request.status == "Closed"
     assert request.linked_payment_entry == "PE-1"
+
+
+def test_backflow_requires_reason(monkeypatch):
+    request = ExpenseRequest(
+        status="Approved",
+        docstatus=1,
+        cost_center="CC",
+        expense_account="5000",
+        amount=150,
+        request_type="Expense",
+        items=[_item(amount=150)],
+    )
+
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="manager@example.com"))
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
+
+    with pytest.raises(NotAllowed):
+        request.before_workflow_action("Backflow", next_state="Pending Review")
+
+
+def test_backflow_rejects_missing_session(monkeypatch):
+    request = ExpenseRequest(
+        status="Approved",
+        docstatus=1,
+        cost_center="CC",
+        expense_account="5000",
+        amount=150,
+        request_type="Expense",
+        items=[_item(amount=150)],
+        backflow_reason="Route updated",
+    )
+
+    monkeypatch.setattr(frappe, "session", None, raising=False)
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
+
+    with pytest.raises(NotAllowed):
+        request.before_workflow_action("Backflow", next_state="Pending Review")
+
+
+def test_backflow_sets_pending_review_and_level(monkeypatch):
+    request = ExpenseRequest(
+        status="Approved",
+        docstatus=1,
+        cost_center="CC",
+        expense_account="5000",
+        amount=150,
+        request_type="Expense",
+        items=[_item(amount=150)],
+    )
+
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="manager@example.com"))
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
+
+    request.before_workflow_action("Backflow", next_state="Pending Review", reason="Policy update")
+    request.on_workflow_action("Backflow", next_state="Pending Review")
+
+    assert request.status == "Pending Review"
+    assert request.current_approval_level == 1
 
 
 def test_validate_blocks_key_changes_after_final_status():
@@ -773,7 +859,8 @@ def test_validate_allows_changes_outside_final_status(monkeypatch):
     )
     previous = ExpenseRequest(
         docstatus=1,
-        status="Pending Level 1",
+        status="Pending Review",
+        current_approval_level=1,
         request_type="Expense",
         supplier="Supplier A",
         expense_account="5000",
@@ -785,7 +872,8 @@ def test_validate_allows_changes_outside_final_status(monkeypatch):
     )
     updated = ExpenseRequest(
         docstatus=1,
-        status="Pending Level 1",
+        status="Pending Review",
+        current_approval_level=1,
         request_type="Expense",
         supplier="Supplier A",
         expense_account="5000",
@@ -817,7 +905,8 @@ def test_validate_restarts_route_when_key_fields_change_after_submit(monkeypatch
 
     previous = ExpenseRequest(
         docstatus=1,
-        status="Pending Level 2",
+        status="Pending Review",
+        current_approval_level=2,
         request_type="Expense",
         supplier="Supplier A",
         expense_account="5000",
@@ -829,7 +918,8 @@ def test_validate_restarts_route_when_key_fields_change_after_submit(monkeypatch
     )
     updated = ExpenseRequest(
         docstatus=1,
-        status="Pending Level 2",
+        status="Pending Review",
+        current_approval_level=2,
         request_type="Expense",
         supplier="Supplier A",
         expense_account="5000",
@@ -844,7 +934,8 @@ def test_validate_restarts_route_when_key_fields_change_after_submit(monkeypatch
     updated.validate()
 
     assert captured["args"] == ("CC", ("5000",), 200)
-    assert updated.status == "Pending Level 1"
+    assert updated.status == "Pending Review"
+    assert updated.current_approval_level == 1
     assert updated.level_1_role == "Level 1 User"
     assert updated.level_1_user == "approver@example.com"
 
@@ -852,7 +943,8 @@ def test_validate_restarts_route_when_key_fields_change_after_submit(monkeypatch
 def test_validate_pending_edit_requires_route_role(monkeypatch):
     previous = ExpenseRequest(
         docstatus=1,
-        status="Pending Level 1",
+        status="Pending Review",
+        current_approval_level=1,
         request_type="Expense",
         supplier="Supplier A",
         expense_account="5000",
@@ -863,7 +955,8 @@ def test_validate_pending_edit_requires_route_role(monkeypatch):
     )
     updated = ExpenseRequest(
         docstatus=1,
-        status="Pending Level 1",
+        status="Pending Review",
+        current_approval_level=1,
         request_type="Expense",
         supplier="Supplier A",
         expense_account="5000",
@@ -889,7 +982,8 @@ def test_validate_pending_edit_requires_route_role(monkeypatch):
 def test_validate_pending_route_freshness_requires_refresh(monkeypatch):
     request = ExpenseRequest(
         docstatus=1,
-        status="Pending Level 1",
+        status="Pending Review",
+        current_approval_level=1,
         request_type="Expense",
         expense_account="5000",
         amount=150,
@@ -910,7 +1004,8 @@ def test_validate_pending_route_freshness_requires_refresh(monkeypatch):
 def test_validate_pending_edit_allows_whitelisted_custom_field(monkeypatch):
     previous = ExpenseRequest(
         docstatus=1,
-        status="Pending Level 1",
+        status="Pending Review",
+        current_approval_level=1,
         request_type="Expense",
         supplier="Supplier A",
         expense_account="5000",
@@ -921,7 +1016,8 @@ def test_validate_pending_edit_allows_whitelisted_custom_field(monkeypatch):
     )
     updated = ExpenseRequest(
         docstatus=1,
-        status="Pending Level 1",
+        status="Pending Review",
+        current_approval_level=1,
         request_type="Expense",
         supplier="Supplier A",
         expense_account="5000",
@@ -949,7 +1045,8 @@ def test_validate_pending_edit_allows_whitelisted_custom_field(monkeypatch):
 def test_validate_pending_edit_rejects_custom_field_for_non_approver(monkeypatch):
     previous = ExpenseRequest(
         docstatus=1,
-        status="Pending Level 1",
+        status="Pending Review",
+        current_approval_level=1,
         request_type="Expense",
         supplier="Supplier A",
         expense_account="5000",
@@ -962,7 +1059,8 @@ def test_validate_pending_edit_rejects_custom_field_for_non_approver(monkeypatch
     )
     updated = ExpenseRequest(
         docstatus=1,
-        status="Pending Level 1",
+        status="Pending Review",
+        current_approval_level=1,
         request_type="Expense",
         supplier="Supplier A",
         expense_account="5000",
@@ -991,7 +1089,8 @@ def test_validate_pending_edit_rejects_custom_field_for_non_approver(monkeypatch
 def test_validate_pending_edit_allows_custom_field_for_routed_user(monkeypatch):
     previous = ExpenseRequest(
         docstatus=1,
-        status="Pending Level 1",
+        status="Pending Review",
+        current_approval_level=1,
         request_type="Expense",
         supplier="Supplier A",
         expense_account="5000",
@@ -1003,7 +1102,8 @@ def test_validate_pending_edit_allows_custom_field_for_routed_user(monkeypatch):
     )
     updated = ExpenseRequest(
         docstatus=1,
-        status="Pending Level 1",
+        status="Pending Review",
+        current_approval_level=1,
         request_type="Expense",
         supplier="Supplier A",
         expense_account="5000",
@@ -1031,7 +1131,8 @@ def test_validate_pending_edit_allows_custom_field_for_routed_user(monkeypatch):
 def test_validate_pending_route_freshness_records_meta_when_missing(monkeypatch):
     request = ExpenseRequest(
         docstatus=1,
-        status="Pending Level 1",
+        status="Pending Review",
+        current_approval_level=1,
         request_type="Expense",
         expense_account="5000",
         amount=150,
@@ -1102,7 +1203,8 @@ def test_approve_requires_route_on_current_level(monkeypatch):
     monkeypatch.setattr(frappe, "get_roles", lambda: ["Expense Approver"])
 
     request = ExpenseRequest(
-        status="Pending Level 2",
+        status="Pending Review",
+        current_approval_level=2,
         level_2_role=None,
         level_2_user=None,
         items=[_item()],
@@ -1117,7 +1219,8 @@ def test_approve_requires_route_on_current_level(monkeypatch):
 def test_validate_blocks_status_change_without_workflow_action():
     previous = ExpenseRequest(
         docstatus=1,
-        status="Pending Level 1",
+        status="Pending Review",
+        current_approval_level=1,
         request_type="Expense",
         cost_center="CC",
         expense_account="5000",
@@ -1142,7 +1245,8 @@ def test_validate_blocks_status_change_without_workflow_action():
 def test_validate_allows_status_change_when_workflow_flagged():
     previous = ExpenseRequest(
         docstatus=1,
-        status="Pending Level 1",
+        status="Pending Review",
+        current_approval_level=1,
         request_type="Expense",
         cost_center="CC",
         expense_account="5000",

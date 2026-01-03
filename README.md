@@ -7,7 +7,7 @@ App for managing expenses at IMOGI.
 #### Expense Request & Approvals
 
 - **Dynamic approval routes**: routes are calculated from Expense Approval Settings per Cost Center + expense account + amount, stored on the document, and must be refreshed before approval (configuration changes are detected and block approval until refreshed). Submit is restricted to the creator, approvers must match the user/role on the route, and levels cannot be skipped.
-- **Edit controls & post-submit states**: changing amount/cost center/expense account while Pending resets to Pending Level 1 with an audit comment; key fields cannot change in Approved/Linked/Closed. Pending edits are limited to the owner or approver, and all rejections/overrides are recorded in the timeline.
+- **Edit controls & post-submit states**: changing amount/cost center/expense account while Pending resets to Pending Review (level 1) with an audit comment; key fields cannot change in Approved/Linked/Closed. Pending edits are limited to the owner or approver, and all rejections/overrides are recorded in the timeline.
 - **Protected reopen & close**: reopen is reserved for System Manager unless an override flag is set; it enforces audit when active links to Payment Entry/Purchase Invoice/Asset exist. Close validates the latest route or final snapshot; an emergency override flag is available with audit trail.
 - **Status guardrails & audit trail**: off-workflow status changes are blocked, approval routes are snapshotted when Approved to validate Close, and automatic comments are posted for denied workflow actions, pending edits, or reopen overrides.
 

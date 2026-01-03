@@ -34,6 +34,7 @@ def get_approval_route(cost_center: str, accounts, amount: float, *, setting_met
 class ExpenseRequest(Document):
     """Main expense request document, integrating approval and accounting flows."""
 
+    PENDING_REVIEW_STATE = "Pending Review"
     REOPEN_ALLOWED_ROLES = {"System Manager"}
     _workflow_service = WorkflowService()
     _workflow_engine = WorkflowEngine(
@@ -173,6 +174,8 @@ class ExpenseRequest(Document):
 
     def _ensure_status(self):
         if getattr(self, "status", None):
+            if self.status == self.PENDING_REVIEW_STATE and not getattr(self, "current_approval_level", None):
+                self.current_approval_level = 1
             return
 
         workflow_state = getattr(self, "workflow_state", None)
@@ -180,6 +183,11 @@ class ExpenseRequest(Document):
             self.status = workflow_state
         else:
             self.status = "Draft"
+
+        if self.status == self.PENDING_REVIEW_STATE:
+            self.current_approval_level = getattr(self, "current_approval_level", None) or 1
+        else:
+            self.current_approval_level = 0
 
     def before_submit(self):
         """Resolve approval route and set initial workflow state."""
@@ -200,7 +208,8 @@ class ExpenseRequest(Document):
 
         self.apply_route(route, setting_meta=setting_meta)
         self.validate_initial_approver(route)
-        self.status = "Pending Level 1"
+        self._set_pending_review(level=1)
+        self.workflow_state = self.PENDING_REVIEW_STATE
 
     def before_workflow_action(self, action, **kwargs):
         """Gate workflow transitions by the resolved approver route.
@@ -216,6 +225,12 @@ class ExpenseRequest(Document):
             flags = type("Flags", (), {})()
             self.flags = flags
         self.flags.workflow_action_allowed = True
+        if action == "Backflow":
+            reason = kwargs.get("reason")
+            if reason:
+                self.backflow_reason = reason
+            elif not getattr(self, "backflow_reason", None):
+                self.flags.backflow_reason = None
         if action != "Close":
             self._workflow_engine.guard_action(
                 doc=self,
@@ -246,7 +261,7 @@ class ExpenseRequest(Document):
             self.validate_pending_route_freshness()
             self.validate_reopen_override_resolution()
 
-        if self.status not in {"Pending Level 1", "Pending Level 2", "Pending Level 3"}:
+        if not self.is_pending_review():
             return
 
         current_level = self.get_current_level_key()
@@ -298,9 +313,20 @@ class ExpenseRequest(Document):
         next_state = kwargs.get("next_state")
         if action == "Approve" and next_state == "Approved":
             self.record_approval_route_snapshot()
+            self.current_approval_level = 0
+        if action == "Approve" and next_state == self.PENDING_REVIEW_STATE:
+            self._advance_approval_level()
 
-        if action in {"Approve", "Reject", "Close", "Submit"} and next_state:
+        if action == "Reject":
+            self.current_approval_level = 0
+
+        if action == "Backflow" and next_state == self.PENDING_REVIEW_STATE:
+            self._set_pending_review(level=1)
+            self.workflow_state = next_state
+
+        if action in {"Approve", "Reject", "Close", "Submit", "Backflow"} and next_state:
             self.status = next_state
+            self.workflow_state = next_state
 
         if action != "Reopen":
             handle_expense_request_workflow(self, action, next_state)
@@ -314,7 +340,8 @@ class ExpenseRequest(Document):
             )
             self.clear_downstream_links()
             self.apply_route(route, setting_meta=setting_meta)
-            self.status = next_state or "Pending Level 1"
+            self._set_pending_review(level=1)
+            self.workflow_state = next_state or self.PENDING_REVIEW_STATE
         except (frappe.DoesNotExistError, frappe.ValidationError) as exc:
             log_route_resolution_error(
                 exc,
@@ -548,7 +575,7 @@ class ExpenseRequest(Document):
         if getattr(self, "docstatus", 0) != 1:
             return
 
-        if self.status not in {"Pending Level 1", "Pending Level 2", "Pending Level 3"}:
+        if not self.is_pending_review():
             return
 
         try:
@@ -658,6 +685,10 @@ class ExpenseRequest(Document):
         )
 
     def get_current_level_key(self) -> str | None:
+        if self.is_pending_review():
+            level = getattr(self, "current_approval_level", None) or 0
+            return str(level) if level else None
+
         status = getattr(self, "status", None)
         if status == "Pending Level 1":
             return "1"
@@ -666,6 +697,37 @@ class ExpenseRequest(Document):
         if status == "Pending Level 3":
             return "3"
         return None
+
+    def _set_pending_review(self, *, level: int = 1):
+        self.status = self.PENDING_REVIEW_STATE
+        self.workflow_state = self.PENDING_REVIEW_STATE
+        self.current_approval_level = level
+
+    def is_pending_review(self) -> bool:
+        return getattr(self, "status", None) == self.PENDING_REVIEW_STATE or getattr(self, "workflow_state", None) == self.PENDING_REVIEW_STATE
+
+    def _level_configured(self, level: int) -> bool:
+        if level not in {1, 2, 3}:
+            return False
+
+        role = self.get(f"level_{level}_role")
+        user = self.get(f"level_{level}_user")
+        return bool(role or user)
+
+    def has_next_approval_level(self) -> bool:
+        current = getattr(self, "current_approval_level", None) or 1
+        for level in range(current + 1, 4):
+            if self._level_configured(level):
+                return True
+        return False
+
+    def _advance_approval_level(self):
+        current = getattr(self, "current_approval_level", None) or 1
+        for level in range(current + 1, 4):
+            if self._level_configured(level):
+                self.current_approval_level = level
+                return
+        self.current_approval_level = current
 
     def handle_key_field_changes_after_submit(self):
         """React to key field changes on submitted documents.
@@ -706,7 +768,7 @@ class ExpenseRequest(Document):
             self.cost_center, self._get_expense_accounts(), self.amount, setting_meta=setting_meta
         )
         self.apply_route(route, setting_meta=setting_meta)
-        self.status = "Pending Level 1"
+        self._set_pending_review(level=1)
         flags = getattr(self, "flags", None)
         if flags is None:
             flags = type("Flags", (), {})()
@@ -720,22 +782,25 @@ class ExpenseRequest(Document):
             self,
             valid_states={
                 "Draft",
-                "Pending Level 1",
-                "Pending Level 2",
-                "Pending Level 3",
+                self.PENDING_REVIEW_STATE,
+                "Reopened",
                 "Approved",
                 "Rejected",
                 "Linked",
                 "Closed",
             },
         )
+        if self.is_pending_review():
+            self.current_approval_level = getattr(self, "current_approval_level", None) or 1
+        else:
+            self.current_approval_level = 0
 
     def validate_pending_edit_restrictions(self):
         """Limit who can edit pending requests and add audit breadcrumbs."""
         if getattr(self, "docstatus", 0) != 1:
             return
 
-        if self.status not in {"Pending Level 1", "Pending Level 2", "Pending Level 3"}:
+        if not self.is_pending_review():
             return
 
         session_user = getattr(getattr(frappe, "session", None), "user", None)

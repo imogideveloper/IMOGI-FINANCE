@@ -36,55 +36,69 @@
         "doctype": "Workflow Document State",
         "state": "Draft",
         "doc_status": "0",
-        "allow_edit": "All"
+        "allow_edit": "All",
+        "backflow_allowed": false
       },
       {
         "doctype": "Workflow Document State",
         "state": "Reopened",
         "doc_status": "1",
-        "allow_edit": "All"
+        "allow_edit": "All",
+        "backflow_allowed": true
       },
       {
         "doctype": "Workflow Document State",
-        "state": "Pending Level 1",
+        "state": "Pending Review",
         "doc_status": "1",
-        "allow_edit": "All"
-      },
-      {
-        "doctype": "Workflow Document State",
-        "state": "Pending Level 2",
-        "doc_status": "1",
-        "allow_edit": "All"
-      },
-      {
-        "doctype": "Workflow Document State",
-        "state": "Pending Level 3",
-        "doc_status": "1",
-        "allow_edit": "All"
+        "allow_edit": "All",
+        "backflow_allowed": true,
+        "acl": {
+          "roles": [
+            "Expense Approver",
+            "System Manager"
+          ],
+          "users": []
+        }
       },
       {
         "doctype": "Workflow Document State",
         "state": "Approved",
         "doc_status": "1",
-        "allow_edit": "System Manager"
+        "allow_edit": "System Manager",
+        "backflow_allowed": true,
+        "acl": {
+          "roles": [
+            "System Manager"
+          ],
+          "users": []
+        }
       },
       {
         "doctype": "Workflow Document State",
         "state": "Rejected",
         "doc_status": "1",
-        "allow_edit": "System Manager"
+        "allow_edit": "System Manager",
+        "backflow_allowed": true,
+        "acl": {
+          "roles": [
+            "System Manager"
+          ],
+          "users": []
+        }
       },
       {
         "doctype": "Workflow Document State",
         "state": "Linked",
         "doc_status": "1",
-        "allow_edit": "System Manager"
+        "allow_edit": "System Manager",
+        "backflow_allowed": false
       },
       {
         "doctype": "Workflow Document State",
         "state": "Closed",
         "doc_status": "1",
-        "allow_edit": "System Manager"
+        "allow_edit": "System Manager",
+        "backflow_allowed": false
       }
     ],
     "transitions": [
@@ -92,67 +106,30 @@
         "doctype": "Workflow Transition",
         "action": "Submit",
         "state": "Draft",
-        "next_state": "Pending Level 1",
+        "next_state": "Pending Review",
         "allowed": "All",
         "allow_self_approval": 0
       },
       {
         "doctype": "Workflow Transition",
         "action": "Approve",
-        "state": "Pending Level 1",
-        "next_state": "Pending Level 2",
+        "state": "Pending Review",
+        "next_state": "Pending Review",
         "allowed": "Expense Approver",
-        "condition": "doc.level_2_role or doc.level_2_user or doc.level_3_role or doc.level_3_user"
+        "condition": "doc.has_next_approval_level()"
       },
       {
         "doctype": "Workflow Transition",
         "action": "Approve",
-        "state": "Pending Level 2",
-        "next_state": "Pending Level 3",
-        "allowed": "Expense Approver",
-        "condition": "doc.level_3_role or doc.level_3_user"
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Approve",
-        "state": "Pending Level 3",
-        "next_state": "Approved",
-        "allowed": "Expense Approver"
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Approve",
-        "state": "Pending Level 1",
+        "state": "Pending Review",
         "next_state": "Approved",
         "allowed": "Expense Approver",
-        "condition": "not doc.level_2_role and not doc.level_2_user and not doc.level_3_role and not doc.level_3_user"
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Approve",
-        "state": "Pending Level 2",
-        "next_state": "Approved",
-        "allowed": "Expense Approver",
-        "condition": "not doc.level_3_role and not doc.level_3_user"
+        "condition": "not doc.has_next_approval_level()"
       },
       {
         "doctype": "Workflow Transition",
         "action": "Reject",
-        "state": "Pending Level 1",
-        "next_state": "Rejected",
-        "allowed": "Expense Approver"
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Reject",
-        "state": "Pending Level 2",
-        "next_state": "Rejected",
-        "allowed": "Expense Approver"
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Reject",
-        "state": "Pending Level 3",
+        "state": "Pending Review",
         "next_state": "Rejected",
         "allowed": "Expense Approver"
       },
@@ -162,6 +139,20 @@
         "state": "Linked",
         "next_state": "Closed",
         "allowed": "Expense Approver"
+      },
+      {
+        "doctype": "Workflow Transition",
+        "action": "Backflow",
+        "state": "Approved",
+        "next_state": "Pending Review",
+        "allowed": "System Manager"
+      },
+      {
+        "doctype": "Workflow Transition",
+        "action": "Backflow",
+        "state": "Rejected",
+        "next_state": "Pending Review",
+        "allowed": "System Manager"
       },
       {
         "doctype": "Workflow Transition",
@@ -176,7 +167,7 @@
         "doctype": "Workflow Transition",
         "action": "Reopen",
         "state": "Closed",
-        "next_state": "Pending Level 1",
+        "next_state": "Pending Review",
         "allowed": "System Manager",
         "doc_status": "1",
         "allow_self_approval": 0

@@ -428,9 +428,7 @@ fixtures = [
                 [
                     "Draft",
                     "Reopened",
-                    "Pending Level 1",
-                    "Pending Level 2",
-                    "Pending Level 3",
+                    "Pending Review",
                     "Approved",
                     "Rejected",
                     "Linked",

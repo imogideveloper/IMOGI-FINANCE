@@ -13,20 +13,8 @@
   },
   {
     "doctype": "Workflow State",
-    "name": "Pending Level 1",
-    "workflow_state_name": "Pending Level 1",
-    "style": ""
-  },
-  {
-    "doctype": "Workflow State",
-    "name": "Pending Level 2",
-    "workflow_state_name": "Pending Level 2",
-    "style": ""
-  },
-  {
-    "doctype": "Workflow State",
-    "name": "Pending Level 3",
-    "workflow_state_name": "Pending Level 3",
+    "name": "Pending Review",
+    "workflow_state_name": "Pending Review",
     "style": ""
   },
   {

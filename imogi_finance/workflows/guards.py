@@ -50,6 +50,11 @@ class WorkflowGuard:
 
     FINAL_STATES = {"Approved", "Linked", "Closed"}
 
+    @staticmethod
+    def require_session_user():
+        if getattr(frappe, "session", None) is None or getattr(getattr(frappe, "session", None), "user", None) is None:
+            frappe.throw(_("Session invalid, backflow not permitted."))
+
     def __init__(self, *, status_field: str = "status", workflow_field: str = "workflow_state"):
         self.status_field = status_field
         self.workflow_field = workflow_field
