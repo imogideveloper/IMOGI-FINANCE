@@ -95,9 +95,11 @@ def get_bpjs_contributions(company: str, date_from=None, date_to=None) -> dict:
         "total_employee": 0.0,
         "total_employer": 0.0,
         "source": "GL",
+        "fallback_reason": None,
     }
 
     if not is_payroll_installed():
+        summary["fallback_reason"] = "payroll_not_installed"
         return summary
 
     salary_slips = _get_salary_slips(company, date_from, date_to)
@@ -124,6 +126,8 @@ def get_bpjs_contributions(company: str, date_from=None, date_to=None) -> dict:
 
     if summary["rows"]:
         summary["source"] = "Payroll"
+    else:
+        summary["fallback_reason"] = "no_payroll_rows"
 
     return summary
 
