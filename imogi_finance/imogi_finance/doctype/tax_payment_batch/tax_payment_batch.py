@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import frappe
 from frappe import _
+from imogi_finance import roles
 from frappe.model.document import Document
 from frappe.utils import flt, nowdate
 
@@ -96,13 +97,13 @@ class TaxPaymentBatch(Document):
             self.amount = 0
 
     def create_journal_entry(self):
-        frappe.only_for(("Accounts Manager", "System Manager"))
+        frappe.only_for((roles.ACCOUNTS_MANAGER, roles.SYSTEM_MANAGER))
         if not self.posting_date:
             self.posting_date = nowdate()
         return build_tax_payment_journal_entry(self)
 
     def create_payment_entry(self):
-        frappe.only_for(("Accounts Manager", "System Manager"))
+        frappe.only_for((roles.ACCOUNTS_MANAGER, roles.SYSTEM_MANAGER))
         if not self.payment_date:
             self.payment_date = nowdate()
         return build_payment_entry(self)
@@ -111,7 +112,7 @@ class TaxPaymentBatch(Document):
 @frappe.whitelist()
 def refresh_tax_payment_amount(batch_name: str):
     batch = frappe.get_doc("Tax Payment Batch", batch_name)
-    frappe.only_for(("Accounts Manager", "System Manager"))
+    frappe.only_for((roles.ACCOUNTS_MANAGER, roles.SYSTEM_MANAGER))
     batch.pull_amounts()
     batch.save(ignore_permissions=True)
     return batch.amount
@@ -120,7 +121,7 @@ def refresh_tax_payment_amount(batch_name: str):
 @frappe.whitelist()
 def create_tax_payment_entry(batch_name: str):
     batch = frappe.get_doc("Tax Payment Batch", batch_name)
-    frappe.only_for(("Accounts Manager", "System Manager"))
+    frappe.only_for((roles.ACCOUNTS_MANAGER, roles.SYSTEM_MANAGER))
     je_name = batch.create_payment_entry()
     batch.save(ignore_permissions=True)
     return je_name
@@ -129,7 +130,7 @@ def create_tax_payment_entry(batch_name: str):
 @frappe.whitelist()
 def create_tax_payment_journal_entry(batch_name: str):
     batch = frappe.get_doc("Tax Payment Batch", batch_name)
-    frappe.only_for(("Accounts Manager", "System Manager"))
+    frappe.only_for((roles.ACCOUNTS_MANAGER, roles.SYSTEM_MANAGER))
     je_name = batch.create_journal_entry()
     batch.save(ignore_permissions=True)
     return je_name

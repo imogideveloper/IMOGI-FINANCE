@@ -10,7 +10,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
-from imogi_finance import accounting
+from imogi_finance import accounting, roles
 from imogi_finance.branching import apply_branch, resolve_branch
 from imogi_finance.approval import (
     approval_setting_required_message,
@@ -35,7 +35,7 @@ class ExpenseRequest(Document):
     """Main expense request document, integrating approval and accounting flows."""
 
     PENDING_REVIEW_STATE = "Pending Review"
-    REOPEN_ALLOWED_ROLES = {"System Manager"}
+    REOPEN_ALLOWED_ROLES = {roles.SYSTEM_MANAGER}
     _workflow_service = WorkflowService()
     _workflow_engine = WorkflowEngine(
         config_path=frappe.get_app_path(
@@ -827,7 +827,7 @@ class ExpenseRequest(Document):
                 getattr(self, "level_1_role", None),
                 getattr(self, "level_2_role", None),
                 getattr(self, "level_3_role", None),
-                "System Manager",
+                roles.SYSTEM_MANAGER,
             }
             if role
         }

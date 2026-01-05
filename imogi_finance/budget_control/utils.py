@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import frappe
+from imogi_finance import roles
 from frappe import _
 
 DEFAULT_SETTINGS = {
@@ -21,7 +22,7 @@ DEFAULT_SETTINGS = {
     "enable_budget_reclass": 0,
     "enable_additional_budget": 0,
     "enable_internal_charge": 0,
-    "budget_controller_role": "Budget Controller",
+    "budget_controller_role": roles.BUDGET_CONTROLLER,
     "require_budget_controller_review": 1,
     "lock_on_workflow_state": "Approved",
     "enforce_mode": "Both",

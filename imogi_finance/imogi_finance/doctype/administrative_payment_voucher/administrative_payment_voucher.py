@@ -5,6 +5,7 @@ from typing import Optional
 
 import frappe
 from frappe import _
+from imogi_finance import roles
 from frappe.model.document import Document
 from frappe.utils import getdate, now_datetime
 
@@ -472,21 +473,21 @@ class AdministrativePaymentVoucher(Document):
             )
 
         settings = get_apv_settings()
-        roles = frappe.get_roles() if hasattr(frappe, "get_roles") else []
-        if settings.posting_requires_accounts_manager and "Accounts Manager" not in roles:
+        roles_for_session = frappe.get_roles() if hasattr(frappe, "get_roles") else []
+        if settings.posting_requires_accounts_manager and roles.ACCOUNTS_MANAGER not in roles_for_session:
             frappe.throw(_("Only Accounts Managers can post Administrative Payment Vouchers."))
 
     def _assert_can_post(self):
         if self.workflow_state not in {"Approved", "Posted"} and self.status not in {"Approved", "Posted"}:
             frappe.throw(_("Voucher must be Approved before posting."))
         settings = get_apv_settings()
-        roles = frappe.get_roles() if hasattr(frappe, "get_roles") else []
-        if settings.posting_requires_accounts_manager and "Accounts Manager" not in roles:
+        roles_for_session = frappe.get_roles() if hasattr(frappe, "get_roles") else []
+        if settings.posting_requires_accounts_manager and roles.ACCOUNTS_MANAGER not in roles_for_session:
             frappe.throw(_("Only Accounts Managers can post Administrative Payment Vouchers."))
 
     def _assert_can_cancel(self):
-        roles = frappe.get_roles() if hasattr(frappe, "get_roles") else []
-        if "Accounts Manager" not in roles:
+        roles_for_session = frappe.get_roles() if hasattr(frappe, "get_roles") else []
+        if roles.ACCOUNTS_MANAGER not in roles_for_session:
             frappe.throw(_("Only Accounts Managers can cancel a posted Administrative Payment Voucher."))
 
     def _allow_workflow_action(self, *, allow_payment_entry: bool = False):

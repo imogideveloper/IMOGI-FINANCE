@@ -14,7 +14,7 @@ from frappe.model.document import Document
 from frappe.utils import flt, get_first_day, get_last_day, getdate, nowdate
 from frappe.utils.xlsxutils import make_xlsx
 
-from imogi_finance import tax_invoice_fields
+from imogi_finance import roles, tax_invoice_fields
 
 INPUT_VAT_REPORT = "imogi_finance.imogi_finance.report.vat_input_register_verified.vat_input_register_verified"
 OUTPUT_VAT_REPORT = "imogi_finance.imogi_finance.report.vat_output_register_verified.vat_output_register_verified"
@@ -223,8 +223,7 @@ def validate_tax_period_lock(doc: Document, posting_date_field: str = "posting_d
     if not locked_name:
         return
 
-    privileged_roles = {"System Manager", "Tax Reviewer"}
-    if set(frappe.get_roles()) & privileged_roles:
+    if roles.has_any_role(*roles.TAX_PRIVILEGED_ROLES):
         return
 
     previous = _get_previous_doc(doc)
