@@ -7,6 +7,7 @@ import json
 
 import frappe
 from frappe import _
+from imogi_finance import roles
 from frappe.model.document import Document
 from frappe.utils import flt, nowdate
 
@@ -122,7 +123,7 @@ class TaxPeriodClosing(Document):
         return frappe.get_cached_doc("Tax Profile", self.tax_profile)
 
     def create_vat_netting_journal_entry(self, save: bool = True) -> str:
-        frappe.only_for(("System Manager", "Accounts Manager", "Tax Reviewer"))
+        frappe.only_for((roles.SYSTEM_MANAGER, roles.ACCOUNTS_MANAGER, roles.TAX_REVIEWER))
         profile = self._get_tax_profile_doc()
 
         if not self.input_vat_total and not self.output_vat_total:
@@ -164,19 +165,19 @@ class TaxPeriodClosing(Document):
 @frappe.whitelist()
 def refresh_tax_registers(closing_name: str):
     closing = frappe.get_doc("Tax Period Closing", closing_name)
-    frappe.only_for(("System Manager", "Accounts Manager", "Tax Reviewer"))
+    frappe.only_for((roles.SYSTEM_MANAGER, roles.ACCOUNTS_MANAGER, roles.TAX_REVIEWER))
     return closing.generate_snapshot()
 
 
 @frappe.whitelist()
 def generate_coretax_exports(closing_name: str):
     closing = frappe.get_doc("Tax Period Closing", closing_name)
-    frappe.only_for(("System Manager", "Accounts Manager", "Tax Reviewer"))
+    frappe.only_for((roles.SYSTEM_MANAGER, roles.ACCOUNTS_MANAGER, roles.TAX_REVIEWER))
     return closing.generate_exports()
 
 
 @frappe.whitelist()
 def create_vat_netting_entry_for_closing(closing_name: str):
     closing = frappe.get_doc("Tax Period Closing", closing_name)
-    frappe.only_for(("System Manager", "Accounts Manager", "Tax Reviewer"))
+    frappe.only_for((roles.SYSTEM_MANAGER, roles.ACCOUNTS_MANAGER, roles.TAX_REVIEWER))
     return closing.create_vat_netting_journal_entry()

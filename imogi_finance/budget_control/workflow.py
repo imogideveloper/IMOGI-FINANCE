@@ -10,7 +10,7 @@ from typing import Iterable
 import frappe
 from frappe import _
 
-from imogi_finance import accounting
+from imogi_finance import accounting, roles
 from imogi_finance.budget_control import ledger, service, utils
 
 BUDGET_WORKFLOW_STATES = (
@@ -109,13 +109,13 @@ def _require_budget_controller_role(settings):
     if not settings.get("require_budget_controller_review"):
         return None
 
-    required_role = settings.get("budget_controller_role") or "Budget Controller"
+    required_role = settings.get("budget_controller_role") or roles.BUDGET_CONTROLLER
     try:
-        roles = set(frappe.get_roles())
+        roles_for_session = set(frappe.get_roles())
     except Exception:
-        roles = set()
+        roles_for_session = set()
 
-    if required_role in roles or "System Manager" in roles:
+    if required_role in roles_for_session or roles.SYSTEM_MANAGER in roles_for_session:
         return required_role
 
     frappe.throw(_("Budget Controller role ({0}) is required to review and approve budget operations.").format(required_role))

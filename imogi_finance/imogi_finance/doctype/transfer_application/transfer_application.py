@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import frappe
 from frappe import _
+from imogi_finance import roles
 from frappe.model.document import Document
 from frappe.utils import cint, flt, money_in_words, now_datetime, today
 
@@ -98,7 +99,7 @@ class TransferApplication(Document):
 
     @frappe.whitelist()
     def mark_as_printed(self):
-        frappe.only_for(("Accounts User", "Accounts Manager", "System Manager"))
+        frappe.only_for((roles.ACCOUNTS_USER, roles.ACCOUNTS_MANAGER, roles.SYSTEM_MANAGER))
         now = now_datetime()
         self.db_set({"printed_by": frappe.session.user, "printed_at": now})
         return {"printed_at": now}
