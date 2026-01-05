@@ -167,6 +167,12 @@ request.db_set({"linked_purchase_invoice": None, "request_type": "Asset"})
 frappe.call("imogi_finance.accounting.create_purchase_invoice_from_request", expense_request_name=request.name)
 ```
 
+### Credits
+
+- PT. Inovasi Terbaik Bangsa © 2026
+- Contributors: dannyaudian, abisena
+- Contact: m.abisena.putrawan@cao-group.co.id
+
 ### License
 
-mit
+MIT

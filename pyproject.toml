@@ -1,7 +1,9 @@
 [project]
 name = "imogi_finance"
 authors = [
-    { name = "Imogi", email = "imogi.indonesia@gmail.com"}
+    { name = "PT. Inovasi Terbaik Bangsa", email = "m.abisena.putrawan@cao-group.co.id"},
+    { name = "dannyaudian" },
+    { name = "abisena", email = "m.abisena.putrawan@cao-group.co.id" },
 ]
 description = "App for Manage Expense IMOGI"
 requires-python = ">=3.10"

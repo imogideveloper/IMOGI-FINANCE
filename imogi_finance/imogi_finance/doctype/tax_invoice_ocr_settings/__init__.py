@@ -1,1 +1,1 @@
-# Copyright (c) 2024, Imogi
+# Copyright (c) 2026, PT. Inovasi Terbaik Bangsa and contributors
