@@ -8,6 +8,7 @@ from .tax_invoice_service import (
     sync_tax_invoice_with_sales,
 )
 from .workflow_service import WorkflowService
+from .letter_template_service import render_payment_letter_html
 
 __all__ = [
     "ApprovalRouteService",
@@ -18,4 +19,5 @@ __all__ = [
     "SYNC_ERROR",
     "SYNC_PENDING",
     "SYNC_SUCCESS",
+    "render_payment_letter_html",
 ]

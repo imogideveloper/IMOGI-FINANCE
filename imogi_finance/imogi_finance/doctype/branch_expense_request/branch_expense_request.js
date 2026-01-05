@@ -157,6 +157,7 @@ frappe.ui.form.on("Branch Expense Request", {
 		maybeAddDeferredExpenseActions(frm);
 		maybeAddOcrButton(frm);
 		maybeAddUploadActions(frm);
+		maybeAddPaymentLetterButton(frm);
 	},
 	items_add(frm) {
 		update_totals(frm);
@@ -244,4 +245,28 @@ function maybeAddUploadActions(frm) {
 		});
 		await frm.reload_doc();
 	}, __("Tax Invoice"));
+}
+
+function maybeAddPaymentLetterButton(frm) {
+	if (frm.is_new() || frm.doc.docstatus !== 1) {
+		return;
+	}
+
+	frm.add_custom_button(
+		__("Payment Letter"),
+		() => {
+			frappe.call({
+				method: "imogi_finance.imogi_finance.doctype.branch_expense_request.branch_expense_request.get_branch_expense_request_payment_letter",
+				args: { name: frm.doc.name },
+				callback(r) {
+					if (!r.exc && r.message) {
+						const w = window.open("", "_blank");
+						w.document.write(r.message);
+						w.document.close();
+					}
+				},
+			});
+		},
+		__("Print"),
+	);
 }

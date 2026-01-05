@@ -56,6 +56,18 @@ def get_data():
                 },
                 {
                     "type": "doctype",
+                    "name": "Letter Template Settings",
+                    "label": "Letter Template Settings",
+                    "description": "Configure global payment letter behavior and defaults.",
+                },
+                {
+                    "type": "doctype",
+                    "name": "Letter Template",
+                    "label": "Letter Templates",
+                    "description": "Manage branch-specific payment letter templates.",
+                },
+                {
+                    "type": "doctype",
                     "name": "Tax Payment Batch",
                     "label": "Tax Payment Batch",
                     "description": "Group and process tax payments.",
