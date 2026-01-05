@@ -66,11 +66,20 @@ def _get_template(branch: Optional[str], letter_type: str = "Payment Letter"):
             return frappe.get_doc("Letter Template", branch_templates[0])
 
     settings = get_settings()
-    if getattr(settings, "default_template", None):
+    default_template = getattr(settings, "default_template", None)
+    if default_template:
+        template = None
         try:
-            return frappe.get_doc("Letter Template", settings.default_template)
+            template = frappe.get_doc("Letter Template", default_template)
         except Exception:
-            pass
+            template = None
+
+        if (
+            template
+            and getattr(template, "is_active", 0)
+            and getattr(template, "letter_type", None) == letter_type
+        ):
+            return template
 
     global_templates = frappe.get_all(
         "Letter Template",
@@ -97,7 +106,7 @@ def _resolve_amount(doc: Any) -> tuple[float, Optional[str]]:
     return float(amount or 0), currency
 
 
-def build_payment_letter_context(doc: Any) -> Dict[str, Any]:
+def build_payment_letter_context(doc: Any, letter_type: str = "Payment Letter") -> Dict[str, Any]:
     branch = _get_effective_branch(doc)
     company_bank = _get_effective_company_bank(branch, doc)
 
@@ -127,7 +136,7 @@ def build_payment_letter_context(doc: Any) -> Dict[str, Any]:
         "letter_place": getattr(doc, "company", None) or company_bank.get("company_name") or "",
         "letter_date": letter_date,
         "letter_number": getattr(doc, "name", ""),
-        "letter_type": getattr(doc, "letter_type", "Payment Letter"),
+        "letter_type": getattr(doc, "letter_type", None) or letter_type,
         "subject": _("Permintaan Pembayaran via Transfer"),
         "customer_name": getattr(doc, "customer_name", None)
         or getattr(doc, "supplier_name", None)
@@ -157,7 +166,7 @@ def render_payment_letter_html(doc: Any, letter_type: str = "Payment Letter") ->
 
     branch = _get_effective_branch(doc)
     template = _get_template(branch, letter_type=letter_type)
-    ctx = build_payment_letter_context(doc)
+    ctx = build_payment_letter_context(doc, letter_type=letter_type)
 
     if getattr(template, "header_image", None):
         ctx["header_image_url"] = get_url(template.header_image)
