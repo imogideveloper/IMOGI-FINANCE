@@ -7,3 +7,4 @@
 imogi_finance.patches.post_model_sync.update_workspace_sidebar_categories
 imogi_finance.patches.post_model_sync.ensure_coretax_export_settings
 imogi_finance.patches.post_model_sync.remove_expense_entry_custom_field
+imogi_finance.patches.post_model_sync.setup_indonesia_taxes
