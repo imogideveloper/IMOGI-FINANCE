@@ -12,6 +12,7 @@ from imogi_finance import accounting
 from imogi_finance.branching import apply_branch, resolve_branch
 from imogi_finance.budget_control import ledger, service
 from imogi_finance.services.deferred_expense import generate_amortization_schedule
+from imogi_finance.services.letter_template_service import render_payment_letter_html
 from imogi_finance.tax_invoice_ocr import validate_tax_invoice_upload_link
 from imogi_finance.validators.finance_validator import FinanceValidator
 from imogi_finance.validators.employee_validator import EmployeeValidator
@@ -327,8 +328,17 @@ class BranchExpenseRequest(Document):
         if getattr(self, "docstatus", 0) == 1 and not getattr(self, "status", None):
             self.status = self.STATUS_PENDING
 
+    def get_payment_letter_html(self):
+        return render_payment_letter_html(self)
+
 
 def apply_default_amounts(item):
     item.qty = flt(getattr(item, "qty", 0)) or 0
     item.rate = flt(getattr(item, "rate", 0)) or 0
     item.amount = flt(item.qty) * flt(item.rate)
+
+
+@frappe.whitelist()
+def get_branch_expense_request_payment_letter(name: str):
+    doc = frappe.get_doc("Branch Expense Request", name)
+    return doc.get_payment_letter_html()

@@ -1,0 +1,167 @@
+from __future__ import annotations
+
+from typing import Any, Dict, Optional
+
+import frappe
+from frappe import _
+from frappe.utils import fmt_money, formatdate, get_url, money_in_words, today
+
+from imogi_finance.branching import resolve_branch
+from imogi_finance.imogi_finance.doctype.letter_template_settings.letter_template_settings import (
+    get_settings,
+)
+
+
+def _get_effective_branch(doc: Any) -> Optional[str]:
+    company = getattr(doc, "company", None)
+    cost_center = getattr(doc, "cost_center", None)
+    if not cost_center:
+        for item in getattr(doc, "items", []) or []:
+            item_cost_center = getattr(item, "cost_center", None)
+            if item_cost_center:
+                cost_center = item_cost_center
+                break
+
+    explicit_branch = getattr(doc, "branch", None)
+    return resolve_branch(company=company, cost_center=cost_center, explicit_branch=explicit_branch)
+
+
+def _get_effective_company_bank(branch: Optional[str], doc: Any | None = None) -> Dict[str, Any]:
+    company = getattr(doc, "company", None)
+    if not company and branch and frappe.db and frappe.db.exists("DocType", "Branch") and frappe.db.has_column("Branch", "company"):
+        company = frappe.db.get_value("Branch", branch, "company")
+
+    company_name = ""
+    company_address = ""
+    if company and frappe.db and frappe.db.exists("DocType", "Company"):
+        company_name = frappe.get_cached_value("Company", company, "company_name") or company
+        # Address handling can be extended later when a definitive source is available.
+
+    return {
+        "company_name": company_name or getattr(frappe.local, "company", "") or "",
+        "company_address": company_address,
+        "bank_name": "",
+        "bank_branch": "",
+        "account_name": "",
+        "account_number": "",
+        "header_image_url": "",
+        "footer_image_url": "",
+    }
+
+
+def _get_template(branch: Optional[str], letter_type: str = "Payment Letter"):
+    if branch:
+        branch_templates = frappe.get_all(
+            "Letter Template",
+            filters={
+                "branch": branch,
+                "letter_type": letter_type,
+                "is_active": 1,
+            },
+            order_by="is_default desc, creation desc",
+            limit=1,
+            pluck="name",
+        )
+        if branch_templates:
+            return frappe.get_doc("Letter Template", branch_templates[0])
+
+    settings = get_settings()
+    if getattr(settings, "default_template", None):
+        try:
+            return frappe.get_doc("Letter Template", settings.default_template)
+        except Exception:
+            pass
+
+    global_templates = frappe.get_all(
+        "Letter Template",
+        filters={
+            "branch": ["is", "not set"],
+            "letter_type": letter_type,
+            "is_active": 1,
+        },
+        order_by="is_default desc, creation desc",
+        limit=1,
+        pluck="name",
+    )
+    if global_templates:
+        return frappe.get_doc("Letter Template", global_templates[0])
+
+    frappe.throw(_("No active letter template configured."))
+
+
+def _resolve_amount(doc: Any) -> tuple[float, Optional[str]]:
+    amount = getattr(doc, "amount", None)
+    if amount is None:
+        amount = getattr(doc, "total_amount", None) or getattr(doc, "grand_total", None) or 0
+    currency = getattr(doc, "currency", None) or getattr(doc, "company_currency", None)
+    return float(amount or 0), currency
+
+
+def build_payment_letter_context(doc: Any) -> Dict[str, Any]:
+    branch = _get_effective_branch(doc)
+    company_bank = _get_effective_company_bank(branch, doc)
+
+    posting_date = (
+        getattr(doc, "posting_date", None)
+        or getattr(doc, "transaction_date", None)
+        or getattr(doc, "invoice_date", None)
+    )
+    letter_date = formatdate(posting_date) if posting_date else formatdate(today())
+
+    amount, currency = _resolve_amount(doc)
+    formatted_amount = fmt_money(amount, currency=currency) if amount is not None else ""
+    amount_words = money_in_words(amount, currency) if amount else ""
+
+    invoice_date = getattr(doc, "invoice_date", None) or posting_date
+    due_date = getattr(doc, "due_date", None) or getattr(doc, "schedule_date", None)
+
+    current_user = getattr(getattr(frappe, "session", None), "user", None)
+    proof_email = getattr(doc, "proof_email", None) or getattr(doc, "contact_email", None)
+    if not proof_email and current_user:
+        proof_email = frappe.db.get_value("User", current_user, "email")
+
+    return {
+        **company_bank,
+        "branch": branch,
+        "company": getattr(doc, "company", None),
+        "letter_place": getattr(doc, "company", None) or company_bank.get("company_name") or "",
+        "letter_date": letter_date,
+        "letter_number": getattr(doc, "name", ""),
+        "letter_type": getattr(doc, "letter_type", "Payment Letter"),
+        "subject": _("Permintaan Pembayaran via Transfer"),
+        "customer_name": getattr(doc, "customer_name", None)
+        or getattr(doc, "supplier_name", None)
+        or getattr(doc, "pay_to", None)
+        or "",
+        "customer_address": getattr(doc, "customer_address", None) or getattr(doc, "address", None) or "",
+        "customer_city": getattr(doc, "customer_city", None) or "",
+        "transaction_type": getattr(doc, "transaction_type", None) or "pembelian barang/jasa",
+        "invoice_number": getattr(doc, "invoice_number", None)
+        or getattr(doc, "reference_no", None)
+        or getattr(doc, "name", None),
+        "invoice_date": formatdate(invoice_date) if invoice_date else "",
+        "amount": formatted_amount,
+        "amount_in_words": amount_words,
+        "due_date": formatdate(due_date) if due_date else "",
+        "proof_email": proof_email or "",
+        "proof_whatsapp": getattr(doc, "proof_whatsapp", None) or getattr(doc, "contact_mobile", None) or "",
+        "signer_name": getattr(doc, "signer_name", None) or getattr(doc, "requester", None) or "",
+        "signer_title": getattr(doc, "signer_title", None) or _("Authorized Signatory"),
+    }
+
+
+def render_payment_letter_html(doc: Any, letter_type: str = "Payment Letter") -> str:
+    settings = get_settings()
+    if not getattr(settings, "enable_payment_letter", 1):
+        frappe.throw(_("Payment Letter is disabled in settings."))
+
+    branch = _get_effective_branch(doc)
+    template = _get_template(branch, letter_type=letter_type)
+    ctx = build_payment_letter_context(doc)
+
+    if getattr(template, "header_image", None):
+        ctx["header_image_url"] = get_url(template.header_image)
+    if getattr(template, "footer_image", None):
+        ctx["footer_image_url"] = get_url(template.footer_image)
+
+    return frappe.render_template(template.body_html or "", ctx)
