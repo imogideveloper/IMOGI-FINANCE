@@ -3,7 +3,10 @@ const TAX_INVOICE_OCR_GROUP = __('Tax Invoice OCR');
 async function refreshUploadStatus(frm) {
 	if (frm.is_new()) return;
 
-	await frm.call('refresh_status');
+	await frappe.call({
+		method: 'imogi_finance.api.tax_invoice.monitor_tax_invoice_ocr',
+		args: { docname: frm.doc.name, doctype: 'Tax Invoice OCR Upload' },
+	});
 	await frm.reload_doc();
 }
 
