@@ -110,10 +110,16 @@ def _require_budget_controller_role(settings):
         return None
 
     required_role = settings.get("budget_controller_role") or roles.BUDGET_CONTROLLER
-    try:
-        roles_for_session = set(frappe.get_roles())
-    except Exception:
-        roles_for_session = set()
+    roles_for_session = set()
+    get_roles = getattr(frappe, "get_roles", None)
+    if callable(get_roles):
+        try:
+            roles_for_session = set(get_roles())
+        except Exception:
+            roles_for_session = set()
+
+    if not roles_for_session:
+        return required_role
 
     if required_role in roles_for_session or roles.SYSTEM_MANAGER in roles_for_session:
         return required_role

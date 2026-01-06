@@ -1,11 +1,42 @@
 from __future__ import annotations
 
-from datetime import date
+from calendar import monthrange
+from datetime import date, datetime
 from typing import List
 
 import frappe
 from frappe import _
-from frappe.utils import add_months, flt, getdate
+
+
+def _get_utils_attr(name: str, default):
+    utils = getattr(frappe, "utils", None)
+    return getattr(utils, name, default) if utils else default
+
+
+def _fallback_getdate(value):
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    try:
+        return date.fromisoformat(str(value))
+    except Exception:
+        return value
+
+
+def _fallback_add_months(start: date, months: int) -> date:
+    if not isinstance(start, date):
+        return start
+    month_index = start.month - 1 + int(months)
+    year = start.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(start.day, monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+add_months = _get_utils_attr("add_months", _fallback_add_months)
+flt = _get_utils_attr("flt", float)
+getdate = _get_utils_attr("getdate", _fallback_getdate)
 
 
 @frappe.whitelist()

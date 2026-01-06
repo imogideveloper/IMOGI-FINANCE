@@ -4,7 +4,6 @@ from typing import Any, Dict, Optional
 
 import frappe
 from frappe import _
-from frappe.utils import fmt_money, formatdate, get_url, money_in_words, today
 
 from imogi_finance.branching import resolve_branch
 from imogi_finance.imogi_finance.doctype.letter_template_settings.letter_template_settings import (
@@ -26,15 +25,45 @@ def _get_effective_branch(doc: Any) -> Optional[str]:
     return resolve_branch(company=company, cost_center=cost_center, explicit_branch=explicit_branch)
 
 
+def _get_utils_attr(name: str, default):
+    utils = getattr(frappe, "utils", None)
+    return getattr(utils, name, default) if utils else default
+
+
+fmt_money = _get_utils_attr(
+    "fmt_money", lambda amount, currency=None: f"{amount} {currency}".strip()
+)
+formatdate = _get_utils_attr("formatdate", lambda value: value)
+get_url = _get_utils_attr("get_url", lambda path: path)
+money_in_words = _get_utils_attr(
+    "money_in_words", lambda amount, currency=None: f"{amount} {currency}".strip()
+)
+today = _get_utils_attr("today", lambda: "")
+
+
 def _get_effective_company_bank(branch: Optional[str], doc: Any | None = None) -> Dict[str, Any]:
     company = getattr(doc, "company", None)
-    if not company and branch and frappe.db and frappe.db.exists("DocType", "Branch") and frappe.db.has_column("Branch", "company"):
-        company = frappe.db.get_value("Branch", branch, "company")
+    db = getattr(frappe, "db", None)
+    db_exists = getattr(db, "exists", None)
+    db_get_value = getattr(db, "get_value", None)
+    db_has_column = getattr(db, "has_column", None)
+    if (
+        not company
+        and branch
+        and callable(db_exists)
+        and db_exists("DocType", "Branch")
+        and callable(db_has_column)
+        and db_has_column("Branch", "company")
+        and callable(db_get_value)
+    ):
+        company = db_get_value("Branch", branch, "company")
 
     company_name = ""
     company_address = ""
-    if company and frappe.db and frappe.db.exists("DocType", "Company"):
-        company_name = frappe.get_cached_value("Company", company, "company_name") or company
+    if company and callable(db_exists) and db_exists("DocType", "Company"):
+        getter = getattr(frappe, "get_cached_value", None)
+        if callable(getter):
+            company_name = getter("Company", company, "company_name") or company
         # Address handling can be extended later when a definitive source is available.
 
     return {

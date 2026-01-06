@@ -28,9 +28,15 @@ def _safe_throw(message: str, *, title: str | None = None):
         try:
             throw_fn(message, title=title)
             return
-        except Exception as exc:
-            if marker and not isinstance(exc, marker) and exc.__class__.__name__ != "ThrowCalled":
-                raise marker(message)
+        except BaseException as exc:  # noqa: BLE001
+            if (
+                marker
+                and isinstance(marker, type)
+                and issubclass(marker, BaseException)
+                and not isinstance(exc, marker)
+            ):
+                Combined = type("CombinedThrowMarker", (exc.__class__, marker), {})  # noqa: N806
+                raise Combined(str(exc))
             raise
 
     if marker:
@@ -385,7 +391,7 @@ def _mapping_matches_requirement(mapping, requirement: dict[str, object]) -> boo
 def validate_coretax_required_mappings(settings: Document) -> None:
     required = _get_coretax_required_fields(getattr(settings, "direction", ""))
     if not required:
-        frappe.throw(_("CoreTax Export Settings must specify a direction of Input or Output."))
+        _safe_throw(_("CoreTax Export Settings must specify a direction of Input or Output."))
 
     mappings = getattr(settings, "column_mappings", []) or []
     missing_labels = []
@@ -394,7 +400,7 @@ def validate_coretax_required_mappings(settings: Document) -> None:
             missing_labels.append(requirement["label"])
 
     if missing_labels:
-        frappe.throw(
+        _safe_throw(
             _("CoreTax Export Settings {0} must include mappings for: {1}.").format(
                 getattr(settings, "title", None) or getattr(settings, "name", None) or _("(untitled)"),
                 ", ".join(missing_labels),

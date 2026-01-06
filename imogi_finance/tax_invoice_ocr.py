@@ -47,6 +47,15 @@ DEFAULT_SETTINGS = {
 ALLOWED_OCR_FIELDS = {"fp_no", "fp_date", "npwp", "dpp", "ppn", "ppnbm", "ppn_type", "notes"}
 
 
+def _raise_validation_error(message: str):
+    try:
+        frappe.throw(message, exc=ValidationError)
+    except ValidationError:
+        raise
+    except Exception:
+        raise ValidationError(message)
+
+
 def get_settings() -> dict[str, Any]:
     if not frappe.db:
         return DEFAULT_SETTINGS.copy()
@@ -60,6 +69,30 @@ def get_settings() -> dict[str, Any]:
     if not hasattr(settings_obj, "get"):
         settings_obj.get = lambda key, default=None: getattr(settings_obj, key, default)
     return settings_obj
+
+
+def _normalize_google_vision_path(path: str | None) -> str:
+    """Ensure the Vision endpoint path targets files:annotate as per Google API docs."""
+    if not path or not path.strip("/"):
+        return "/v1/files:annotate"
+
+    normalized = path.strip()
+    if not normalized.startswith("/"):
+        normalized = f"/{normalized}"
+    normalized = normalized.rstrip("/")
+
+    if "asyncBatchAnnotate" in normalized:
+        return normalized
+
+    if not normalized.endswith("files:annotate"):
+        raise ValidationError(
+            _(
+                "Google Vision endpoint must call files:annotate for PDF OCR. "
+                "See https://vision.googleapis.com/$discovery/rest?version=v1 for supported resources."
+            )
+        )
+
+    return normalized
 
 
 def normalize_npwp(npwp: str | None) -> str | None:
@@ -609,8 +642,8 @@ def _validate_provider_settings(provider: str, settings: dict[str, Any]) -> None
                         "Upload a Service Account JSON file or configure Application Default Credentials (service account). "
                         "API Key is not supported for the selected OCR flow. "
                         "See Google Cloud authentication guidance (e.g. gcloud auth application-default login or GOOGLE_APPLICATION_CREDENTIALS)."
-                    )
                 )
+            )
         endpoint = settings.get("google_vision_endpoint") or DEFAULT_SETTINGS["google_vision_endpoint"]
         parsed = urlparse(endpoint or DEFAULT_SETTINGS["google_vision_endpoint"])
         if not parsed.scheme or not parsed.netloc:
@@ -620,7 +653,9 @@ def _validate_provider_settings(provider: str, settings: dict[str, Any]) -> None
         if parsed.netloc not in allowed_hosts:
             raise ValidationError(_("Google Vision endpoint host is not supported. Please use vision.googleapis.com or a supported regional host."))
 
-        if "asyncBatchAnnotate" in (parsed.path or ""):
+        normalized_path = _normalize_google_vision_path(parsed.path)
+
+        if "asyncBatchAnnotate" in (normalized_path or ""):
             raise ValidationError(
                 _(
                     "Google Vision asyncBatchAnnotate is not supported with the current OCR flow. "
@@ -629,8 +664,8 @@ def _validate_provider_settings(provider: str, settings: dict[str, Any]) -> None
             )
 
         # If caller provides explicit parent in the path, ensure location is supported.
-        if "/locations/" in (parsed.path or ""):
-            parts = parsed.path.split("/locations/", 1)
+        if "/locations/" in (normalized_path or ""):
+            parts = normalized_path.split("/locations/", 1)
             if len(parts) > 1:
                 loc_part = (parts[1] or "").split("/")[0]
                 if loc_part and loc_part not in {"us", "eu"}:
@@ -692,11 +727,7 @@ def _build_google_vision_url(settings: dict[str, Any]) -> str:
         raise ValidationError(_("Google Vision endpoint is invalid. Please update Tax Invoice OCR Settings."))
 
     netloc = parsed.netloc
-    path = parsed.path or ""
-
-    is_regional = netloc.startswith(("eu-vision.googleapis.com", "us-vision.googleapis.com"))
-    if not path or path == "/":
-        path = "/v1/files:annotate"
+    path = _normalize_google_vision_path(parsed.path)
 
     url = f"{parsed.scheme}://{netloc}{path}"
     return url
@@ -1272,11 +1303,11 @@ def verify_tax_invoice(doc: Any, *, doctype: str, force: bool = False) -> dict[s
 def run_ocr(docname: str, doctype: str):
     settings = get_settings()
     if not cint(settings.get("enable_tax_invoice_ocr", 0)):
-        frappe.throw(_("Tax Invoice OCR is disabled. Enable it in Tax Invoice OCR Settings."))
+        _raise_validation_error(_("Tax Invoice OCR is disabled. Enable it in Tax Invoice OCR Settings."))
 
     provider_ready, provider_error = _get_provider_status(settings)
     if not provider_ready:
-        frappe.throw(provider_error)
+        _raise_validation_error(provider_error)
 
     doc = frappe.get_doc(doctype, docname)
     _enqueue_ocr(doc, doctype)

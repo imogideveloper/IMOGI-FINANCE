@@ -12,8 +12,10 @@ SYNC_PENDING = "Pending Sync"
 SYNC_ERROR = "Error"
 SYNC_SUCCESS = "Synced"
 
+ValidationError = getattr(frappe, "ValidationError", Exception)
 
-class TaxInvoiceSyncError(frappe.ValidationError):
+
+class TaxInvoiceSyncError(ValidationError):
     """Raised when tax invoice sync validation fails."""
 
 
