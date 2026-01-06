@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import frappe
 
-from imogi_finance.indonesia_tax_setup import (
+from imogi_finance.imogi_finance.indonesia_tax_setup import (
     AccountResolver,
     ensure_tax_template,
     ensure_withholding_category,
