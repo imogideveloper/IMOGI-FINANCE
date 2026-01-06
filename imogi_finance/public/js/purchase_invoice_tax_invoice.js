@@ -85,6 +85,8 @@ function lockPiTaxInvoiceFields(frm) {
 async function setPiUploadQuery(frm) {
   let usedUploads = [];
   let verifiedUploads = [];
+  let providerReady = true;
+  let providerError = null;
 
   try {
     const { message } = await frappe.call({
@@ -93,9 +95,14 @@ async function setPiUploadQuery(frm) {
     });
     usedUploads = message?.used_uploads || [];
     verifiedUploads = message?.verified_uploads || [];
+    providerReady = Boolean(message?.provider_ready ?? true);
+    providerError = message?.provider_error || null;
   } catch (error) {
     console.error('Unable to load available Tax Invoice uploads', error);
   }
+
+  frm.taxInvoiceProviderReady = providerReady;
+  frm.taxInvoiceProviderError = providerError;
 
   frm.taxInvoiceUploadCache = (verifiedUploads || []).reduce((acc, upload) => {
     acc[upload.name] = upload;
@@ -118,6 +125,14 @@ frappe.ui.form.on('Purchase Invoice', {
     const addOcrButton = async () => {
       const enabled = await frappe.db.get_single_value('Tax Invoice OCR Settings', 'enable_tax_invoice_ocr');
       if (!enabled || !frm.doc.ti_tax_invoice_upload || frm.doc.docstatus === 1) {
+        return;
+      }
+
+      if (frm.taxInvoiceProviderReady === false) {
+        const message = frm.taxInvoiceProviderError
+          ? __('OCR cannot run: {0}', [frm.taxInvoiceProviderError])
+          : __('OCR provider is not configured.');
+        frm.dashboard.set_headline(`<span class="indicator red">${message}</span>`);
         return;
       }
 

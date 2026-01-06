@@ -9,16 +9,38 @@ async function refreshUploadStatus(frm) {
 
 frappe.ui.form.on('Tax Invoice OCR Upload', {
 	async refresh(frm) {
-		const enabled = await frappe.db.get_single_value('Tax Invoice OCR Settings', 'enable_tax_invoice_ocr');
+		let providerReady = true;
+		let providerError = null;
+		let enabled = false;
+
+		try {
+			const { message } = await frappe.call({
+				method: 'imogi_finance.api.tax_invoice.get_tax_invoice_upload_context_api',
+				args: { target_doctype: 'Tax Invoice OCR Upload', target_name: frm.doc.name },
+			});
+			enabled = Boolean(message?.enable_tax_invoice_ocr);
+			providerReady = Boolean(message?.provider_ready ?? true);
+			providerError = message?.provider_error || null;
+		} catch (error) {
+			enabled = await frappe.db.get_single_value('Tax Invoice OCR Settings', 'enable_tax_invoice_ocr');
+		}
+
 		if (!enabled || frm.is_new()) {
 			return;
+		}
+
+		if (providerReady === false) {
+			const message = providerError
+				? __('OCR cannot run: {0}', [providerError])
+				: __('OCR provider is not configured.');
+			frm.dashboard.set_headline(`<span class="indicator red">${message}</span>`);
 		}
 
 		frm.add_custom_button(__('Refresh OCR Status'), async () => {
 			await refreshUploadStatus(frm);
 		}, TAX_INVOICE_OCR_GROUP);
 
-		if (frm.doc.tax_invoice_pdf) {
+		if (frm.doc.tax_invoice_pdf && providerReady !== false) {
 			frm.add_custom_button(__('Run OCR'), async () => {
 				await frappe.call({
 					method: 'imogi_finance.api.tax_invoice.run_ocr_for_upload',
