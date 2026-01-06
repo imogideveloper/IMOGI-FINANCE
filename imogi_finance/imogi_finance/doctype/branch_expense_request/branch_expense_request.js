@@ -1,3 +1,4 @@
+frappe.provide("imogi_finance");
 frappe.require("/assets/imogi_finance/js/tax_invoice_fields.js");
 
 const TAX_INVOICE_MODULE = imogi_finance?.tax_invoice || {};
