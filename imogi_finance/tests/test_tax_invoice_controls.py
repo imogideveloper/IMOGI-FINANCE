@@ -332,6 +332,38 @@ def test_monitor_tax_invoice_ocr_returns_doc_and_job_info(monkeypatch):
     assert result["provider"] == "Manual Only"
 
 
+def test_monitor_tax_invoice_ocr_sets_done_when_verified_without_job(monkeypatch):
+    doc = types.SimpleNamespace(
+        name="PI-2",
+        ti_fp_no="010203",
+        ti_fp_npwp="123",
+        ti_fp_ppn=11,
+        ti_fp_dpp=100,
+        ti_fp_ppn_type="Standard",
+        ti_verification_status="Verified",
+        ti_verification_notes=None,
+        ti_duplicate_flag=0,
+        ti_npwp_match=1,
+        ti_ocr_status="Queued",
+        ti_ocr_confidence=0.5,
+        ti_ocr_raw_json=None,
+        ti_tax_invoice_pdf="/files/ti.pdf",
+    )
+
+    monkeypatch.setattr(frappe, "get_doc", lambda *_args, **_kwargs: doc)
+    monkeypatch.setattr(
+        tax_invoice_ocr,
+        "get_settings",
+        lambda: {"ocr_provider": "Manual Only", "ocr_max_retry": 2},
+    )
+    monkeypatch.setattr(tax_invoice_ocr, "_get_job_info", lambda *_args, **_kwargs: None)
+
+    result = get_tax_invoice_ocr_monitoring("PI-2", "Purchase Invoice")
+
+    assert result["doc"]["ocr_status"] == "Done"
+    assert doc.ti_ocr_status == "Done"
+
+
 def test_monitor_doctype_refresh_status_updates_fields(monkeypatch):
     monitor = TaxInvoiceOCRMonitoring()
     monitor.target_doctype = "Purchase Invoice"

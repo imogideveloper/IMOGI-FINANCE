@@ -3,10 +3,28 @@ const TAX_INVOICE_OCR_GROUP = __('Tax Invoice OCR');
 async function refreshUploadStatus(frm) {
 	if (frm.is_new()) return;
 
-	await frappe.call({
-		method: 'imogi_finance.api.tax_invoice.monitor_tax_invoice_ocr',
-		args: { docname: frm.doc.name, doctype: 'Tax Invoice OCR Upload' },
-	});
+	const callMonitor = () =>
+		frappe.call({
+			method: 'imogi_finance.api.tax_invoice.monitor_tax_invoice_ocr',
+			args: { docname: frm.doc.name, doctype: 'Tax Invoice OCR Upload' },
+		});
+
+	const isTimestampMismatch = (error) => {
+		const excType = error?.exc_type || error?.exc?.exc_type;
+		const exceptionText = error?.exception || error?.exc;
+		return (
+			excType === 'TimestampMismatchError' ||
+			(typeof exceptionText === 'string' && exceptionText.includes('TimestampMismatchError'))
+		);
+	};
+
+	try {
+		await callMonitor();
+	} catch (error) {
+		if (!isTimestampMismatch(error)) throw error;
+		await frm.reload_doc();
+		await callMonitor();
+	}
 	await frm.reload_doc();
 }
 

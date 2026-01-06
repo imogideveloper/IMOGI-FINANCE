@@ -1414,6 +1414,24 @@ def get_tax_invoice_ocr_monitoring(docname: str, doctype: str) -> dict[str, Any]
         "ocr_raw_json_present": bool(_get_value(source_doc, source_doctype, "ocr_raw_json")),
     }
 
+    status_fieldname = _get_fieldname(source_doctype, "ocr_status")
+    verification_status = doc_info.get("verification_status")
+    current_ocr_status = doc_info.get("ocr_status")
+    active_job = job_info.get("status") if job_info else None
+    if (
+        verification_status == "Verified"
+        and current_ocr_status in {None, "", "Queued", "Processing", "Not Started"}
+        and active_job not in {"queued", "started"}
+    ):
+        new_status = "Done"
+        if current_ocr_status != new_status:
+            setter = getattr(source_doc, "db_set", None)
+            if callable(setter):
+                setter(status_fieldname, new_status)
+            else:
+                setattr(source_doc, status_fieldname, new_status)
+            doc_info["ocr_status"] = new_status
+
     return {
         "doc": doc_info,
         "job": job_info,
