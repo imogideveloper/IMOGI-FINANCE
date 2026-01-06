@@ -13,7 +13,7 @@ from imogi_finance.branching import apply_branch, resolve_branch
 from imogi_finance.budget_control import ledger, service
 from imogi_finance.services.deferred_expense import generate_amortization_schedule
 from imogi_finance.services.letter_template_service import render_payment_letter_html
-from imogi_finance.tax_invoice_ocr import validate_tax_invoice_upload_link
+from imogi_finance.tax_invoice_ocr import sync_tax_invoice_upload, validate_tax_invoice_upload_link
 from imogi_finance.validators.finance_validator import FinanceValidator
 from imogi_finance.validators.employee_validator import EmployeeValidator
 from ..branch_expense_request_settings.branch_expense_request_settings import get_settings
@@ -60,6 +60,7 @@ class BranchExpenseRequest(Document):
         self._validate_employee_requirement(settings)
         self._validate_items(settings)
         self.validate_amounts()
+        self._sync_tax_invoice_upload()
         self.validate_tax_fields()
         self._validate_deferred_expense()
         validate_tax_invoice_upload_link(self, "Branch Expense Request")
@@ -133,6 +134,12 @@ class BranchExpenseRequest(Document):
             flags = type("Flags", (), {})()
             self.flags = flags
         self.flags.deferred_amortization_schedule = schedule
+
+    def _sync_tax_invoice_upload(self):
+        if not getattr(self, "ti_tax_invoice_upload", None):
+            return
+
+        sync_tax_invoice_upload(self, "Branch Expense Request", save=False)
 
     def _ensure_enabled(self, settings):
         if getattr(settings, "enable_branch_expense_request", 1):

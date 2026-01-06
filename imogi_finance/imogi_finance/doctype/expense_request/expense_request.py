@@ -21,7 +21,7 @@ from imogi_finance.budget_control.workflow import handle_expense_request_workflo
 from imogi_finance.services.approval_route_service import ApprovalRouteService
 from imogi_finance.services.deferred_expense import generate_amortization_schedule
 from imogi_finance.services.workflow_service import WorkflowService
-from imogi_finance.tax_invoice_ocr import validate_tax_invoice_upload_link
+from imogi_finance.tax_invoice_ocr import sync_tax_invoice_upload, validate_tax_invoice_upload_link
 from imogi_finance.validators.finance_validator import FinanceValidator
 from imogi_finance.workflows.workflow_engine import WorkflowEngine
 
@@ -56,6 +56,7 @@ class ExpenseRequest(Document):
         self.validate_amounts()
         self.apply_branch_defaults()
         self.validate_asset_details()
+        self._sync_tax_invoice_upload()
         self.validate_tax_fields()
         self.validate_deferred_expense()
         validate_tax_invoice_upload_link(self, "Expense Request")
@@ -129,6 +130,12 @@ class ExpenseRequest(Document):
             flags = type("Flags", (), {})()
             self.flags = flags
         self.flags.deferred_amortization_schedule = schedule
+
+    def _sync_tax_invoice_upload(self):
+        if not getattr(self, "ti_tax_invoice_upload", None):
+            return
+
+        sync_tax_invoice_upload(self, "Expense Request", save=False)
 
     def validate_final_state_immutability(self):
         """Prevent edits to key fields after approval or downstream linkage."""
