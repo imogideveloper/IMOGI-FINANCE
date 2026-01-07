@@ -102,6 +102,9 @@ before_install = "imogi_finance.install.before_install"
 # after_install = "imogi_finance.install.after_install"
 after_install = "imogi_finance.utils.ensure_coretax_export_doctypes"
 
+# Migration safeguards
+before_migrate = "imogi_finance.fixtures.sanitize_fixture_files"
+
 # Uninstallation
 # ------------
 
