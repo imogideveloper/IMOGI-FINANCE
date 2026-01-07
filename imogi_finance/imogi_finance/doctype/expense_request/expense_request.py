@@ -54,6 +54,7 @@ class ExpenseRequest(Document):
     def validate(self):
         self._set_requester_to_creator()
         self._ensure_status()
+        self._prepare_route_for_submit()
         self.validate_amounts()
         self.apply_branch_defaults()
         self.validate_asset_details()
@@ -66,6 +67,21 @@ class ExpenseRequest(Document):
         self.validate_pending_edit_restrictions()
         self.validate_final_state_immutability()
         self.validate_workflow_action_guard()
+
+    def _prepare_route_for_submit(self):
+        """Resolve approval routing before workflow validation during submit."""
+        if getattr(self, "_action", None) != "submit":
+            return
+
+        route, setting_meta = self._resolve_approval_route()
+        self.apply_route(route, setting_meta=setting_meta)
+        self._skip_approval_route = self._should_skip_approval(route)
+        if self._skip_approval_route:
+            self.current_approval_level = 0
+            self.status = "Approved"
+            self.workflow_state = "Approved"
+        else:
+            self._set_pending_review(level=1)
 
     def validate_amounts(self):
         total, expense_accounts = FinanceValidator.validate_amounts(self.get("items"))
