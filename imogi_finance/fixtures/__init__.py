@@ -25,16 +25,21 @@ def sanitize_fixture_files() -> None:
         except json.JSONDecodeError:
             continue
 
-        if not isinstance(data, list):
-            continue
+        cleaned: list[dict] | None = None
+        original_count: int | None = None
+        if isinstance(data, list):
+            original_count = len(data)
+            cleaned = [doc for doc in data if isinstance(doc, dict) and doc.get("name")]
+        elif isinstance(data, dict):
+            original_count = 1
+            cleaned = [data] if data.get("name") else []
 
-        cleaned = [doc for doc in data if isinstance(doc, dict) and "name" in doc]
-        if cleaned == data:
+        if cleaned is None or cleaned == data:
             continue
 
         fixture_path.write_text(json.dumps(cleaned, indent=2, ensure_ascii=False) + "\n")
         frappe.logger().warning(
             "Removed %s malformed fixture rows from %s",
-            len(data) - len(cleaned),
+            original_count - len(cleaned),
             fixture_path.name,
         )
