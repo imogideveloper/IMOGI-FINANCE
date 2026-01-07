@@ -332,7 +332,6 @@ after_migrate = "imogi_finance.utils.ensure_coretax_export_doctypes"
 
 
 fixtures = [
-    "Workspace",
     {
         "dt": "Custom Field",
         "filters": [["name", "in", [
@@ -408,7 +407,7 @@ fixtures = [
             "Branch Expense Request-ti_npwp_match",
         ]]],
     },
-    {"dt": "Workspace", "filters": [["name", "=", "IMOGI FINANCE"]]},
+    {"dt": "Workspace", "filters": [["name", "=", "FINANCE IMOGI"]]},
     {
         "dt": "Workflow",
         "filters": [
