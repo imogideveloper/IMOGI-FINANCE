@@ -47,10 +47,16 @@ def _get_route_for_account(setting_name: str, account: str, amount: float) -> di
             fields=[
                 "level_1_role",
                 "level_1_user",
+                "level_1_min_amount",
+                "level_1_max_amount",
                 "level_2_role",
                 "level_2_user",
+                "level_2_min_amount",
+                "level_2_max_amount",
                 "level_3_role",
                 "level_3_user",
+                "level_3_min_amount",
+                "level_3_max_amount",
             ],
             order_by="min_amount desc, max_amount asc",
             limit=1,
@@ -80,6 +86,14 @@ def _get_route_for_account(setting_name: str, account: str, amount: float) -> di
         )
 
     data = approval_line[0]
+    for level in (1, 2, 3):
+        min_amount = data.get(f"level_{level}_min_amount")
+        max_amount = data.get(f"level_{level}_max_amount")
+        if min_amount is None or max_amount is None:
+            continue
+        if amount < min_amount or amount > max_amount:
+            data[f"level_{level}_role"] = None
+            data[f"level_{level}_user"] = None
     return {
         "level_1": {"role": data.get("level_1_role"), "user": data.get("level_1_user")},
         "level_2": {"role": data.get("level_2_role"), "user": data.get("level_2_user")},

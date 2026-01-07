@@ -17,10 +17,6 @@
       "allowed": "Expense Approver"
     },
     {
-      "action": "Backflow",
-      "allowed": "System Manager"
-    },
-    {
       "action": "Reopen",
       "allowed": "System Manager"
     }
@@ -127,20 +123,6 @@
       "allowed": "Expense Approver",
       "state": "Linked",
       "next_state": "Closed",
-      "doc_status": 1
-    },
-    {
-      "action": "Backflow",
-      "allowed": "System Manager",
-      "state": "Approved",
-      "next_state": "Pending Review",
-      "doc_status": 1
-    },
-    {
-      "action": "Backflow",
-      "allowed": "System Manager",
-      "state": "Rejected",
-      "next_state": "Pending Review",
       "doc_status": 1
     },
     {

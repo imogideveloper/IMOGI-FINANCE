@@ -27,6 +27,7 @@
       "label": "Is Active"
     },
     {
+      "description": "Level dengan range lebih tinggi tidak akan dipanggil jika amount lebih kecil.",
       "fieldname": "expense_approval_lines",
       "fieldtype": "Table",
       "label": "Expense Approval Lines",

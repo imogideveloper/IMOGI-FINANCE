@@ -14,10 +14,16 @@
     "section_break_1",
     "level_1_role",
     "level_1_user",
+    "level_1_min_amount",
+    "level_1_max_amount",
     "level_2_role",
     "level_2_user",
+    "level_2_min_amount",
+    "level_2_max_amount",
     "level_3_role",
-    "level_3_user"
+    "level_3_user",
+    "level_3_min_amount",
+    "level_3_max_amount"
   ],
   "fields": [
     {
@@ -61,6 +67,16 @@
       "options": "User"
     },
     {
+      "fieldname": "level_1_min_amount",
+      "fieldtype": "Currency",
+      "label": "Level 1 Minimum Amount"
+    },
+    {
+      "fieldname": "level_1_max_amount",
+      "fieldtype": "Currency",
+      "label": "Level 1 Maximum Amount"
+    },
+    {
       "fieldname": "level_2_role",
       "fieldtype": "Link",
       "label": "Level 2 Role",
@@ -73,6 +89,16 @@
       "options": "User"
     },
     {
+      "fieldname": "level_2_min_amount",
+      "fieldtype": "Currency",
+      "label": "Level 2 Minimum Amount"
+    },
+    {
+      "fieldname": "level_2_max_amount",
+      "fieldtype": "Currency",
+      "label": "Level 2 Maximum Amount"
+    },
+    {
       "fieldname": "level_3_role",
       "fieldtype": "Link",
       "label": "Level 3 Role",
@@ -83,6 +109,16 @@
       "fieldtype": "Link",
       "label": "Level 3 User",
       "options": "User"
+    },
+    {
+      "fieldname": "level_3_min_amount",
+      "fieldtype": "Currency",
+      "label": "Level 3 Minimum Amount"
+    },
+    {
+      "fieldname": "level_3_max_amount",
+      "fieldtype": "Currency",
+      "label": "Level 3 Maximum Amount"
     }
   ],
   "index_web_pages_for_search": 1,

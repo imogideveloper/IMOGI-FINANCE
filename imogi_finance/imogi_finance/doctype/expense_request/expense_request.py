@@ -35,6 +35,7 @@ class ExpenseRequest(Document):
     """Main expense request document, integrating approval and accounting flows."""
 
     PENDING_REVIEW_STATE = "Pending Review"
+    CANCEL_ALLOWED_ROLES = {roles.SYSTEM_MANAGER, roles.EXPENSE_APPROVER}
     REOPEN_ALLOWED_ROLES = {roles.SYSTEM_MANAGER}
     _workflow_service = WorkflowService()
     _workflow_engine = WorkflowEngine(
@@ -356,6 +357,10 @@ class ExpenseRequest(Document):
     def on_cancel(self):
         release_budget_for_request(self, reason="Cancel")
 
+    def before_cancel(self):
+        self.validate_cancel_permission()
+        self.validate_cancel_without_active_links()
+
     def validate_reopen_permission(self):
         allowed = self.REOPEN_ALLOWED_ROLES
         current_roles = set(frappe.get_roles())
@@ -366,6 +371,20 @@ class ExpenseRequest(Document):
 
         frappe.throw(
             _("You do not have permission to reopen this request. Required: {roles}.").format(
+                roles=_(", ").join(sorted(allowed))
+            ),
+            title=_("Not Allowed"),
+        )
+
+    def validate_cancel_permission(self):
+        allowed = self.CANCEL_ALLOWED_ROLES
+        current_roles = set(frappe.get_roles())
+
+        if current_roles & allowed:
+            return
+
+        frappe.throw(
+            _("You do not have permission to cancel this request. Required: {roles}.").format(
                 roles=_(", ").join(sorted(allowed))
             ),
             title=_("Not Allowed"),
@@ -444,6 +463,36 @@ class ExpenseRequest(Document):
 
         frappe.throw(
             _("Cannot reopen while the request is still linked to: {0}. Please cancel those documents first.").format(
+                _(", ").join(active_links)
+            ),
+            title=_("Not Allowed"),
+        )
+
+    def validate_cancel_without_active_links(self):
+        active_links = []
+
+        def _is_active(doctype, name):
+            docstatus = frappe.db.get_value(doctype, name, "docstatus")
+            return docstatus != 2
+
+        payment_entry = getattr(self, "linked_payment_entry", None)
+        purchase_invoice = getattr(self, "linked_purchase_invoice", None)
+        asset = getattr(self, "linked_asset", None)
+
+        if payment_entry and _is_active("Payment Entry", payment_entry):
+            active_links.append(_("Payment Entry {0}").format(payment_entry))
+
+        if purchase_invoice and _is_active("Purchase Invoice", purchase_invoice):
+            active_links.append(_("Purchase Invoice {0}").format(purchase_invoice))
+
+        if asset and _is_active("Asset", asset):
+            active_links.append(_("Asset {0}").format(asset))
+
+        if not active_links:
+            return
+
+        frappe.throw(
+            _("Cannot cancel while the request is still linked to: {0}. Please cancel those documents first.").format(
                 _(", ").join(active_links)
             ),
             title=_("Not Allowed"),

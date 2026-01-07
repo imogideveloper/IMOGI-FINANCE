@@ -142,20 +142,6 @@
       },
       {
         "doctype": "Workflow Transition",
-        "action": "Backflow",
-        "state": "Approved",
-        "next_state": "Pending Review",
-        "allowed": "System Manager"
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Backflow",
-        "state": "Rejected",
-        "next_state": "Pending Review",
-        "allowed": "System Manager"
-      },
-      {
-        "doctype": "Workflow Transition",
         "action": "Reopen",
         "state": "Rejected",
         "next_state": "Reopened",

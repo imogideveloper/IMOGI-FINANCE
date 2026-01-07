@@ -759,62 +759,39 @@ def test_reopen_handles_validation_error(monkeypatch):
     assert request.linked_payment_entry == "PE-1"
 
 
-def test_backflow_requires_reason(monkeypatch):
+def test_cancel_requires_downstream_links_cleared(monkeypatch):
+    request = ExpenseRequest(
+        status="Linked",
+        docstatus=1,
+        linked_purchase_invoice="PI-100",
+        linked_payment_entry="PE-200",
+        linked_asset="AST-300",
+    )
+
+    def _fake_get_value(doctype, name, field):
+        return 1
+
+    monkeypatch.setattr(frappe.db, "get_value", _fake_get_value)
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
+
+    with pytest.raises(NotAllowed) as excinfo:
+        request.before_cancel()
+
+    assert "Cannot cancel while the request is still linked" in str(excinfo.value)
+
+
+def test_cancel_requires_authorized_role(monkeypatch):
     request = ExpenseRequest(
         status="Approved",
         docstatus=1,
-        cost_center="CC",
-        expense_account="5000",
-        amount=150,
-        request_type="Expense",
-        items=[_item(amount=150)],
     )
 
-    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="manager@example.com"))
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Accounts User"])
 
-    with pytest.raises(NotAllowed):
-        request.before_workflow_action("Backflow", next_state="Pending Review")
+    with pytest.raises(NotAllowed) as excinfo:
+        request.before_cancel()
 
-
-def test_backflow_rejects_missing_session(monkeypatch):
-    request = ExpenseRequest(
-        status="Approved",
-        docstatus=1,
-        cost_center="CC",
-        expense_account="5000",
-        amount=150,
-        request_type="Expense",
-        items=[_item(amount=150)],
-        backflow_reason="Route updated",
-    )
-
-    monkeypatch.setattr(frappe, "session", None, raising=False)
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
-
-    with pytest.raises(NotAllowed):
-        request.before_workflow_action("Backflow", next_state="Pending Review")
-
-
-def test_backflow_sets_pending_review_and_level(monkeypatch):
-    request = ExpenseRequest(
-        status="Approved",
-        docstatus=1,
-        cost_center="CC",
-        expense_account="5000",
-        amount=150,
-        request_type="Expense",
-        items=[_item(amount=150)],
-    )
-
-    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="manager@example.com"))
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
-
-    request.before_workflow_action("Backflow", next_state="Pending Review", reason="Policy update")
-    request.on_workflow_action("Backflow", next_state="Pending Review")
-
-    assert request.status == "Pending Review"
-    assert request.current_approval_level == 1
+    assert "You do not have permission to cancel this request" in str(excinfo.value)
 
 
 def test_validate_blocks_key_changes_after_final_status():
@@ -1366,3 +1343,86 @@ def test_expense_approval_setting_requires_default_and_contiguous_ranges():
 
     setting_valid.validate_default_lines()
     setting_valid.validate_amount_ranges()
+
+
+def test_expense_approval_setting_rejects_level_range_gaps():
+    setting_with_gap = ExpenseApprovalSetting(
+        expense_approval_lines=[
+            Document(
+                is_default=1,
+                min_amount=0,
+                max_amount=1000,
+                level_1_role="L1",
+                level_1_min_amount=0,
+                level_1_max_amount=100,
+                level_2_role="L2",
+                level_2_min_amount=150,
+                level_2_max_amount=300,
+            )
+        ]
+    )
+
+    with pytest.raises(NotAllowed):
+        setting_with_gap.validate_amount_ranges()
+
+
+def test_expense_approval_setting_rejects_level_range_overlap():
+    setting_with_overlap = ExpenseApprovalSetting(
+        expense_approval_lines=[
+            Document(
+                is_default=1,
+                min_amount=0,
+                max_amount=1000,
+                level_1_role="L1",
+                level_1_min_amount=0,
+                level_1_max_amount=200,
+                level_2_role="L2",
+                level_2_min_amount=150,
+                level_2_max_amount=300,
+            )
+        ]
+    )
+
+    with pytest.raises(NotAllowed):
+        setting_with_overlap.validate_amount_ranges()
+
+
+def test_approval_route_filters_levels_by_amount(monkeypatch):
+    line = {
+        "level_1_role": "L1",
+        "level_1_user": None,
+        "level_1_min_amount": 0,
+        "level_1_max_amount": 10000000,
+        "level_2_role": "L2",
+        "level_2_user": None,
+        "level_2_min_amount": 10000000,
+        "level_2_max_amount": 30000000,
+        "level_3_role": "L3",
+        "level_3_user": None,
+        "level_3_min_amount": 30000000,
+        "level_3_max_amount": 60000000,
+    }
+
+    def _fake_get_all(doctype, filters=None, fields=None, order_by=None, limit=None):
+        if filters.get("parent") != "EAS-1":
+            return []
+
+        min_filter = filters.get("min_amount")
+        max_filter = filters.get("max_amount")
+        if not (min_filter and max_filter):
+            return []
+
+        return [line]
+
+    monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: "EAS-1")
+    monkeypatch.setattr(frappe, "get_all", _fake_get_all, raising=False)
+
+    route_small = get_approval_route("CC", ("7000",), 4000000)
+    assert route_small["level_1"]["role"] == "L1"
+    assert route_small["level_2"]["role"] is None
+    assert route_small["level_3"]["role"] is None
+
+    route_mid = get_approval_route("CC", ("7000",), 15000000)
+    assert route_mid["level_1"]["role"] == "L1"
+    assert route_mid["level_2"]["role"] == "L2"
+    assert route_mid["level_3"]["role"] is None

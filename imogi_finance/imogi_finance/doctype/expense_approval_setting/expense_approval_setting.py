@@ -61,6 +61,7 @@ class ExpenseApprovalSetting(Document):
                 )
 
             grouped.setdefault(key, []).append(line)
+            self._validate_level_ranges(line)
 
         for account, lines in grouped.items():
             sorted_lines = sorted(lines, key=lambda line: (line.min_amount, line.max_amount))
@@ -77,3 +78,40 @@ class ExpenseApprovalSetting(Document):
                     )
 
                 previous_max = line.max_amount
+
+    @staticmethod
+    def _validate_level_ranges(line):
+        level_ranges = []
+        for level in (1, 2, 3):
+            min_amount = getattr(line, f"level_{level}_min_amount", None)
+            max_amount = getattr(line, f"level_{level}_max_amount", None)
+            role = getattr(line, f"level_{level}_role", None)
+            user = getattr(line, f"level_{level}_user", None)
+
+            if min_amount is None and max_amount is None and not role and not user:
+                continue
+
+            if min_amount is None or max_amount is None:
+                frappe.throw(f"Level {level} must define both Minimum Amount and Maximum Amount.")
+
+            if min_amount > max_amount:
+                frappe.throw(f"Level {level} Minimum Amount cannot exceed Maximum Amount.")
+
+            level_ranges.append((level, min_amount, max_amount))
+
+        previous_max = None
+        for level, min_amount, max_amount in level_ranges:
+            if previous_max is None:
+                previous_max = max_amount
+                continue
+
+            if min_amount > previous_max:
+                frappe.throw(
+                    f"Approval ranges cannot have gaps between levels. Gap found at level {level}."
+                )
+            if min_amount < previous_max:
+                frappe.throw(
+                    f"Approval ranges cannot overlap between levels. Overlap found at level {level}."
+                )
+
+            previous_max = max_amount
