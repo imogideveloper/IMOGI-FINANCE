@@ -1,0 +1,48 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "creation": "2024-01-01 00:00:00.000000",
+  "default_view": "Form",
+  "doctype": "DocType",
+  "editable_grid": 0,
+  "engine": "InnoDB",
+  "field_order": [
+    "enable_payment_letter",
+    "default_template",
+    "inherit_bank_from_branch"
+  ],
+  "fields": [
+    {
+      "default": "1",
+      "fieldname": "enable_payment_letter",
+      "fieldtype": "Check",
+      "label": "Enable Payment Letter"
+    },
+    {
+      "fieldname": "default_template",
+      "fieldtype": "Link",
+      "label": "Default Letter Template",
+      "options": "Letter Template"
+    },
+    {
+      "default": "1",
+      "fieldname": "inherit_bank_from_branch",
+      "fieldtype": "Check",
+      "label": "Inherit Bank from Branch"
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "issingle": 1,
+  "links": [],
+  "modified": "2024-01-01 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Imogi Finance",
+  "name": "Letter Template Settings",
+  "owner": "Administrator",
+  "permissions": [
+    { "role": "System Manager", "create": 1, "read": 1, "write": 1, "delete": 1, "email": 1, "print": 1, "report": 1, "share": 1 }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "track_changes": 1
+}
