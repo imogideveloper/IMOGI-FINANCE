@@ -99,6 +99,7 @@
       "fieldname": "status",
       "label": "Status",
       "fieldtype": "Select",
+      "read_only": 1,
       "options": "Draft\nPending Approval\nApproved\nRejected",
       "default": "Draft"
     }
