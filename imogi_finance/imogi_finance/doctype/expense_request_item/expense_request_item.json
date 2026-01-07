@@ -22,6 +22,7 @@
     {
       "fieldname": "expense_account",
       "fieldtype": "Link",
+      "in_list_view": 1,
       "label": "Expense Account",
       "options": "Account",
       "reqd": 1
@@ -29,6 +30,7 @@
     {
       "fieldname": "amount",
       "fieldtype": "Currency",
+      "in_list_view": 1,
       "label": "Amount",
       "reqd": 1
     },
@@ -36,6 +38,7 @@
       "default": "0",
       "fieldname": "is_pph_applicable",
       "fieldtype": "Check",
+      "in_list_view": 1,
       "label": "Apply PPh"
     },
     {
@@ -46,6 +49,7 @@
     {
       "fieldname": "description",
       "fieldtype": "Small Text",
+      "in_list_view": 1,
       "label": "Description"
     },
     {
