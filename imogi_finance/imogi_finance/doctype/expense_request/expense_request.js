@@ -85,6 +85,12 @@ function hideErOcrStatus(frm) {
   }
 }
 
+function setExpenseAccountQuery(frm) {
+  const filters = { root_type: 'Expense', is_group: 0 };
+  frm.set_query('expense_account', () => ({ filters }));
+  frm.set_query('expense_account', 'items', () => ({ filters }));
+}
+
 async function setErUploadQuery(frm) {
   let usedUploads = [];
   let verifiedUploads = [];
@@ -159,6 +165,7 @@ frappe.ui.form.on('Expense Request', {
   async refresh(frm) {
     hideErOcrStatus(frm);
     lockErTaxInvoiceFields(frm);
+    setExpenseAccountQuery(frm);
     frm.dashboard.clear_headline();
     await setErUploadQuery(frm);
     await syncErUpload(frm);
