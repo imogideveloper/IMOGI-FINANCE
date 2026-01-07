@@ -97,6 +97,16 @@
       "allowed": "All",
       "state": "Draft",
       "next_state": "Pending Review",
+      "condition": "doc.get('level_1_role') or doc.get('level_1_user') or doc.get('level_2_role') or doc.get('level_2_user') or doc.get('level_3_role') or doc.get('level_3_user')",
+      "doc_status": 1
+    },
+    {
+      "action": "Submit",
+      "allow_self_approval": 0,
+      "allowed": "All",
+      "state": "Draft",
+      "next_state": "Approved",
+      "condition": "not (doc.get('level_1_role') or doc.get('level_1_user') or doc.get('level_2_role') or doc.get('level_2_user') or doc.get('level_3_role') or doc.get('level_3_user'))",
       "doc_status": 1
     },
     {

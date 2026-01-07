@@ -108,7 +108,17 @@
         "state": "Draft",
         "next_state": "Pending Review",
         "allowed": "All",
-        "allow_self_approval": 0
+        "allow_self_approval": 0,
+        "condition": "doc.get('level_1_role') or doc.get('level_1_user') or doc.get('level_2_role') or doc.get('level_2_user') or doc.get('level_3_role') or doc.get('level_3_user')"
+      },
+      {
+        "doctype": "Workflow Transition",
+        "action": "Submit",
+        "state": "Draft",
+        "next_state": "Approved",
+        "allowed": "All",
+        "allow_self_approval": 0,
+        "condition": "not (doc.get('level_1_role') or doc.get('level_1_user') or doc.get('level_2_role') or doc.get('level_2_user') or doc.get('level_3_role') or doc.get('level_3_user'))"
       },
       {
         "doctype": "Workflow Transition",
