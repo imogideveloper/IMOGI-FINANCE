@@ -255,6 +255,7 @@ scheduler_events = {
 
 # before_tests = "imogi_finance.install.before_tests"
 
+before_migrate = "imogi_finance.utils.ensure_coretax_export_doctypes"
 after_migrate = "imogi_finance.utils.ensure_coretax_export_doctypes"
 
 # Overriding Methods

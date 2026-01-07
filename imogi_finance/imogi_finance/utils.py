@@ -16,13 +16,8 @@ def ensure_coretax_export_doctypes() -> None:
 		"Tax Profile PPh Account": "tax_profile_pph_account",
 	}
 
-	missing_doctypes = [name for name in doctype_map if not frappe.db.exists("DocType", name)]
-	if not missing_doctypes:
-		return
-
 	doctype_root = Path(frappe.get_app_path("imogi_finance", "imogi_finance", "doctype"))
-	for doctype in missing_doctypes:
-		module_name = doctype_map[doctype]
+	for doctype, module_name in doctype_map.items():
 		doctype_definition = doctype_root / module_name / f"{module_name}.json"
 		if doctype_definition.exists():
 			frappe.reload_doc("imogi_finance", "doctype", module_name)
