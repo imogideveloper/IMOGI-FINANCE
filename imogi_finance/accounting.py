@@ -210,6 +210,7 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
             if ic_status != "Approved":
                 frappe.throw(_("Internal Charge Request {0} must be Approved.").format(ic_name))
 
+    has_tax_invoice_upload = bool(getattr(request, "ti_tax_invoice_upload", None))
     if (
         cint(settings.get("enable_tax_invoice_ocr"))
         and cint(settings.get("require_verification_before_create_pi_from_expense_request"))

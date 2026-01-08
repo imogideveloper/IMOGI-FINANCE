@@ -27,7 +27,12 @@ def validate_before_submit(doc, method=None):
     require_verified = cint(settings.get("enable_tax_invoice_ocr")) and cint(
         settings.get("require_verification_before_submit_pi")
     )
-    if require_verified and getattr(doc, "ti_verification_status", "") != "Verified":
+    has_tax_invoice_upload = bool(getattr(doc, "ti_tax_invoice_upload", None))
+    if (
+        require_verified
+        and has_tax_invoice_upload
+        and getattr(doc, "ti_verification_status", "") != "Verified"
+    ):
         message = _("Tax Invoice must be verified before submitting this Purchase Invoice.")
         marker = getattr(frappe, "ThrowMarker", None)
         throw_fn = getattr(frappe, "throw", None)

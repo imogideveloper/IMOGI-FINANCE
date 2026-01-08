@@ -60,13 +60,15 @@ def test_purchase_invoice_submit_requires_verified(monkeypatch):
         "get_settings",
         lambda: {"enable_tax_invoice_ocr": 1, "require_verification_before_submit_pi": 1},
     )
+    monkeypatch.setattr(purchase_invoice, "sync_tax_invoice_upload", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(purchase_invoice, "validate_tax_invoice_upload_link", lambda *_args, **_kwargs: None)
 
     def fake_throw(msg, title=None):
         raise ThrowCalled(msg)
 
     monkeypatch.setattr(frappe, "throw", fake_throw)
 
-    doc = types.SimpleNamespace(ti_verification_status="Needs Review")
+    doc = types.SimpleNamespace(ti_verification_status="Needs Review", ti_tax_invoice_upload="TI-0001")
 
     with pytest.raises(ThrowCalled):
         purchase_invoice.validate_before_submit(doc)
@@ -97,6 +99,18 @@ def test_purchase_invoice_submit_ignores_string_zero(monkeypatch):
     )
 
     doc = types.SimpleNamespace(ti_verification_status=None)
+
+    purchase_invoice.validate_before_submit(doc)
+
+
+def test_purchase_invoice_submit_allows_without_upload(monkeypatch):
+    monkeypatch.setattr(
+        purchase_invoice,
+        "get_settings",
+        lambda: {"enable_tax_invoice_ocr": 1, "require_verification_before_submit_pi": 1},
+    )
+
+    doc = types.SimpleNamespace(ti_verification_status="Needs Review", ti_tax_invoice_upload=None)
 
     purchase_invoice.validate_before_submit(doc)
 
@@ -175,6 +189,64 @@ def test_create_purchase_invoice_allows_when_ocr_disabled(monkeypatch):
         "get_settings",
         lambda: {
             "enable_tax_invoice_ocr": 0,
+            "require_verification_before_create_pi_from_expense_request": 1,
+        },
+    )
+    monkeypatch.setattr(accounting, "resolve_branch", lambda **_kwargs: None, raising=False)
+
+    created_items = []
+
+    def fake_new_doc(doctype):
+        assert doctype == "Purchase Invoice"
+        return types.SimpleNamespace(
+            name="PI-NEW",
+            docstatus=0,
+            append=lambda field, row: created_items.append((field, row)),
+            set_taxes=lambda: None,
+            insert=lambda ignore_permissions=True: None,
+        )
+
+    monkeypatch.setattr(frappe, "new_doc", fake_new_doc, raising=False)
+    monkeypatch.setattr(frappe, "msgprint", lambda *args, **kwargs: None, raising=False)
+
+    result = accounting.create_purchase_invoice_from_request("ER-TEST")
+
+    assert result == "PI-NEW"
+    assert request.pending_purchase_invoice == "PI-NEW"
+    assert not request.linked_purchase_invoice
+
+
+def test_create_purchase_invoice_allows_without_tax_invoice_upload(monkeypatch):
+    request = types.SimpleNamespace(
+        docstatus=1,
+        status="Approved",
+        request_type="Expense",
+        cost_center="CC-1",
+        supplier="Supp-1",
+        request_date="2024-01-01",
+        supplier_invoice_date="2024-01-02",
+        supplier_invoice_no="INV-1",
+        currency="IDR",
+        name="ER-TEST",
+        project=None,
+        is_ppn_applicable=0,
+        is_pph_applicable=0,
+        ppn_template=None,
+        pph_type=None,
+        items=[types.SimpleNamespace(amount=100, expense_account="EA-1")],
+        ti_verification_status=None,
+        ti_tax_invoice_upload=None,
+        linked_purchase_invoice=None,
+        pending_purchase_invoice=None,
+    )
+
+    monkeypatch.setattr(frappe, "get_doc", lambda doctype, name: request)
+    monkeypatch.setattr(frappe.db, "get_value", lambda *args, **kwargs: "COMP" if args[0] == "Cost Center" else None)
+    monkeypatch.setattr(
+        accounting,
+        "get_settings",
+        lambda: {
+            "enable_tax_invoice_ocr": 1,
             "require_verification_before_create_pi_from_expense_request": 1,
         },
     )

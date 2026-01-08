@@ -48,8 +48,15 @@ class ExpenseRequest(Document):
         )
     )
 
+    def before_validate(self):
+        self.validate_amounts()
+        self._prepare_route_for_submit()
+
     def before_insert(self):
         self._set_requester_to_creator()
+
+    def after_insert(self):
+        self._auto_submit_if_skip_approval()
 
     def validate(self):
         self._set_requester_to_creator()
@@ -215,6 +222,7 @@ class ExpenseRequest(Document):
         """Resolve approval route and set initial workflow state."""
         self.validate_amounts()
         route = self._resolve_and_apply_route()
+        self._ensure_route_ready(route)
         if self._skip_approval_route:
             self.current_approval_level = 0
             self.status = "Approved"
@@ -222,7 +230,7 @@ class ExpenseRequest(Document):
             return
 
         self.validate_initial_approver(route)
-        self._set_pending_review(level=1)
+        self._set_pending_review(level=self._get_initial_approval_level(route))
         self.workflow_state = self.PENDING_REVIEW_STATE
 
     def before_workflow_action(self, action, **kwargs):
@@ -248,12 +256,13 @@ class ExpenseRequest(Document):
         if action == "Submit":
             self.validate_amounts()
             route = self._resolve_and_apply_route()
+            self._ensure_route_ready(route)
             if self._skip_approval_route:
                 self.current_approval_level = 0
                 self.status = "Approved"
                 self.workflow_state = "Approved"
             else:
-                self._set_pending_review(level=1)
+                self._set_pending_review(level=self._get_initial_approval_level(route))
             self.validate_submit_permission()
             self.validate_reopen_override_resolution()
             return
@@ -316,10 +325,14 @@ class ExpenseRequest(Document):
     def on_workflow_action(self, action, **kwargs):
         """Reset approval routing when a request is reopened."""
         next_state = kwargs.get("next_state")
-        if action == "Submit" and self._should_skip_approval():
-            next_state = "Approved"
-            self.current_approval_level = 0
-            self.record_approval_route_snapshot()
+        if action == "Submit":
+            if self._should_skip_approval():
+                next_state = "Approved"
+                self.current_approval_level = 0
+                self.record_approval_route_snapshot()
+            else:
+                next_state = self.PENDING_REVIEW_STATE
+                self.current_approval_level = getattr(self, "current_approval_level", None) or 1
         if action == "Approve" and next_state == "Approved":
             self.record_approval_route_snapshot()
             self.current_approval_level = 0
@@ -338,7 +351,9 @@ class ExpenseRequest(Document):
             return
 
         self.validate_amounts()
-        route, setting_meta = self._resolve_approval_route()
+        route, setting_meta, failed = self._resolve_approval_route()
+        self._approval_route_resolution_failed = failed
+        self._ensure_route_ready(route, context="reopen")
         self.clear_downstream_links()
         self.apply_route(route, setting_meta=setting_meta)
         self._skip_approval_route = self._should_skip_approval(route)
@@ -348,13 +363,39 @@ class ExpenseRequest(Document):
             self.status = next_state
             self.workflow_state = next_state
         else:
-            self._set_pending_review(level=1)
+            self._set_pending_review(level=self._get_initial_approval_level(route))
             self.workflow_state = next_state or self.PENDING_REVIEW_STATE
 
         handle_expense_request_workflow(self, action, next_state)
 
     def on_cancel(self):
         release_budget_for_request(self, reason="Cancel")
+
+    def on_submit(self):
+        self._auto_create_purchase_invoice()
+
+    def on_update_after_submit(self):
+        previous = self._get_previous_doc()
+        previous_status = getattr(previous, "status", None) if previous else None
+        self._auto_create_purchase_invoice(previous_status=previous_status)
+
+    def _auto_submit_if_skip_approval(self):
+        if getattr(self, "docstatus", 0) != 0:
+            return
+
+        if getattr(self, "status", None) not in {None, "", "Draft"}:
+            return
+
+        if getattr(self, "_skip_approval_route", None) is None:
+            self.validate_amounts()
+            route, setting_meta = self._resolve_approval_route()
+            self.apply_route(route, setting_meta=setting_meta)
+            self._skip_approval_route = self._should_skip_approval(route)
+
+        if not self._skip_approval_route:
+            return
+
+        self.submit()
 
     def before_cancel(self):
         self.validate_cancel_permission()
@@ -713,7 +754,7 @@ class ExpenseRequest(Document):
             # Avoid blocking workflow if snapshot persistence fails.
             pass
 
-    def _resolve_approval_route(self) -> tuple[dict, dict | None]:
+    def _resolve_approval_route(self) -> tuple[dict, dict | None, bool]:
         try:
             setting_meta = get_active_setting_meta(self.cost_center)
             route_result = get_approval_route(
@@ -732,15 +773,32 @@ class ExpenseRequest(Document):
                 accounts=self._get_expense_accounts(),
                 amount=self.amount,
             )
-            return {}, None
+            return {}, None, True
 
-        return route, setting_meta
+        return route, setting_meta, False
 
     def _resolve_and_apply_route(self) -> dict:
-        route, setting_meta = self._resolve_approval_route()
+        route, setting_meta, failed = self._resolve_approval_route()
+        self._approval_route_resolution_failed = failed
         self.apply_route(route, setting_meta=setting_meta)
         self._skip_approval_route = self._should_skip_approval(route)
         return route
+
+    def _ensure_route_ready(self, route: dict, *, context: str = "submit"):
+        if getattr(self, "_approval_route_resolution_failed", False):
+            frappe.throw(
+                approval_setting_required_message(self.cost_center),
+                title=_("Not Allowed"),
+            )
+
+        if self._route_has_approver(route):
+            return
+
+        message = _("Level 1 approver is required before submitting an Expense Request.")
+        if context == "reopen":
+            message = _("Level 1 approver is required before reopening an Expense Request.")
+
+        frappe.throw(message, title=_("Not Allowed"))
 
     @staticmethod
     def _route_has_approver(route: dict | None) -> bool:
@@ -786,6 +844,14 @@ class ExpenseRequest(Document):
         self.status = self.PENDING_REVIEW_STATE
         self.workflow_state = self.PENDING_REVIEW_STATE
         self.current_approval_level = level
+
+    def _get_initial_approval_level(self, route: dict | None = None) -> int:
+        route = route or self.get_route_snapshot()
+        for level in (1, 2, 3):
+            target = route.get(f"level_{level}", {}) if isinstance(route, dict) else {}
+            if target.get("role") or target.get("user"):
+                return level
+        return 1
 
     def is_pending_review(self) -> bool:
         return getattr(self, "status", None) == self.PENDING_REVIEW_STATE or getattr(self, "workflow_state", None) == self.PENDING_REVIEW_STATE
@@ -847,14 +913,16 @@ class ExpenseRequest(Document):
                 title=_("Not Allowed"),
             )
 
-        route, setting_meta = self._resolve_approval_route()
+        route, setting_meta, failed = self._resolve_approval_route()
+        self._approval_route_resolution_failed = failed
+        self._ensure_route_ready(route)
         self.apply_route(route, setting_meta=setting_meta)
         if self._should_skip_approval(route):
             self.current_approval_level = 0
             self.status = "Approved"
             self.workflow_state = "Approved"
         else:
-            self._set_pending_review(level=1)
+            self._set_pending_review(level=self._get_initial_approval_level(route))
         flags = getattr(self, "flags", None)
         if flags is None:
             flags = type("Flags", (), {})()
@@ -942,15 +1010,14 @@ class ExpenseRequest(Document):
         )
 
     def validate_initial_approver(self, route: dict):
-        """Ensure the first approval level has a configured user or role."""
+        """Ensure the approval route has at least one configured user or role."""
         if self._should_skip_approval(route):
             return
-        first_level = route.get("level_1", {}) if route else {}
-        if first_level.get("role") or first_level.get("user"):
+        if self._get_initial_approval_level(route):
             return
 
         frappe.throw(
-            _("Level 1 approver is required before submitting an Expense Request."),
+            _("At least one approver level is required before submitting an Expense Request."),
             title=_("Not Allowed"),
         )
 
@@ -975,6 +1042,26 @@ class ExpenseRequest(Document):
     def validate_workflow_action_guard(self):
         """Block status mutations that bypass workflow enforcement."""
         self._workflow_service.guard_status_changes(self)
+
+    def _auto_create_purchase_invoice(self, *, previous_status: str | None = None):
+        if getattr(self, "docstatus", 0) != 1:
+            return
+
+        if getattr(self, "status", None) != "Approved":
+            return
+
+        if previous_status == "Approved":
+            return
+
+        if getattr(self, "linked_purchase_invoice", None) or getattr(self, "pending_purchase_invoice", None):
+            return
+
+        if getattr(self, "request_type", None) not in accounting.PURCHASE_INVOICE_REQUEST_TYPES:
+            return
+
+        pi_name = accounting.create_purchase_invoice_from_request(self.name)
+        if pi_name:
+            self.pending_purchase_invoice = pi_name
 
     @staticmethod
     def _get_value(source, field):
