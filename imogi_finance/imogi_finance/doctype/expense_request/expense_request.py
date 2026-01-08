@@ -791,14 +791,8 @@ class ExpenseRequest(Document):
                 title=_("Not Allowed"),
             )
 
-        if self._route_has_approver(route):
+        if not self._route_has_approver(route):
             return
-
-        message = _("Level 1 approver is required before submitting an Expense Request.")
-        if context == "reopen":
-            message = _("Level 1 approver is required before reopening an Expense Request.")
-
-        frappe.throw(message, title=_("Not Allowed"))
 
     @staticmethod
     def _route_has_approver(route: dict | None) -> bool:
