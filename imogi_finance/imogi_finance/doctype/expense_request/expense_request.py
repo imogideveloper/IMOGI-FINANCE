@@ -79,7 +79,7 @@ class ExpenseRequest(Document):
             self.status = "Approved"
             self.workflow_state = "Approved"
         else:
-            self._set_pending_review(level=1)
+            self._set_pending_review(level=self._get_initial_approval_level(route))
 
     def validate_amounts(self):
         total, expense_accounts = FinanceValidator.validate_amounts(self.get("items"))
@@ -222,7 +222,7 @@ class ExpenseRequest(Document):
             return
 
         self.validate_initial_approver(route)
-        self._set_pending_review(level=1)
+        self._set_pending_review(level=self._get_initial_approval_level(route))
         self.workflow_state = self.PENDING_REVIEW_STATE
 
     def before_workflow_action(self, action, **kwargs):
@@ -260,7 +260,7 @@ class ExpenseRequest(Document):
                 self.status = "Approved"
                 self.workflow_state = "Approved"
             else:
-                self._set_pending_review(level=1)
+                self._set_pending_review(level=self._get_initial_approval_level(route))
             self.validate_submit_permission()
             self.validate_reopen_override_resolution()
             return
@@ -347,7 +347,7 @@ class ExpenseRequest(Document):
             self.current_approval_level = 0
 
         if action == "Backflow" and next_state == self.PENDING_REVIEW_STATE:
-            self._set_pending_review(level=1)
+            self._set_pending_review(level=self._get_initial_approval_level())
             self.workflow_state = next_state
 
         if action in {"Approve", "Reject", "Close", "Submit", "Backflow"} and next_state:
@@ -369,7 +369,7 @@ class ExpenseRequest(Document):
             self.status = next_state
             self.workflow_state = next_state
         else:
-            self._set_pending_review(level=1)
+            self._set_pending_review(level=self._get_initial_approval_level(route))
             self.workflow_state = next_state or self.PENDING_REVIEW_STATE
 
         handle_expense_request_workflow(self, action, next_state)
@@ -805,6 +805,14 @@ class ExpenseRequest(Document):
         self.workflow_state = self.PENDING_REVIEW_STATE
         self.current_approval_level = level
 
+    def _get_initial_approval_level(self, route: dict | None = None) -> int:
+        route = route or self.get_route_snapshot()
+        for level in (1, 2, 3):
+            target = route.get(f"level_{level}", {}) if isinstance(route, dict) else {}
+            if target.get("role") or target.get("user"):
+                return level
+        return 1
+
     def is_pending_review(self) -> bool:
         return getattr(self, "status", None) == self.PENDING_REVIEW_STATE or getattr(self, "workflow_state", None) == self.PENDING_REVIEW_STATE
 
@@ -872,7 +880,7 @@ class ExpenseRequest(Document):
             self.status = "Approved"
             self.workflow_state = "Approved"
         else:
-            self._set_pending_review(level=1)
+            self._set_pending_review(level=self._get_initial_approval_level(route))
         flags = getattr(self, "flags", None)
         if flags is None:
             flags = type("Flags", (), {})()
@@ -960,15 +968,14 @@ class ExpenseRequest(Document):
         )
 
     def validate_initial_approver(self, route: dict):
-        """Ensure the first approval level has a configured user or role."""
+        """Ensure the approval route has at least one configured user or role."""
         if self._should_skip_approval(route):
             return
-        first_level = route.get("level_1", {}) if route else {}
-        if first_level.get("role") or first_level.get("user"):
+        if self._get_initial_approval_level(route):
             return
 
         frappe.throw(
-            _("Level 1 approver is required before submitting an Expense Request."),
+            _("At least one approver level is required before submitting an Expense Request."),
             title=_("Not Allowed"),
         )
 
