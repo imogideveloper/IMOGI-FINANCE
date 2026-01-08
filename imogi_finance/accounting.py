@@ -214,7 +214,7 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     if (
         cint(settings.get("enable_tax_invoice_ocr"))
         and cint(settings.get("require_verification_before_create_pi_from_expense_request"))
-        and has_tax_invoice_upload
+        and bool(getattr(request, "is_ppn_applicable", 0))
         and getattr(request, "ti_verification_status", "") != "Verified"
     ):
         _raise_verification_error(

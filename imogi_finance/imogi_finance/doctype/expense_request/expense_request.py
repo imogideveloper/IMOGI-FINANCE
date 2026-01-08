@@ -78,25 +78,15 @@ class ExpenseRequest(Document):
     def _prepare_route_for_submit(self):
         """Resolve approval routing before workflow validation during submit."""
         workflow_action = getattr(self, "_workflow_action", None)
-        submitting = getattr(self, "_action", None) == "submit" or workflow_action == "Submit"
-        workflow_state = getattr(self, "workflow_state", None)
-        workflow_submit_state = workflow_state in {"Pending Review", "Approved"} and getattr(self, "docstatus", 0) == 0
-        if not submitting and not workflow_submit_state:
+        action = getattr(self, "_action", None)
+        if action != "submit" and workflow_action != "Submit":
             return
 
         route = self._resolve_and_apply_route()
-        self._ensure_route_ready(route)
-        if workflow_action == "Submit":
-            if self._skip_approval_route:
-                self.current_approval_level = 0
-            else:
-                self.current_approval_level = 1
-            return
-
-        if self._skip_approval_route:
-            self.current_approval_level = 0
-        else:
-            self.current_approval_level = 1
+        target_state = "Approved" if self._skip_approval_route else self.PENDING_REVIEW_STATE
+        self.current_approval_level = 0 if self._skip_approval_route else 1
+        self.status = target_state
+        self.workflow_state = target_state
 
     def validate_amounts(self):
         total, expense_accounts = FinanceValidator.validate_amounts(self.get("items"))
@@ -767,9 +757,15 @@ class ExpenseRequest(Document):
     def _resolve_approval_route(self) -> tuple[dict, dict | None, bool]:
         try:
             setting_meta = get_active_setting_meta(self.cost_center)
-            route = get_approval_route(
+            route_result = get_approval_route(
                 self.cost_center, self._get_expense_accounts(), self.amount, setting_meta=setting_meta
             )
+            if isinstance(route_result, tuple):
+                route = route_result[0] if route_result else {}
+                if len(route_result) > 1 and setting_meta is None:
+                    setting_meta = route_result[1]
+            else:
+                route = route_result
         except (frappe.DoesNotExistError, frappe.ValidationError) as exc:
             log_route_resolution_error(
                 exc,

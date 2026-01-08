@@ -352,54 +352,7 @@ frappe.ui.form.on('Expense Request', {
 
     maybeRenderPurchaseInvoiceButton();
 
-    const maybeAddOcrButton = async () => {
-      const enabled = await frappe.db.get_single_value('Tax Invoice OCR Settings', 'enable_tax_invoice_ocr');
-      if (!enabled || !frm.doc.ti_tax_invoice_upload) {
-        return;
-      }
-
-      if (frm.taxInvoiceProviderReady === false) {
-        const message = frm.taxInvoiceProviderError
-          ? __('OCR cannot run: {0}', [frm.taxInvoiceProviderError])
-          : __('OCR provider is not configured.');
-        frm.dashboard.set_headline(`<span class="indicator red">${message}</span>`);
-        return;
-      }
-
-      frm.add_custom_button(__('Run OCR'), async () => {
-        await frappe.call({
-          method: 'imogi_finance.api.tax_invoice.run_ocr_for_upload',
-          args: { upload_name: frm.doc.ti_tax_invoice_upload },
-          freeze: true,
-          freeze_message: __('Queueing OCR...'),
-        });
-        frappe.show_alert({ message: __('OCR queued.'), indicator: 'green' });
-        await syncErUpload(frm);
-      }, __('Tax Invoice'));
-    };
-
-    const maybeAddTaxInvoiceActions = () => {
-      if (!frm.doc.ti_tax_invoice_upload) {
-        return;
-      }
-
-      frm.add_custom_button(__('Open Tax Invoice Upload'), () => {
-        frappe.set_route('Form', 'Tax Invoice OCR Upload', frm.doc.ti_tax_invoice_upload);
-      }, __('Tax Invoice'));
-
-      frm.add_custom_button(__('Refresh Tax Invoice Data'), async () => {
-        await frappe.call({
-          method: 'imogi_finance.api.tax_invoice.apply_tax_invoice_upload',
-          args: { target_doctype: 'Expense Request', target_name: frm.doc.name },
-          freeze: true,
-          freeze_message: __('Refreshing...'),
-        });
-        await frm.reload_doc();
-      }, __('Tax Invoice'));
-    };
-
-    maybeAddOcrButton();
-    maybeAddTaxInvoiceActions();
+    // Tax Invoice OCR actions are intentionally managed from the OCR Upload doctype.
   },
 
   async ti_tax_invoice_upload(frm) {
