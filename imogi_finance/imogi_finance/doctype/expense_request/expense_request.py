@@ -78,10 +78,14 @@ class ExpenseRequest(Document):
     def _prepare_route_for_submit(self):
         """Resolve approval routing before workflow validation during submit."""
         workflow_action = getattr(self, "_workflow_action", None)
-        if getattr(self, "_action", None) != "submit" and workflow_action != "Submit":
+        submitting = getattr(self, "_action", None) == "submit" or workflow_action == "Submit"
+        workflow_state = getattr(self, "workflow_state", None)
+        workflow_submit_state = workflow_state in {"Pending Review", "Approved"} and getattr(self, "docstatus", 0) == 0
+        if not submitting and not workflow_submit_state:
             return
 
         route = self._resolve_and_apply_route()
+        self._ensure_route_ready(route)
         if workflow_action == "Submit":
             if self._skip_approval_route:
                 self.current_approval_level = 0
@@ -228,6 +232,7 @@ class ExpenseRequest(Document):
         """Resolve approval route and set initial workflow state."""
         self.validate_amounts()
         route = self._resolve_and_apply_route()
+        self._ensure_route_ready(route)
         if self._skip_approval_route:
             self.current_approval_level = 0
             self.status = "Approved"
@@ -261,6 +266,7 @@ class ExpenseRequest(Document):
         if action == "Submit":
             self.validate_amounts()
             route = self._resolve_and_apply_route()
+            self._ensure_route_ready(route)
             if self._skip_approval_route:
                 self.current_approval_level = 0
                 self.status = "Approved"
@@ -355,7 +361,9 @@ class ExpenseRequest(Document):
             return
 
         self.validate_amounts()
-        route, setting_meta = self._resolve_approval_route()
+        route, setting_meta, failed = self._resolve_approval_route()
+        self._approval_route_resolution_failed = failed
+        self._ensure_route_ready(route, context="reopen")
         self.clear_downstream_links()
         self.apply_route(route, setting_meta=setting_meta)
         self._skip_approval_route = self._should_skip_approval(route)
@@ -756,7 +764,7 @@ class ExpenseRequest(Document):
             # Avoid blocking workflow if snapshot persistence fails.
             pass
 
-    def _resolve_approval_route(self) -> tuple[dict, dict | None]:
+    def _resolve_approval_route(self) -> tuple[dict, dict | None, bool]:
         try:
             setting_meta = get_active_setting_meta(self.cost_center)
             route = get_approval_route(
@@ -769,15 +777,32 @@ class ExpenseRequest(Document):
                 accounts=self._get_expense_accounts(),
                 amount=self.amount,
             )
-            return {}, None
+            return {}, None, True
 
-        return route, setting_meta
+        return route, setting_meta, False
 
     def _resolve_and_apply_route(self) -> dict:
-        route, setting_meta = self._resolve_approval_route()
+        route, setting_meta, failed = self._resolve_approval_route()
+        self._approval_route_resolution_failed = failed
         self.apply_route(route, setting_meta=setting_meta)
         self._skip_approval_route = self._should_skip_approval(route)
         return route
+
+    def _ensure_route_ready(self, route: dict, *, context: str = "submit"):
+        if getattr(self, "_approval_route_resolution_failed", False):
+            frappe.throw(
+                approval_setting_required_message(self.cost_center),
+                title=_("Not Allowed"),
+            )
+
+        if self._route_has_approver(route):
+            return
+
+        message = _("Level 1 approver is required before submitting an Expense Request.")
+        if context == "reopen":
+            message = _("Level 1 approver is required before reopening an Expense Request.")
+
+        frappe.throw(message, title=_("Not Allowed"))
 
     @staticmethod
     def _route_has_approver(route: dict | None) -> bool:
@@ -884,7 +909,9 @@ class ExpenseRequest(Document):
                 title=_("Not Allowed"),
             )
 
-        route, setting_meta = self._resolve_approval_route()
+        route, setting_meta, failed = self._resolve_approval_route()
+        self._approval_route_resolution_failed = failed
+        self._ensure_route_ready(route)
         self.apply_route(route, setting_meta=setting_meta)
         if self._should_skip_approval(route):
             self.current_approval_level = 0
