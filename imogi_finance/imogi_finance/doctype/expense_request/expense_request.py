@@ -48,6 +48,10 @@ class ExpenseRequest(Document):
         )
     )
 
+    def before_validate(self):
+        self.validate_amounts()
+        self._prepare_route_for_submit()
+
     def before_insert(self):
         self._set_requester_to_creator()
 
