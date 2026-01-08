@@ -71,8 +71,7 @@ class ExpenseRequest(Document):
     def _prepare_route_for_submit(self):
         """Resolve approval routing before workflow validation during submit."""
         workflow_action = getattr(self, "_workflow_action", None)
-        action = getattr(self, "_action", None)
-        if action != "submit" and workflow_action != "Submit":
+        if getattr(self, "_action", None) != "submit" and workflow_action != "Submit":
             return
 
         route = self._resolve_and_apply_route()
@@ -325,10 +324,14 @@ class ExpenseRequest(Document):
     def on_workflow_action(self, action, **kwargs):
         """Reset approval routing when a request is reopened."""
         next_state = kwargs.get("next_state")
-        if action == "Submit" and self._should_skip_approval():
-            next_state = "Approved"
-            self.current_approval_level = 0
-            self.record_approval_route_snapshot()
+        if action == "Submit":
+            if self._should_skip_approval():
+                next_state = "Approved"
+                self.current_approval_level = 0
+                self.record_approval_route_snapshot()
+            else:
+                next_state = self.PENDING_REVIEW_STATE
+                self.current_approval_level = getattr(self, "current_approval_level", None) or 1
         if action == "Approve" and next_state == "Approved":
             self.record_approval_route_snapshot()
             self.current_approval_level = 0
@@ -364,6 +367,14 @@ class ExpenseRequest(Document):
 
     def on_cancel(self):
         release_budget_for_request(self, reason="Cancel")
+
+    def on_submit(self):
+        self._auto_create_purchase_invoice()
+
+    def on_update_after_submit(self):
+        previous = self._get_previous_doc()
+        previous_status = getattr(previous, "status", None) if previous else None
+        self._auto_create_purchase_invoice(previous_status=previous_status)
 
     def before_cancel(self):
         self.validate_cancel_permission()
@@ -978,6 +989,26 @@ class ExpenseRequest(Document):
     def validate_workflow_action_guard(self):
         """Block status mutations that bypass workflow enforcement."""
         self._workflow_service.guard_status_changes(self)
+
+    def _auto_create_purchase_invoice(self, *, previous_status: str | None = None):
+        if getattr(self, "docstatus", 0) != 1:
+            return
+
+        if getattr(self, "status", None) != "Approved":
+            return
+
+        if previous_status == "Approved":
+            return
+
+        if getattr(self, "linked_purchase_invoice", None) or getattr(self, "pending_purchase_invoice", None):
+            return
+
+        if getattr(self, "request_type", None) not in accounting.PURCHASE_INVOICE_REQUEST_TYPES:
+            return
+
+        pi_name = accounting.create_purchase_invoice_from_request(self.name)
+        if pi_name:
+            self.pending_purchase_invoice = pi_name
 
     @staticmethod
     def _get_value(source, field):
