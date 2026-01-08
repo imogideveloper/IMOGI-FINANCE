@@ -106,7 +106,10 @@ def _get_pph_base_amount(request: frappe.model.document.Document) -> float:
 
 
 def _validate_request_ready_for_link(request: frappe.model.document.Document) -> None:
-    if request.docstatus != 1 or request.status not in PURCHASE_INVOICE_ALLOWED_STATUSES:
+    status = None
+    if hasattr(request, "get"):
+        status = request.get("status") or request.get("workflow_state")
+    if request.docstatus != 1 or status not in PURCHASE_INVOICE_ALLOWED_STATUSES:
         frappe.throw(
             _("Expense Request must be submitted and have status {0} before creating accounting entries.").format(
                 ", ".join(sorted(PURCHASE_INVOICE_ALLOWED_STATUSES))
