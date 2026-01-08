@@ -55,6 +55,9 @@ class ExpenseRequest(Document):
     def before_insert(self):
         self._set_requester_to_creator()
 
+    def after_insert(self):
+        self._auto_submit_if_skip_approval()
+
     def validate(self):
         self._set_requester_to_creator()
         self._ensure_status()
@@ -377,6 +380,24 @@ class ExpenseRequest(Document):
         previous = self._get_previous_doc()
         previous_status = getattr(previous, "status", None) if previous else None
         self._auto_create_purchase_invoice(previous_status=previous_status)
+
+    def _auto_submit_if_skip_approval(self):
+        if getattr(self, "docstatus", 0) != 0:
+            return
+
+        if getattr(self, "status", None) not in {None, "", "Draft"}:
+            return
+
+        if getattr(self, "_skip_approval_route", None) is None:
+            self.validate_amounts()
+            route, setting_meta = self._resolve_approval_route()
+            self.apply_route(route, setting_meta=setting_meta)
+            self._skip_approval_route = self._should_skip_approval(route)
+
+        if not self._skip_approval_route:
+            return
+
+        self.submit()
 
     def before_cancel(self):
         self.validate_cancel_permission()
