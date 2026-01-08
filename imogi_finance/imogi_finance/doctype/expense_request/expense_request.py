@@ -239,19 +239,12 @@ class ExpenseRequest(Document):
             flags = type("Flags", (), {})()
             self.flags = flags
         self.flags.workflow_action_allowed = True
-        if action == "Backflow":
-            reason = kwargs.get("reason")
-            if reason:
-                self.backflow_reason = reason
-            elif not getattr(self, "backflow_reason", None):
-                self.flags.backflow_reason = None
-        if action != "Close":
-            self._workflow_engine.guard_action(
-                doc=self,
-                action=action,
-                current_state=self.status,
-                next_state=kwargs.get("next_state"),
-            )
+        self._workflow_engine.guard_action(
+            doc=self,
+            action=action,
+            current_state=self.status,
+            next_state=kwargs.get("next_state"),
+        )
         if action == "Submit":
             self.validate_amounts()
             route = self._resolve_and_apply_route()
@@ -267,16 +260,6 @@ class ExpenseRequest(Document):
 
         if action == "Reopen":
             self.validate_reopen_permission()
-            return
-
-        if action == "Close":
-            if self.status not in {"PI Created", "Paid"}:
-                frappe.throw(
-                    _("Close action is only allowed when the request is PI Created or already Paid."),
-                    title=_("Not Allowed"),
-                )
-
-            self.validate_close_permission()
             return
 
         if action in {"Approve", "Reject"}:
@@ -346,11 +329,7 @@ class ExpenseRequest(Document):
         if action == "Reject":
             self.current_approval_level = 0
 
-        if action == "Backflow" and next_state == self.PENDING_REVIEW_STATE:
-            self._set_pending_review(level=1)
-            self.workflow_state = next_state
-
-        if action in {"Approve", "Reject", "Close", "Submit", "Backflow"} and next_state:
+        if action in {"Approve", "Reject", "Submit"} and next_state:
             self.status = next_state
             self.workflow_state = next_state
 
@@ -617,15 +596,12 @@ class ExpenseRequest(Document):
         if not current_level or next_state != "Approved":
             return
 
-        level_2_role = self.get("level_2_role")
-        level_2_user = self.get("level_2_user")
-        level_3_role = self.get("level_3_role")
-        level_3_user = self.get("level_3_user")
+        configured_levels = [level for level in (1, 2, 3) if self._level_configured(level)]
+        if not configured_levels:
+            return
 
-        if current_level == "1" and (level_2_role or level_2_user or level_3_role or level_3_user):
-            frappe.throw(_("Cannot approve directly when further levels are configured."))
-
-        if current_level == "2" and (level_3_role or level_3_user):
+        last_level = str(configured_levels[-1])
+        if current_level != last_level:
             frappe.throw(_("Cannot approve directly when further levels are configured."))
 
     def apply_route(self, route: dict, *, setting_meta: dict | None = None):
