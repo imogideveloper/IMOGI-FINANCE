@@ -60,13 +60,15 @@ def test_purchase_invoice_submit_requires_verified(monkeypatch):
         "get_settings",
         lambda: {"enable_tax_invoice_ocr": 1, "require_verification_before_submit_pi": 1},
     )
+    monkeypatch.setattr(purchase_invoice, "sync_tax_invoice_upload", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(purchase_invoice, "validate_tax_invoice_upload_link", lambda *_args, **_kwargs: None)
 
     def fake_throw(msg, title=None):
         raise ThrowCalled(msg)
 
     monkeypatch.setattr(frappe, "throw", fake_throw)
 
-    doc = types.SimpleNamespace(ti_verification_status="Needs Review")
+    doc = types.SimpleNamespace(ti_verification_status="Needs Review", ti_tax_invoice_upload="TI-0001")
 
     with pytest.raises(ThrowCalled):
         purchase_invoice.validate_before_submit(doc)
@@ -97,6 +99,18 @@ def test_purchase_invoice_submit_ignores_string_zero(monkeypatch):
     )
 
     doc = types.SimpleNamespace(ti_verification_status=None)
+
+    purchase_invoice.validate_before_submit(doc)
+
+
+def test_purchase_invoice_submit_allows_without_upload(monkeypatch):
+    monkeypatch.setattr(
+        purchase_invoice,
+        "get_settings",
+        lambda: {"enable_tax_invoice_ocr": 1, "require_verification_before_submit_pi": 1},
+    )
+
+    doc = types.SimpleNamespace(ti_verification_status="Needs Review", ti_tax_invoice_upload=None)
 
     purchase_invoice.validate_before_submit(doc)
 
