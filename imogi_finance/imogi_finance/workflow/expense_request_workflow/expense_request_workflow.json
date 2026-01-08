@@ -6,11 +6,11 @@
     },
     {
       "action": "Approve",
-      "allowed": "Expense Approver"
+      "allowed": "All"
     },
     {
       "action": "Reject",
-      "allowed": "Expense Approver"
+      "allowed": "All"
     },
     {
       "action": "Reopen",
@@ -45,7 +45,7 @@
       "allow_edit": "All",
       "backflow_allowed": true,
       "acl": {
-        "roles": ["Expense Approver", "System Manager"],
+        "roles": [],
         "users": []
       }
     },
@@ -103,7 +103,7 @@
     },
     {
       "action": "Approve",
-      "allowed": "Expense Approver",
+      "allowed": "All",
       "state": "Pending Review",
       "next_state": "Pending Review",
       "condition": "((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_role') or doc.get('level_2_user') or doc.get('level_3_role') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and (doc.get('level_3_role') or doc.get('level_3_user')))",
@@ -111,7 +111,7 @@
     },
     {
       "action": "Approve",
-      "allowed": "Expense Approver",
+      "allowed": "All",
       "state": "Pending Review",
       "next_state": "Approved",
       "condition": "not (((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_role') or doc.get('level_2_user') or doc.get('level_3_role') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and (doc.get('level_3_role') or doc.get('level_3_user'))))",
@@ -119,7 +119,7 @@
     },
     {
       "action": "Reject",
-      "allowed": "Expense Approver",
+      "allowed": "All",
       "state": "Pending Review",
       "next_state": "Rejected",
       "doc_status": 1
