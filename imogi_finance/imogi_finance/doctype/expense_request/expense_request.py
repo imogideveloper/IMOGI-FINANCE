@@ -70,7 +70,8 @@ class ExpenseRequest(Document):
 
     def _prepare_route_for_submit(self):
         """Resolve approval routing before workflow validation during submit."""
-        if getattr(self, "_action", None) != "submit":
+        workflow_action = getattr(self, "_workflow_action", None)
+        if getattr(self, "_action", None) != "submit" and workflow_action != "Submit":
             return
 
         route = self._resolve_and_apply_route()
