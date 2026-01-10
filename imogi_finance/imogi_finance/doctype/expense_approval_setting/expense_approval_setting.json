@@ -8,37 +8,82 @@
   "editable_grid": 0,
   "engine": "InnoDB",
   "field_order": [
+    "basic_info_section",
     "cost_center",
+    "column_break_basic",
     "is_active",
+    "section_break_info",
+    "info_html",
+    "approval_lines_section",
     "expense_approval_lines"
   ],
   "fields": [
+    {
+      "fieldname": "basic_info_section",
+      "fieldtype": "Section Break",
+      "label": "📋 Informasi Dasar"
+    },
     {
       "fieldname": "cost_center",
       "fieldtype": "Link",
       "label": "Cost Center",
       "options": "Cost Center",
-      "reqd": 1
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "description": "Pilih Cost Center yang akan menggunakan setting approval ini"
+    },
+    {
+      "fieldname": "column_break_basic",
+      "fieldtype": "Column Break"
     },
     {
       "default": "1",
       "fieldname": "is_active",
       "fieldtype": "Check",
-      "label": "Is Active"
+      "label": "Is Active",
+      "in_list_view": 1,
+      "bold": 1,
+      "description": "Hanya satu setting aktif per Cost Center"
     },
     {
-      "description": "Level dengan range lebih tinggi tidak akan dipanggil jika amount lebih kecil.",
+      "fieldname": "section_break_info",
+      "fieldtype": "Section Break",
+      "collapsible": 1,
+      "collapsible_depends_on": "eval:1",
+      "label": "ℹ️ Panduan Penggunaan"
+    },
+    {
+      "fieldname": "info_html",
+      "fieldtype": "HTML",
+      "options": "<div class=\"alert alert-info\" style=\"margin-bottom: 0;\">\n<h5>📖 Cara Kerja Approval</h5>\n<ol style=\"margin-bottom: 10px;\">\n<li><strong>Matching Account:</strong> Sistem mencari line dengan Expense Account yang cocok</li>\n<li><strong>Fallback Default:</strong> Jika tidak ada yang cocok, gunakan line dengan \"Apply to All Accounts\"</li>\n<li><strong>Filter by Amount:</strong> Setiap level hanya aktif jika amount dalam range Min-Max level tersebut</li>\n</ol>\n<h5>💡 Tips Setup</h5>\n<ul style=\"margin-bottom: 0;\">\n<li>Buat minimal 1 line dengan <strong>Apply to All Accounts</strong> sebagai fallback</li>\n<li>Untuk account khusus, buat line terpisah dengan Expense Account spesifik</li>\n<li>Jika tidak ada level yang match dengan amount, request akan <strong>auto-approve</strong></li>\n</ul>\n</div>"
+    },
+    {
+      "fieldname": "approval_lines_section",
+      "fieldtype": "Section Break",
+      "label": "✅ Approval Lines",
+      "description": "Definisikan aturan approval berdasarkan expense account dan range amount"
+    },
+    {
       "fieldname": "expense_approval_lines",
       "fieldtype": "Table",
-      "label": "Expense Approval Lines",
-      "options": "Expense Approval Line"
+      "label": "Daftar Approval Lines",
+      "options": "Expense Approval Line",
+      "reqd": 1,
+      "description": "Tambahkan minimal 1 line dengan 'Apply to All Accounts' sebagai default"
     }
   ],
   "index_web_pages_for_search": 1,
   "istable": 0,
-  "links": [],
+  "links": [
+    {
+      "link_doctype": "Expense Request",
+      "link_fieldname": "approval_setting"
+    }
+  ],
   "module": "Imogi Finance",
   "name": "Expense Approval Setting",
+  "naming_rule": "Expression",
   "permissions": [
     {
       "create": 1,
@@ -51,8 +96,18 @@
       "role": "System Manager",
       "share": 1,
       "write": 1
+    },
+    {
+      "read": 1,
+      "report": 1,
+      "role": "Accounts Manager",
+      "export": 1
     }
   ],
   "quick_entry": 0,
-  "track_changes": 1
+  "show_name_in_global_search": 1,
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "track_changes": 1,
+  "title_field": "cost_center"
 }

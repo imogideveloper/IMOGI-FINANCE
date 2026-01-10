@@ -7,119 +7,173 @@
   "editable_grid": 1,
   "engine": "InnoDB",
   "field_order": [
+    "account_section",
     "expense_account",
+    "column_break_account",
     "is_default",
-    "section_break_1",
+    "level_1_section",
     "level_1_role",
     "level_1_user",
+    "column_break_level_1",
     "level_1_min_amount",
     "level_1_max_amount",
-    "column_break_level_2",
+    "level_2_section",
     "level_2_role",
     "level_2_user",
+    "column_break_level_2",
     "level_2_min_amount",
     "level_2_max_amount",
-    "column_break_level_3",
+    "level_3_section",
     "level_3_role",
     "level_3_user",
+    "column_break_level_3",
     "level_3_min_amount",
     "level_3_max_amount"
   ],
   "fields": [
     {
+      "fieldname": "account_section",
+      "fieldtype": "Section Break",
+      "label": "🎯 Target Account"
+    },
+    {
       "fieldname": "expense_account",
       "fieldtype": "Link",
       "label": "Expense Account",
       "options": "Account",
-      "in_list_view": 1
+      "in_list_view": 1,
+      "columns": 3,
+      "description": "Pilih expense account spesifik, atau kosongkan jika Apply to All"
+    },
+    {
+      "fieldname": "column_break_account",
+      "fieldtype": "Column Break"
     },
     {
       "default": "0",
       "fieldname": "is_default",
       "fieldtype": "Check",
       "label": "Apply to All Accounts",
-      "in_list_view": 1
+      "in_list_view": 1,
+      "columns": 1,
+      "bold": 1,
+      "description": "Centang sebagai fallback untuk account yang tidak didefinisikan"
     },
     {
-      "fieldname": "section_break_1",
+      "fieldname": "level_1_section",
       "fieldtype": "Section Break",
-      "label": "Approval Levels"
+      "label": "👤 Level 1 - First Approver"
     },
     {
       "fieldname": "level_1_role",
       "fieldtype": "Link",
-      "label": "Level 1 Role",
-      "options": "Role"
+      "label": "Role",
+      "options": "Role",
+      "in_list_view": 1,
+      "columns": 2,
+      "description": "Role yang dapat approve di level ini"
     },
     {
       "fieldname": "level_1_user",
       "fieldtype": "Link",
-      "label": "Level 1 User",
-      "options": "User"
+      "label": "User (Optional)",
+      "options": "User",
+      "description": "User spesifik (opsional, bisa dikosongkan)"
+    },
+    {
+      "fieldname": "column_break_level_1",
+      "fieldtype": "Column Break"
     },
     {
       "fieldname": "level_1_min_amount",
       "fieldtype": "Currency",
-      "label": "Level 1 Min Amount",
-      "description": "Level aktif jika amount >= nilai ini"
+      "label": "Min Amount",
+      "default": "0",
+      "in_list_view": 1,
+      "columns": 1,
+      "description": "Level aktif jika amount ≥ nilai ini"
     },
     {
       "fieldname": "level_1_max_amount",
       "fieldtype": "Currency",
-      "label": "Level 1 Max Amount",
-      "description": "Level aktif jika amount <= nilai ini"
+      "label": "Max Amount",
+      "in_list_view": 1,
+      "columns": 1,
+      "description": "Level aktif jika amount ≤ nilai ini"
+    },
+    {
+      "fieldname": "level_2_section",
+      "fieldtype": "Section Break",
+      "label": "👥 Level 2 - Second Approver",
+      "collapsible": 1,
+      "collapsible_depends_on": "eval:!doc.level_2_role && !doc.level_2_user"
+    },
+    {
+      "fieldname": "level_2_role",
+      "fieldtype": "Link",
+      "label": "Role",
+      "options": "Role",
+      "description": "Role yang dapat approve di level ini"
+    },
+    {
+      "fieldname": "level_2_user",
+      "fieldtype": "Link",
+      "label": "User (Optional)",
+      "options": "User",
+      "description": "User spesifik (opsional)"
     },
     {
       "fieldname": "column_break_level_2",
       "fieldtype": "Column Break"
     },
     {
-      "fieldname": "level_2_role",
-      "fieldtype": "Link",
-      "label": "Level 2 Role",
-      "options": "Role"
-    },
-    {
-      "fieldname": "level_2_user",
-      "fieldtype": "Link",
-      "label": "Level 2 User",
-      "options": "User"
-    },
-    {
       "fieldname": "level_2_min_amount",
       "fieldtype": "Currency",
-      "label": "Level 2 Min Amount"
+      "label": "Min Amount",
+      "description": "Level aktif jika amount ≥ nilai ini"
     },
     {
       "fieldname": "level_2_max_amount",
       "fieldtype": "Currency",
-      "label": "Level 2 Max Amount"
+      "label": "Max Amount",
+      "description": "Level aktif jika amount ≤ nilai ini"
+    },
+    {
+      "fieldname": "level_3_section",
+      "fieldtype": "Section Break",
+      "label": "👑 Level 3 - Final Approver",
+      "collapsible": 1,
+      "collapsible_depends_on": "eval:!doc.level_3_role && !doc.level_3_user"
+    },
+    {
+      "fieldname": "level_3_role",
+      "fieldtype": "Link",
+      "label": "Role",
+      "options": "Role",
+      "description": "Role yang dapat approve di level ini"
+    },
+    {
+      "fieldname": "level_3_user",
+      "fieldtype": "Link",
+      "label": "User (Optional)",
+      "options": "User",
+      "description": "User spesifik (opsional)"
     },
     {
       "fieldname": "column_break_level_3",
       "fieldtype": "Column Break"
     },
     {
-      "fieldname": "level_3_role",
-      "fieldtype": "Link",
-      "label": "Level 3 Role",
-      "options": "Role"
-    },
-    {
-      "fieldname": "level_3_user",
-      "fieldtype": "Link",
-      "label": "Level 3 User",
-      "options": "User"
-    },
-    {
       "fieldname": "level_3_min_amount",
       "fieldtype": "Currency",
-      "label": "Level 3 Min Amount"
+      "label": "Min Amount",
+      "description": "Level aktif jika amount ≥ nilai ini"
     },
     {
       "fieldname": "level_3_max_amount",
       "fieldtype": "Currency",
-      "label": "Level 3 Max Amount"
+      "label": "Max Amount",
+      "description": "Level aktif jika amount ≤ nilai ini"
     }
   ],
   "index_web_pages_for_search": 1,
