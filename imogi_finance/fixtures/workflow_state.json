@@ -7,12 +7,6 @@
   },
   {
     "doctype": "Workflow State",
-    "name": "Reopened",
-    "workflow_state_name": "Reopened",
-    "style": ""
-  },
-  {
-    "doctype": "Workflow State",
     "name": "Pending Review",
     "workflow_state_name": "Pending Review",
     "style": ""
@@ -33,6 +27,12 @@
     "doctype": "Workflow State",
     "name": "PI Created",
     "workflow_state_name": "PI Created",
+    "style": ""
+  },
+  {
+    "doctype": "Workflow State",
+    "name": "Reopened",
+    "workflow_state_name": "Reopened",
     "style": ""
   },
   {
@@ -78,3 +78,4 @@
     "style": ""
   }
 ]
+

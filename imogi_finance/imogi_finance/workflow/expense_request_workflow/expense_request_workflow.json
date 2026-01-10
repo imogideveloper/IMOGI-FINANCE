@@ -11,10 +11,6 @@
     {
       "action": "Reject",
       "allowed": "All"
-    },
-    {
-      "action": "Reopen",
-      "allowed": "System Manager"
     }
   ],
   "creation": "",
@@ -34,12 +30,6 @@
       "backflow_allowed": false
     },
     {
-      "state": "Reopened",
-      "doc_status": 1,
-      "allow_edit": "All",
-      "backflow_allowed": true
-    },
-    {
       "state": "Pending Review",
       "doc_status": 1,
       "allow_edit": "",
@@ -53,7 +43,7 @@
       "state": "Approved",
       "doc_status": 1,
       "allow_edit": "",
-      "backflow_allowed": true,
+      "backflow_allowed": false,
       "acl": {
         "roles": ["System Manager"],
         "users": []
@@ -63,7 +53,7 @@
       "state": "Rejected",
       "doc_status": 1,
       "allow_edit": "",
-      "backflow_allowed": true,
+      "backflow_allowed": false,
       "acl": {
         "roles": ["System Manager"],
         "users": []
@@ -122,20 +112,6 @@
       "allowed": "All",
       "state": "Pending Review",
       "next_state": "Rejected",
-      "doc_status": 1
-    },
-    {
-      "action": "Reopen",
-      "allowed": "System Manager",
-      "state": "Rejected",
-      "next_state": "Reopened",
-      "doc_status": 1
-    },
-    {
-      "action": "Reopen",
-      "allowed": "System Manager",
-      "state": "Paid",
-      "next_state": "Pending Review",
       "doc_status": 1
     }
   ],

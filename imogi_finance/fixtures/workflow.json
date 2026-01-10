@@ -21,10 +21,6 @@
       {
         "action": "Reject",
         "allowed": "Expense Approver"
-      },
-      {
-        "action": "Reopen",
-        "allowed": "System Manager"
       }
     ],
     "states": [
@@ -37,22 +33,12 @@
       },
       {
         "doctype": "Workflow Document State",
-        "state": "Reopened",
-        "doc_status": "1",
-        "allow_edit": "All",
-        "backflow_allowed": true
-      },
-      {
-        "doctype": "Workflow Document State",
         "state": "Pending Review",
         "doc_status": "1",
-        "allow_edit": "All",
-        "backflow_allowed": true,
+        "allow_edit": "",
+        "backflow_allowed": false,
         "acl": {
-          "roles": [
-            "Expense Approver",
-            "System Manager"
-          ],
+          "roles": ["Expense Approver", "System Manager"],
           "users": []
         }
       },
@@ -60,12 +46,10 @@
         "doctype": "Workflow Document State",
         "state": "Approved",
         "doc_status": "1",
-        "allow_edit": "System Manager",
-        "backflow_allowed": true,
+        "allow_edit": "",
+        "backflow_allowed": false,
         "acl": {
-          "roles": [
-            "System Manager"
-          ],
+          "roles": ["System Manager"],
           "users": []
         }
       },
@@ -73,12 +57,10 @@
         "doctype": "Workflow Document State",
         "state": "Rejected",
         "doc_status": "1",
-        "allow_edit": "System Manager",
-        "backflow_allowed": true,
+        "allow_edit": "",
+        "backflow_allowed": false,
         "acl": {
-          "roles": [
-            "System Manager"
-          ],
+          "roles": ["System Manager"],
           "users": []
         }
       },
@@ -86,14 +68,14 @@
         "doctype": "Workflow Document State",
         "state": "PI Created",
         "doc_status": "1",
-        "allow_edit": "System Manager",
+        "allow_edit": "",
         "backflow_allowed": false
       },
       {
         "doctype": "Workflow Document State",
         "state": "Paid",
         "doc_status": "1",
-        "allow_edit": "System Manager",
+        "allow_edit": "",
         "backflow_allowed": false
       }
     ],
@@ -138,24 +120,6 @@
         "state": "Pending Review",
         "next_state": "Rejected",
         "allowed": "Expense Approver"
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Reopen",
-        "state": "Rejected",
-        "next_state": "Reopened",
-        "allowed": "System Manager",
-        "allow_self_approval": 0,
-        "doc_status": "1"
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Reopen",
-        "state": "Paid",
-        "next_state": "Pending Review",
-        "allowed": "System Manager",
-        "doc_status": "1",
-        "allow_self_approval": 0
       }
     ]
   },
@@ -369,3 +333,4 @@
     ]
   }
 ]
+
