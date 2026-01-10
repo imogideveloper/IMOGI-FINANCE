@@ -110,11 +110,15 @@ class ExpenseRequest(Document):
         if self.request_type != "Asset":
             return
 
-        items = self.get("items") or []
-        if not items:
+        if getattr(self, "build_cumulative_asset_from_items", 0):
+            self._sync_cumulative_asset_items()
             return
 
-        for item in items:
+        asset_items = self.get("asset_items") or []
+        if not asset_items:
+            frappe.throw(_("Asset List is required for Asset requests."))
+
+        for idx, item in enumerate(asset_items, start=1):
             missing_fields = []
             if not getattr(item, "asset_category", None):
                 missing_fields.append(_("Asset Category"))
@@ -122,13 +126,49 @@ class ExpenseRequest(Document):
                 missing_fields.append(_("Asset Name"))
             if not getattr(item, "asset_description", None):
                 missing_fields.append(_("Asset Description"))
+            if not getattr(item, "qty", None):
+                missing_fields.append(_("Qty"))
 
             if missing_fields:
                 frappe.throw(
-                    _("Asset items require the following fields: {0}.").format(
-                        _(", ").join(missing_fields)
+                    _("Asset item row {0} requires the following fields: {1}.").format(
+                        idx, _(", ").join(missing_fields)
                     )
                 )
+
+    def _sync_cumulative_asset_items(self):
+        items = self.get("items") or []
+        if not items:
+            frappe.throw(_("Expense Items are required to build a cumulative asset."))
+
+        header_missing = []
+        if not getattr(self, "asset_category", None):
+            header_missing.append(_("Asset Category"))
+        if not getattr(self, "asset_name", None):
+            header_missing.append(_("Asset Name"))
+        if not getattr(self, "asset_description", None):
+            header_missing.append(_("Asset Description"))
+
+        if header_missing:
+            frappe.throw(
+                _("Cumulative asset requires the following header fields: {0}.").format(
+                    _(", ").join(header_missing)
+                )
+            )
+
+        total_amount = float(getattr(self, "amount", 0) or 0)
+        self.set("asset_items", [])
+        self.append(
+            "asset_items",
+            {
+                "asset_category": self.asset_category,
+                "asset_name": self.asset_name,
+                "asset_description": self.asset_description,
+                "asset_location": getattr(self, "asset_location", None),
+                "qty": 1,
+                "amount": total_amount,
+            },
+        )
 
     def validate_tax_fields(self):
         FinanceValidator.validate_tax_fields(self)
