@@ -1,0 +1,9 @@
+[
+  {
+    "doctype": "Letter Template Settings",
+    "name": "Letter Template Settings",
+    "enable_payment_letter": 1,
+    "default_template": "Payment Letter Default",
+    "inherit_bank_from_branch": 1
+  }
+]

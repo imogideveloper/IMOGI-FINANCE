@@ -412,6 +412,11 @@ fixtures = [
     },
     {"dt": "Workspace", "filters": [["name", "=", "FINANCE IMOGI"]]},
     {
+        "dt": "Letter Template",
+        "filters": [["name", "in", ["Payment Letter Default"]]],
+    },
+    {"dt": "Letter Template Settings"},
+    {
         "dt": "Workflow",
         "filters": [
             [
