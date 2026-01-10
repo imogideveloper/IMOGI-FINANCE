@@ -91,6 +91,22 @@ function setExpenseAccountQuery(frm) {
   frm.set_query('expense_account', 'items', () => ({ filters }));
 }
 
+function toggleAssetItemsBehavior(frm) {
+  const isAsset = frm.doc.request_type === 'Asset';
+  const useCumulative = Boolean(frm.doc.build_cumulative_asset_from_items);
+  const assetItemsField = frm.get_field('asset_items');
+  const shouldLock = isAsset && useCumulative;
+
+  frm.set_df_property('asset_items_section', 'hidden', !isAsset);
+  frm.set_df_property('asset_items', 'read_only', shouldLock);
+
+  if (assetItemsField?.grid) {
+    assetItemsField.grid.cannot_add_rows = shouldLock;
+    assetItemsField.grid.cannot_delete_rows = shouldLock;
+    assetItemsField.grid.only_sortable = !shouldLock;
+  }
+}
+
 async function setErUploadQuery(frm) {
   let usedUploads = [];
   let verifiedUploads = [];
@@ -166,6 +182,7 @@ frappe.ui.form.on('Expense Request', {
     hideErOcrStatus(frm);
     lockErTaxInvoiceFields(frm);
     setExpenseAccountQuery(frm);
+    toggleAssetItemsBehavior(frm);
     frm.dashboard.clear_headline();
     await setErUploadQuery(frm);
     await syncErUpload(frm);
@@ -401,6 +418,12 @@ frappe.ui.form.on('Expense Request', {
   async ti_tax_invoice_upload(frm) {
     await syncErUpload(frm);
   },
+  request_type(frm) {
+    toggleAssetItemsBehavior(frm);
+  },
+  build_cumulative_asset_from_items(frm) {
+    toggleAssetItemsBehavior(frm);
+  },
 });
 
 function maybeRenderInternalChargeButton(frm) {
@@ -440,4 +463,3 @@ function maybeRenderInternalChargeButton(frm) {
     }
   }, __('Actions'));
 }
-

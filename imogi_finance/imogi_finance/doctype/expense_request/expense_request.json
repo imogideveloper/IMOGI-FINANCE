@@ -64,6 +64,9 @@
     "asset_location",
     "section_break_asset_desc",
     "asset_description",
+    "asset_items_section",
+    "build_cumulative_asset_from_items",
+    "asset_items",
 
     "tab_approval",
     "approval_status_section",
@@ -410,6 +413,25 @@
       "fieldname": "asset_description",
       "fieldtype": "Small Text",
       "label": "Deskripsi Asset"
+    },
+    {
+      "fieldname": "asset_items_section",
+      "fieldtype": "Section Break",
+      "label": "Asset List"
+    },
+    {
+      "default": "0",
+      "fieldname": "build_cumulative_asset_from_items",
+      "fieldtype": "Check",
+      "label": "Cumulative Asset dari Expense Items",
+      "description": "Jika dicentang, daftar asset dibuat otomatis dari Expense Items."
+    },
+    {
+      "fieldname": "asset_items",
+      "fieldtype": "Table",
+      "label": "Asset Items",
+      "options": "Expense Request Asset Item",
+      "depends_on": "eval:doc.request_type==\"Asset\""
     },
 
     {
