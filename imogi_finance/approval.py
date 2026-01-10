@@ -11,6 +11,7 @@ from frappe.utils import flt
 
 
 def _normalize_accounts(accounts: str | Iterable[str]) -> tuple[str, ...]:
+    """Normalize accounts to tuple."""
     if isinstance(accounts, str):
         return (accounts,)
 
@@ -19,7 +20,6 @@ def _normalize_accounts(accounts: str | Iterable[str]) -> tuple[str, ...]:
         if normalized:
             return normalized
 
-    # Return empty tuple instead of raising error for optional approval
     return ()
 
 
@@ -35,7 +35,6 @@ def get_active_setting_meta(cost_center: str) -> dict | None:
         as_dict=True,
     )
     
-    # Return None instead of raising error
     if not setting:
         return None
 
@@ -43,12 +42,6 @@ def get_active_setting_meta(cost_center: str) -> dict | None:
         return {"name": setting, "modified": None}
 
     return setting
-
-
-def _normalize_route(route: dict) -> dict:
-    normalized = dict(route)
-    normalized["level_3"] = {"role": None, "user": None}
-    return normalized
 
 
 def _empty_route() -> dict:
@@ -61,68 +54,75 @@ def _empty_route() -> dict:
 
 
 def _get_route_for_account(setting_name: str, account: str, amount: float) -> dict | None:
-    """Get approval route for a specific account. Returns None if no match."""
-    def _get_matching_line(filters: dict):
-        return frappe.get_all(
+    """Get approval route for a specific account.
+    
+    Matches by expense_account first, falls back to is_default.
+    Then filters levels by amount range.
+    """
+    # Try to find specific account line
+    approval_line = frappe.get_all(
+        "Expense Approval Line",
+        filters={
+            "parent": setting_name,
+            "expense_account": account,
+        },
+        fields=[
+            "level_1_role", "level_1_user", "level_1_min_amount", "level_1_max_amount",
+            "level_2_role", "level_2_user", "level_2_min_amount", "level_2_max_amount",
+            "level_3_role", "level_3_user", "level_3_min_amount", "level_3_max_amount",
+        ],
+        limit=1,
+    )
+
+    # Fall back to default line
+    if not approval_line:
+        approval_line = frappe.get_all(
             "Expense Approval Line",
-            filters=filters,
+            filters={
+                "parent": setting_name,
+                "is_default": 1,
+            },
             fields=[
-                "level_1_role",
-                "level_1_user",
-                "level_1_min_amount",
-                "level_1_max_amount",
-                "level_2_role",
-                "level_2_user",
-                "level_2_min_amount",
-                "level_2_max_amount",
-                "level_3_role",
-                "level_3_user",
-                "level_3_min_amount",
-                "level_3_max_amount",
+                "level_1_role", "level_1_user", "level_1_min_amount", "level_1_max_amount",
+                "level_2_role", "level_2_user", "level_2_min_amount", "level_2_max_amount",
+                "level_3_role", "level_3_user", "level_3_min_amount", "level_3_max_amount",
             ],
-            order_by="min_amount desc, max_amount asc",
             limit=1,
         )
 
-    filters = {
-        "parent": setting_name,
-        "expense_account": account,
-        "min_amount": ["<=", amount],
-        "max_amount": [">=", amount],
-    }
-    approval_line = _get_matching_line(filters)
-
-    if not approval_line:
-        approval_line = _get_matching_line(
-            {
-                "parent": setting_name,
-                "is_default": 1,
-                "min_amount": ["<=", amount],
-                "max_amount": [">=", amount],
-            }
-        )
-
-    # Return None instead of raising error
     if not approval_line:
         return None
 
     data = approval_line[0]
+    route = {
+        "level_1": {"role": None, "user": None},
+        "level_2": {"role": None, "user": None},
+        "level_3": {"role": None, "user": None},
+    }
+
+    # Filter each level by amount range
     for level in (1, 2, 3):
+        role = data.get(f"level_{level}_role")
+        user = data.get(f"level_{level}_user")
         min_amount = data.get(f"level_{level}_min_amount")
         max_amount = data.get(f"level_{level}_max_amount")
+
+        # Skip if no approver configured for this level
+        if not role and not user:
+            continue
+
+        # Skip if amount range not configured
         if min_amount is None or max_amount is None:
             continue
+
         min_amount = flt(min_amount)
         max_amount = flt(max_amount)
-        if amount < min_amount or amount > max_amount:
-            data[f"level_{level}_role"] = None
-            data[f"level_{level}_user"] = None
-            
-    return {
-        "level_1": {"role": data.get("level_1_role"), "user": data.get("level_1_user")},
-        "level_2": {"role": data.get("level_2_role"), "user": data.get("level_2_user")},
-        "level_3": {"role": data.get("level_3_role"), "user": data.get("level_3_user")},
-    }
+
+        # Check if amount falls within this level's range
+        if min_amount <= amount <= max_amount:
+            route[f"level_{level}"] = {"role": role, "user": user}
+
+    return route
 
 
 def get_approval_route(
@@ -134,7 +134,7 @@ def get_approval_route(
     """
     amount = flt(amount or 0)
     
-    # Normalize accounts - return empty route if no accounts
+    # Normalize accounts
     try:
         normalized_accounts = _normalize_accounts(accounts)
     except Exception:
@@ -143,7 +143,7 @@ def get_approval_route(
     if not normalized_accounts:
         return _empty_route()
     
-    # Get setting, return empty route if not found
+    # Get setting
     try:
         route_setting = setting_meta if setting_meta is not None else get_active_setting_meta(cost_center)
     except Exception:
@@ -161,7 +161,6 @@ def get_approval_route(
     for account in normalized_accounts:
         route = _get_route_for_account(setting_name, account, amount)
         
-        # Skip if no route found for this account
         if route is None:
             continue
 
@@ -175,46 +174,30 @@ def get_approval_route(
                 _("All expense accounts on the request must share the same approval route.")
             )
 
-    # No route found = auto-approve
     if not resolved_route:
         return _empty_route()
 
-    return _normalize_route(resolved_route)
+    return resolved_route
 
 
 def approval_setting_required_message(cost_center: str | None = None) -> str:
+    """Return user-friendly message when approval setting is missing."""
     if cost_center:
         return _(
-            "Approval route could not be determined. Please ask your System Manager to configure an Expense Approval Setting for Cost Center {0}."
+            "Approval route could not be determined. Please configure an Expense Approval Setting for Cost Center {0}."
         ).format(cost_center)
 
-    return _(
-        "Approval route could not be determined. Please ask your System Manager to configure an Expense Approval Setting."
-    )
+    return _("Approval route could not be determined. Please configure an Expense Approval Setting.")
 
 
 def log_route_resolution_error(exc: Exception, *, cost_center: str | None = None, accounts=None, amount=None):
+    """Log approval route resolution errors."""
     logger = getattr(frappe, "log_error", None)
     if logger:
         try:
             logger(
                 title=_("Expense Request Approval Route Resolution Failed"),
                 message={
-                    "cost_center": cost_center,
-                    "accounts": accounts,
-                    "amount": amount,
-                    "error": repr(exc),
-                },
-            )
-        except Exception:
-            pass
-
-    frappe_logger = getattr(frappe, "logger", None)
-    if frappe_logger:
-        try:
-            frappe_logger("imogi_finance").warning(
-                "Approval route resolution failed",
-                extra={
                     "cost_center": cost_center,
                     "accounts": accounts,
                     "amount": amount,
@@ -233,6 +216,7 @@ def check_expense_request_route(
     amount: float | None = None,
     docstatus: int | None = None,
 ):
+    """API to check approval route for expense request."""
     parsed_items = json.loads(items) if isinstance(items, str) else items
     parsed_accounts = json.loads(expense_accounts) if isinstance(expense_accounts, str) else expense_accounts
 
@@ -273,7 +257,7 @@ def check_expense_request_route(
         return {
             "ok": True,
             "route": route,
-            "message": _("No approval setting configured. Request will be auto-approved."),
+            "message": _("No approval required. Request will be auto-approved."),
             "auto_approve": True,
         }
     

@@ -9,17 +9,17 @@
   "field_order": [
     "expense_account",
     "is_default",
-    "min_amount",
-    "max_amount",
     "section_break_1",
     "level_1_role",
     "level_1_user",
     "level_1_min_amount",
     "level_1_max_amount",
+    "column_break_level_2",
     "level_2_role",
     "level_2_user",
     "level_2_min_amount",
     "level_2_max_amount",
+    "column_break_level_3",
     "level_3_role",
     "level_3_user",
     "level_3_min_amount",
@@ -30,29 +30,20 @@
       "fieldname": "expense_account",
       "fieldtype": "Link",
       "label": "Expense Account",
-      "options": "Account"
+      "options": "Account",
+      "in_list_view": 1
     },
     {
       "default": "0",
       "fieldname": "is_default",
       "fieldtype": "Check",
-      "label": "Apply to All Accounts"
-    },
-    {
-      "fieldname": "min_amount",
-      "fieldtype": "Currency",
-      "label": "Minimum Amount",
-      "reqd": 1
-    },
-    {
-      "fieldname": "max_amount",
-      "fieldtype": "Currency",
-      "label": "Maximum Amount",
-      "reqd": 1
+      "label": "Apply to All Accounts",
+      "in_list_view": 1
     },
     {
       "fieldname": "section_break_1",
-      "fieldtype": "Section Break"
+      "fieldtype": "Section Break",
+      "label": "Approval Levels"
     },
     {
       "fieldname": "level_1_role",
@@ -69,12 +60,18 @@
     {
       "fieldname": "level_1_min_amount",
       "fieldtype": "Currency",
-      "label": "Level 1 Minimum Amount"
+      "label": "Level 1 Min Amount",
+      "description": "Level aktif jika amount >= nilai ini"
     },
     {
       "fieldname": "level_1_max_amount",
       "fieldtype": "Currency",
-      "label": "Level 1 Maximum Amount"
+      "label": "Level 1 Max Amount",
+      "description": "Level aktif jika amount <= nilai ini"
+    },
+    {
+      "fieldname": "column_break_level_2",
+      "fieldtype": "Column Break"
     },
     {
       "fieldname": "level_2_role",
@@ -91,12 +88,16 @@
     {
       "fieldname": "level_2_min_amount",
       "fieldtype": "Currency",
-      "label": "Level 2 Minimum Amount"
+      "label": "Level 2 Min Amount"
     },
     {
       "fieldname": "level_2_max_amount",
       "fieldtype": "Currency",
-      "label": "Level 2 Maximum Amount"
+      "label": "Level 2 Max Amount"
+    },
+    {
+      "fieldname": "column_break_level_3",
+      "fieldtype": "Column Break"
     },
     {
       "fieldname": "level_3_role",
@@ -113,12 +114,12 @@
     {
       "fieldname": "level_3_min_amount",
       "fieldtype": "Currency",
-      "label": "Level 3 Minimum Amount"
+      "label": "Level 3 Min Amount"
     },
     {
       "fieldname": "level_3_max_amount",
       "fieldtype": "Currency",
-      "label": "Level 3 Maximum Amount"
+      "label": "Level 3 Max Amount"
     }
   ],
   "index_web_pages_for_search": 1,
