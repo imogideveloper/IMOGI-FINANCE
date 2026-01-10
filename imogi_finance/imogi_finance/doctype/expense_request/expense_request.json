@@ -28,6 +28,14 @@
     "attachment",
     "column_break_attachment",
     "description",
+    "basic_totals_section",
+    "total_expense",
+    "total_asset",
+    "column_break_basic_totals",
+    "total_ppn",
+    "total_ppnbm",
+    "total_pph",
+    "total_amount",
 
     "tab_items",
     "items_section",
@@ -36,6 +44,8 @@
     "amount",
     "column_break_totals",
     "expense_account",
+    "items_totals_section",
+    "items_totals_html",
 
     "tab_taxes",
     "ppn_section",
@@ -67,6 +77,8 @@
     "asset_items_section",
     "build_cumulative_asset_from_items",
     "asset_items",
+    "asset_totals_section",
+    "asset_totals_html",
 
     "tab_approval",
     "approval_status_section",
@@ -216,6 +228,58 @@
       "fieldtype": "Small Text",
       "label": "Catatan / Keterangan"
     },
+    {
+      "fieldname": "basic_totals_section",
+      "fieldtype": "Section Break",
+      "label": "Ringkasan Total"
+    },
+    {
+      "fieldname": "total_expense",
+      "fieldtype": "Currency",
+      "label": "Total Expense",
+      "options": "currency",
+      "read_only": 1
+    },
+    {
+      "fieldname": "total_asset",
+      "fieldtype": "Currency",
+      "label": "Total Asset",
+      "options": "currency",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_basic_totals",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "total_ppn",
+      "fieldtype": "Currency",
+      "label": "Total PPN",
+      "options": "currency",
+      "read_only": 1
+    },
+    {
+      "fieldname": "total_ppnbm",
+      "fieldtype": "Currency",
+      "label": "Total PPnBM",
+      "options": "currency",
+      "read_only": 1
+    },
+    {
+      "fieldname": "total_pph",
+      "fieldtype": "Currency",
+      "label": "Total PPh",
+      "options": "currency",
+      "read_only": 1
+    },
+    {
+      "bold": 1,
+      "fieldname": "total_amount",
+      "fieldtype": "Currency",
+      "label": "Total",
+      "options": "currency",
+      "read_only": 1
+    },
 
     {
       "fieldname": "tab_items",
@@ -259,6 +323,15 @@
       "description": "Otomatis terisi jika semua item menggunakan akun yang sama",
       "options": "Account",
       "read_only": 1
+    },
+    {
+      "fieldname": "items_totals_section",
+      "fieldtype": "Section Break",
+      "label": "Ringkasan Total"
+    },
+    {
+      "fieldname": "items_totals_html",
+      "fieldtype": "HTML"
     },
 
     {
@@ -417,20 +490,33 @@
     {
       "fieldname": "asset_items_section",
       "fieldtype": "Section Break",
-      "label": "Asset List"
+      "label": "Asset List",
+      "depends_on": "eval:doc.request_type==\"Asset\""
     },
     {
       "default": "0",
       "fieldname": "build_cumulative_asset_from_items",
       "fieldtype": "Check",
       "label": "Cumulative Asset dari Expense Items",
-      "description": "Jika dicentang, daftar asset dibuat otomatis dari Expense Items."
+      "description": "Jika dicentang, daftar asset dibuat otomatis dari Expense Items.",
+      "depends_on": "eval:doc.request_type==\"Asset\""
     },
     {
       "fieldname": "asset_items",
       "fieldtype": "Table",
       "label": "Asset Items",
       "options": "Expense Request Asset Item",
+      "depends_on": "eval:doc.request_type==\"Asset\""
+    },
+    {
+      "fieldname": "asset_totals_section",
+      "fieldtype": "Section Break",
+      "label": "Ringkasan Total",
+      "depends_on": "eval:doc.request_type==\"Asset\""
+    },
+    {
+      "fieldname": "asset_totals_html",
+      "fieldtype": "HTML",
       "depends_on": "eval:doc.request_type==\"Asset\""
     },
 
