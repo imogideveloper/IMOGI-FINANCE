@@ -223,6 +223,7 @@ class ExpenseRequest(Document):
         self.validate_amounts()
         route = self._resolve_and_apply_route()
         self._ensure_route_ready(route)
+        self.validate_route_users_exist(route)
         if self._skip_approval_route:
             self.current_approval_level = 0
             self.status = "Approved"
@@ -257,6 +258,7 @@ class ExpenseRequest(Document):
             self.validate_amounts()
             route = self._resolve_and_apply_route()
             self._ensure_route_ready(route)
+            self.validate_route_users_exist(route)
             if self._skip_approval_route:
                 self.current_approval_level = 0
                 self.status = "Approved"
@@ -274,6 +276,7 @@ class ExpenseRequest(Document):
         if action in {"Approve", "Reject"}:
             self.validate_pending_route_freshness()
             self.validate_reopen_override_resolution()
+            self.validate_route_users_exist()
 
         if not self.is_pending_review():
             return
@@ -354,6 +357,7 @@ class ExpenseRequest(Document):
         route, setting_meta, failed = self._resolve_approval_route()
         self._approval_route_resolution_failed = failed
         self._ensure_route_ready(route, context="reopen")
+        self.validate_route_users_exist(route)
         self.clear_downstream_links()
         self.apply_route(route, setting_meta=setting_meta)
         self._skip_approval_route = self._should_skip_approval(route)
@@ -930,6 +934,106 @@ class ExpenseRequest(Document):
             _("Edits while pending are restricted to routed approvers or the document owner. Please request an authorized user to update or log an audit note."),
             title=_("Not Allowed"),
         )
+
+    def validate_route_users_exist(self, route: dict | None = None):
+        """Validate approval route users still exist and are enabled."""
+        if route is None:
+            route = self.get_route_snapshot()
+
+        if not route:
+            return
+
+        invalid_users = []
+        disabled_users = []
+
+        for level in (1, 2, 3):
+            level_data = route.get(f"level_{level}", {})
+            if not isinstance(level_data, dict):
+                continue
+
+            user = level_data.get("user")
+            if not user:
+                continue
+
+            if not frappe.db.exists("User", user):
+                invalid_users.append(
+                    {
+                        "level": level,
+                        "user": user,
+                        "reason": "not_found",
+                    }
+                )
+                continue
+
+            is_enabled = frappe.db.get_value("User", user, "enabled")
+            if not is_enabled:
+                disabled_users.append(
+                    {
+                        "level": level,
+                        "user": user,
+                        "reason": "disabled",
+                    }
+                )
+
+        error_parts = []
+
+        if invalid_users:
+            user_list = ", ".join(
+                _("Level {level}: {user}").format(level=entry["level"], user=entry["user"])
+                for entry in invalid_users
+            )
+            error_parts.append(
+                _("The following approval users no longer exist: {0}").format(user_list)
+            )
+
+        if disabled_users:
+            user_list = ", ".join(
+                _("Level {level}: {user}").format(level=entry["level"], user=entry["user"])
+                for entry in disabled_users
+            )
+            error_parts.append(
+                _("The following approval users are disabled: {0}").format(user_list)
+            )
+
+        if not error_parts:
+            return
+
+        self._log_invalid_route_users(invalid_users, disabled_users)
+        frappe.throw(
+            _("{errors}. Please update the Expense Approval Setting to use valid, active users.").format(
+                errors=_("; ").join(error_parts)
+            ),
+            title=_("Invalid Approval Route"),
+        )
+
+    def _log_invalid_route_users(self, invalid_users: list[dict], disabled_users: list[dict]):
+        """Log invalid route users for audit purposes."""
+        try:
+            details = []
+            for entry in invalid_users:
+                details.append(_("Level {0}: User '{1}' not found").format(entry["level"], entry["user"]))
+            for entry in disabled_users:
+                details.append(_("Level {0}: User '{1}' is disabled").format(entry["level"], entry["user"]))
+
+            if details and getattr(self, "name", None) and hasattr(self, "add_comment"):
+                self.add_comment(
+                    "Comment",
+                    _("Approval route validation failed. {0}").format(_("; ").join(details)),
+                )
+
+            logger = getattr(frappe, "logger", None)
+            if logger:
+                logger("imogi_finance").warning(
+                    "Invalid users in approval route",
+                    extra={
+                        "expense_request": getattr(self, "name", None),
+                        "invalid_users": invalid_users,
+                        "disabled_users": disabled_users,
+                        "cost_center": self.cost_center,
+                    },
+                )
+        except Exception:
+            pass
 
     def validate_initial_approver(self, route: dict):
         """Ensure the approval route has at least one configured user or role."""
