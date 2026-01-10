@@ -10,106 +10,185 @@
   "autoname": "BCE-.YYYY.-.#####",
   "field_order": [
     "entry_type",
+    "direction",
+
+    "tab_main",
+    "basic_section",
     "company",
     "posting_date",
+    "column_break_basic",
     "fiscal_year",
+    "amount",
+    "dimension_section",
     "cost_center",
     "account",
+    "column_break_dimension",
     "project",
     "branch",
-    "amount",
-    "direction",
+
+    "tab_reference",
+    "reference_section",
     "ref_doctype",
     "ref_name",
+    "remarks_section",
     "remarks"
   ],
   "fields": [
     {
       "fieldname": "entry_type",
-      "label": "Entry Type",
+      "label": "Tipe Entry",
       "fieldtype": "Select",
       "options": "RESERVATION\nCONSUMPTION\nRELEASE\nRECLASS\nSUPPLEMENT\nREVERSAL",
-      "reqd": 1
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "bold": 1
+    },
+    {
+      "fieldname": "direction",
+      "label": "Arah",
+      "fieldtype": "Select",
+      "options": "IN\nOUT",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "bold": 1
+    },
+
+    {
+      "fieldname": "tab_main",
+      "fieldtype": "Tab Break",
+      "label": "Informasi Utama"
+    },
+    {
+      "fieldname": "basic_section",
+      "fieldtype": "Section Break",
+      "label": "Detail Entry"
     },
     {
       "fieldname": "company",
       "label": "Company",
       "fieldtype": "Link",
       "options": "Company",
-      "reqd": 1
+      "reqd": 1,
+      "in_standard_filter": 1
     },
     {
       "fieldname": "posting_date",
-      "label": "Posting Date",
+      "label": "Tanggal Posting",
       "fieldtype": "Date",
-      "reqd": 1
+      "reqd": 1,
+      "in_list_view": 1,
+      "default": "Today"
+    },
+    {
+      "fieldname": "column_break_basic",
+      "fieldtype": "Column Break"
     },
     {
       "fieldname": "fiscal_year",
-      "label": "Fiscal Year",
+      "label": "Tahun Fiskal",
       "fieldtype": "Link",
       "options": "Fiscal Year",
-      "reqd": 1
+      "reqd": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "amount",
+      "label": "Jumlah",
+      "fieldtype": "Currency",
+      "reqd": 1,
+      "in_list_view": 1,
+      "bold": 1
+    },
+    {
+      "fieldname": "dimension_section",
+      "fieldtype": "Section Break",
+      "label": "Dimensi Akuntansi"
     },
     {
       "fieldname": "cost_center",
       "label": "Cost Center",
       "fieldtype": "Link",
       "options": "Cost Center",
-      "reqd": 1
+      "reqd": 1,
+      "in_standard_filter": 1
     },
     {
       "fieldname": "account",
-      "label": "Account",
+      "label": "Akun",
       "fieldtype": "Link",
       "options": "Account",
-      "reqd": 1
+      "reqd": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "column_break_dimension",
+      "fieldtype": "Column Break"
     },
     {
       "fieldname": "project",
       "label": "Project",
       "fieldtype": "Link",
-      "options": "Project"
+      "options": "Project",
+      "in_standard_filter": 1
     },
     {
       "fieldname": "branch",
-      "label": "Branch",
+      "label": "Cabang",
       "fieldtype": "Link",
       "options": "Branch"
     },
+
     {
-      "fieldname": "amount",
-      "label": "Amount",
-      "fieldtype": "Currency",
-      "reqd": 1
+      "fieldname": "tab_reference",
+      "fieldtype": "Tab Break",
+      "label": "Referensi"
     },
     {
-      "fieldname": "direction",
-      "label": "Direction",
-      "fieldtype": "Select",
-      "options": "IN\nOUT",
-      "reqd": 1
+      "fieldname": "reference_section",
+      "fieldtype": "Section Break",
+      "label": "Dokumen Sumber"
     },
     {
       "fieldname": "ref_doctype",
-      "label": "Reference Doctype",
-      "fieldtype": "Data"
+      "label": "Tipe Dokumen",
+      "fieldtype": "Link",
+      "options": "DocType",
+      "description": "Pilih tipe dokumen sumber"
     },
     {
       "fieldname": "ref_name",
-      "label": "Reference Name",
+      "label": "Nama Dokumen",
       "fieldtype": "Dynamic Link",
       "options": "ref_doctype"
     },
     {
+      "fieldname": "remarks_section",
+      "fieldtype": "Section Break",
+      "label": "Catatan"
+    },
+    {
       "fieldname": "remarks",
-      "label": "Remarks",
+      "label": "Keterangan",
       "fieldtype": "Small Text"
     }
   ],
   "permissions": [
     {
-      "role": "System Manager"
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "submit": 1,
+      "cancel": 1,
+      "amend": 1,
+      "email": 1,
+      "print": 1,
+      "share": 1,
+      "report": 1,
+      "export": 1
     },
     {
       "role": "Accounts Manager",
@@ -125,6 +204,16 @@
       "share": 1,
       "report": 1,
       "export": 1
+    },
+    {
+      "role": "Accounts User",
+      "read": 1,
+      "report": 1,
+      "export": 1
     }
-  ]
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "index_web_pages_for_search": 1,
+  "show_name_in_global_search": 1
 }

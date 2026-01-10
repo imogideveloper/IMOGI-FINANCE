@@ -6,91 +6,174 @@
   "istable": 0,
   "is_submittable": 1,
   "track_changes": 1,
+  "track_seen": 1,
   "editable_grid": 0,
   "autoname": "ABR-.YYYY.-.#####",
   "field_order": [
-    "naming_series",
+    "status",
+
+    "tab_main",
+    "basic_section",
     "company",
     "posting_date",
+    "column_break_basic",
     "fiscal_year",
+
+    "budget_section",
     "cost_center",
     "account",
+    "column_break_budget",
     "amount",
+
+    "details_section",
     "reason",
+    "column_break_details",
     "attachments",
-    "status"
+
+    "section_break_hidden",
+    "naming_series"
   ],
   "fields": [
-    {
-      "fieldname": "naming_series",
-      "label": "Naming Series",
-      "fieldtype": "Select",
-      "options": "ABR-.YYYY.-.#####",
-      "reqd": 1,
-      "default": "ABR-.YYYY.-.#####"
-    },
-    {
-      "fieldname": "company",
-      "label": "Company",
-      "fieldtype": "Link",
-      "options": "Company",
-      "reqd": 1
-    },
-    {
-      "fieldname": "posting_date",
-      "label": "Posting Date",
-      "fieldtype": "Date",
-      "reqd": 1
-    },
-    {
-      "fieldname": "fiscal_year",
-      "label": "Fiscal Year",
-      "fieldtype": "Link",
-      "options": "Fiscal Year",
-      "reqd": 1
-    },
-    {
-      "fieldname": "cost_center",
-      "label": "Cost Center",
-      "fieldtype": "Link",
-      "options": "Cost Center",
-      "reqd": 1
-    },
-    {
-      "fieldname": "account",
-      "label": "Account",
-      "fieldtype": "Link",
-      "options": "Account",
-      "reqd": 1
-    },
-    {
-      "fieldname": "amount",
-      "label": "Amount",
-      "fieldtype": "Currency",
-      "reqd": 1
-    },
-    {
-      "fieldname": "reason",
-      "label": "Reason",
-      "fieldtype": "Small Text"
-    },
-    {
-      "fieldname": "attachments",
-      "label": "Attachments",
-      "fieldtype": "Attach"
-    },
     {
       "fieldname": "status",
       "label": "Status",
       "fieldtype": "Select",
       "read_only": 1,
       "options": "Draft\nPending Approval\nApproved\nRejected",
-      "default": "Draft"
+      "default": "Draft",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "bold": 1
+    },
+
+    {
+      "fieldname": "tab_main",
+      "fieldtype": "Tab Break",
+      "label": "Detail Pengajuan"
+    },
+    {
+      "fieldname": "basic_section",
+      "fieldtype": "Section Break",
+      "label": "Informasi Dasar"
+    },
+    {
+      "fieldname": "company",
+      "label": "Company",
+      "fieldtype": "Link",
+      "options": "Company",
+      "reqd": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "posting_date",
+      "label": "Tanggal Pengajuan",
+      "fieldtype": "Date",
+      "reqd": 1,
+      "in_list_view": 1,
+      "default": "Today"
+    },
+    {
+      "fieldname": "column_break_basic",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "fiscal_year",
+      "label": "Tahun Fiskal",
+      "fieldtype": "Link",
+      "options": "Fiscal Year",
+      "reqd": 1,
+      "in_standard_filter": 1
+    },
+
+    {
+      "fieldname": "budget_section",
+      "fieldtype": "Section Break",
+      "label": "Alokasi Budget Tambahan"
+    },
+    {
+      "fieldname": "cost_center",
+      "label": "Cost Center",
+      "fieldtype": "Link",
+      "options": "Cost Center",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "account",
+      "label": "Account",
+      "fieldtype": "Link",
+      "options": "Account",
+      "reqd": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "column_break_budget",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "amount",
+      "label": "Jumlah Tambahan",
+      "fieldtype": "Currency",
+      "reqd": 1,
+      "in_list_view": 1,
+      "bold": 1,
+      "description": "Jumlah budget tambahan yang diajukan"
+    },
+
+    {
+      "fieldname": "details_section",
+      "fieldtype": "Section Break",
+      "label": "Keterangan & Lampiran"
+    },
+    {
+      "fieldname": "reason",
+      "label": "Alasan Pengajuan",
+      "fieldtype": "Small Text",
+      "reqd": 1,
+      "description": "Jelaskan alasan kebutuhan budget tambahan"
+    },
+    {
+      "fieldname": "column_break_details",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "attachments",
+      "label": "Dokumen Pendukung",
+      "fieldtype": "Attach",
+      "description": "Upload dokumen pendukung (proposal, justifikasi, dll)"
+    },
+
+    {
+      "fieldname": "section_break_hidden",
+      "fieldtype": "Section Break",
+      "hidden": 1
+    },
+    {
+      "fieldname": "naming_series",
+      "label": "Naming Series",
+      "fieldtype": "Select",
+      "options": "ABR-.YYYY.-.#####",
+      "reqd": 1,
+      "default": "ABR-.YYYY.-.#####",
+      "hidden": 1
     }
   ],
   "permissions": [
     {
-      "role": "System Manager"
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "submit": 1,
+      "cancel": 1,
+      "amend": 1,
+      "email": 1,
+      "print": 1,
+      "share": 1,
+      "report": 1,
+      "export": 1
     },
     {
       "role": "Accounts Manager",
@@ -106,6 +189,21 @@
       "share": 1,
       "report": 1,
       "export": 1
+    },
+    {
+      "role": "Accounts User",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "email": 1,
+      "print": 1,
+      "share": 1,
+      "report": 1,
+      "export": 1
     }
-  ]
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "index_web_pages_for_search": 1,
+  "show_name_in_global_search": 1
 }

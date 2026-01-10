@@ -6,107 +6,191 @@
   "istable": 0,
   "is_submittable": 1,
   "track_changes": 1,
+  "track_seen": 1,
   "editable_grid": 0,
   "autoname": "BCR-.YYYY.-.#####",
   "field_order": [
-    "naming_series",
+    "status",
+
+    "tab_main",
+    "basic_section",
     "company",
     "posting_date",
+    "column_break_basic",
     "fiscal_year",
+    "amount",
+
+    "reclass_section",
     "from_cost_center",
     "from_account",
+    "column_break_reclass",
     "to_cost_center",
     "to_account",
-    "amount",
+
+    "details_section",
     "reason",
+    "column_break_details",
     "attachments",
-    "status"
+
+    "section_break_hidden",
+    "naming_series"
   ],
   "fields": [
-    {
-      "fieldname": "naming_series",
-      "label": "Naming Series",
-      "fieldtype": "Select",
-      "options": "BCR-.YYYY.-.#####",
-      "reqd": 1,
-      "default": "BCR-.YYYY.-.#####"
-    },
-    {
-      "fieldname": "company",
-      "label": "Company",
-      "fieldtype": "Link",
-      "options": "Company",
-      "reqd": 1
-    },
-    {
-      "fieldname": "posting_date",
-      "label": "Posting Date",
-      "fieldtype": "Date",
-      "reqd": 1
-    },
-    {
-      "fieldname": "fiscal_year",
-      "label": "Fiscal Year",
-      "fieldtype": "Link",
-      "options": "Fiscal Year",
-      "reqd": 1
-    },
-    {
-      "fieldname": "from_cost_center",
-      "label": "From Cost Center",
-      "fieldtype": "Link",
-      "options": "Cost Center",
-      "reqd": 1
-    },
-    {
-      "fieldname": "from_account",
-      "label": "From Account",
-      "fieldtype": "Link",
-      "options": "Account",
-      "reqd": 1
-    },
-    {
-      "fieldname": "to_cost_center",
-      "label": "To Cost Center",
-      "fieldtype": "Link",
-      "options": "Cost Center",
-      "reqd": 1
-    },
-    {
-      "fieldname": "to_account",
-      "label": "To Account",
-      "fieldtype": "Link",
-      "options": "Account",
-      "reqd": 1
-    },
-    {
-      "fieldname": "amount",
-      "label": "Amount",
-      "fieldtype": "Currency",
-      "reqd": 1
-    },
-    {
-      "fieldname": "reason",
-      "label": "Reason",
-      "fieldtype": "Small Text"
-    },
-    {
-      "fieldname": "attachments",
-      "label": "Attachments",
-      "fieldtype": "Attach"
-    },
     {
       "fieldname": "status",
       "label": "Status",
       "fieldtype": "Select",
       "read_only": 1,
       "options": "Draft\nPending Approval\nApproved\nRejected",
-      "default": "Draft"
+      "default": "Draft",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "bold": 1
+    },
+
+    {
+      "fieldname": "tab_main",
+      "fieldtype": "Tab Break",
+      "label": "Detail Reclass"
+    },
+    {
+      "fieldname": "basic_section",
+      "fieldtype": "Section Break",
+      "label": "Informasi Dasar"
+    },
+    {
+      "fieldname": "company",
+      "label": "Company",
+      "fieldtype": "Link",
+      "options": "Company",
+      "reqd": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "posting_date",
+      "label": "Tanggal Posting",
+      "fieldtype": "Date",
+      "reqd": 1,
+      "in_list_view": 1,
+      "default": "Today"
+    },
+    {
+      "fieldname": "column_break_basic",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "fiscal_year",
+      "label": "Tahun Fiskal",
+      "fieldtype": "Link",
+      "options": "Fiscal Year",
+      "reqd": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "amount",
+      "label": "Jumlah Reclass",
+      "fieldtype": "Currency",
+      "reqd": 1,
+      "in_list_view": 1,
+      "bold": 1,
+      "description": "Jumlah budget yang akan dipindahkan"
+    },
+
+    {
+      "fieldname": "reclass_section",
+      "fieldtype": "Section Break",
+      "label": "Detail Pemindahan Budget"
+    },
+    {
+      "fieldname": "from_cost_center",
+      "label": "Dari Cost Center",
+      "fieldtype": "Link",
+      "options": "Cost Center",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "from_account",
+      "label": "Dari Account",
+      "fieldtype": "Link",
+      "options": "Account",
+      "reqd": 1
+    },
+    {
+      "fieldname": "column_break_reclass",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "to_cost_center",
+      "label": "Ke Cost Center",
+      "fieldtype": "Link",
+      "options": "Cost Center",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "to_account",
+      "label": "Ke Account",
+      "fieldtype": "Link",
+      "options": "Account",
+      "reqd": 1
+    },
+
+    {
+      "fieldname": "details_section",
+      "fieldtype": "Section Break",
+      "label": "Keterangan & Lampiran"
+    },
+    {
+      "fieldname": "reason",
+      "label": "Alasan Reclass",
+      "fieldtype": "Small Text",
+      "reqd": 1,
+      "description": "Jelaskan alasan pemindahan budget"
+    },
+    {
+      "fieldname": "column_break_details",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "attachments",
+      "label": "Dokumen Pendukung",
+      "fieldtype": "Attach",
+      "description": "Upload dokumen pendukung jika ada"
+    },
+
+    {
+      "fieldname": "section_break_hidden",
+      "fieldtype": "Section Break",
+      "hidden": 1
+    },
+    {
+      "fieldname": "naming_series",
+      "label": "Naming Series",
+      "fieldtype": "Select",
+      "options": "BCR-.YYYY.-.#####",
+      "reqd": 1,
+      "default": "BCR-.YYYY.-.#####",
+      "hidden": 1
     }
   ],
   "permissions": [
     {
-      "role": "System Manager"
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "submit": 1,
+      "cancel": 1,
+      "amend": 1,
+      "email": 1,
+      "print": 1,
+      "share": 1,
+      "report": 1,
+      "export": 1
     },
     {
       "role": "Accounts Manager",
@@ -122,6 +206,21 @@
       "share": 1,
       "report": 1,
       "export": 1
+    },
+    {
+      "role": "Accounts User",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "email": 1,
+      "print": 1,
+      "share": 1,
+      "report": 1,
+      "export": 1
     }
-  ]
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "index_web_pages_for_search": 1,
+  "show_name_in_global_search": 1
 }

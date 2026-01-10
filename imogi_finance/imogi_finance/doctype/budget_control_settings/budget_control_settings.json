@@ -8,122 +8,203 @@
   "editable_grid": 0,
   "track_changes": 1,
   "field_order": [
+    "feature_toggles_section",
     "enable_budget_lock",
     "enable_budget_reclass",
+    "column_break_features",
     "enable_additional_budget",
     "enable_internal_charge",
+
+    "budget_control_section",
     "budget_controller_role",
     "require_budget_controller_review",
+    "column_break_control",
     "lock_on_workflow_state",
     "enforce_mode",
+
+    "dimension_section",
+    "dimension_mode",
+
+    "override_section",
     "allow_budget_overrun_role",
+    "column_break_override",
     "allow_reclass_override_role",
+
+    "internal_charge_section",
     "internal_charge_required_before_er_approval",
-    "internal_charge_posting_mode",
-    "dimension_mode"
+    "column_break_internal",
+    "internal_charge_posting_mode"
   ],
   "fields": [
+    {
+      "fieldname": "feature_toggles_section",
+      "fieldtype": "Section Break",
+      "label": "Fitur Budget Control",
+      "description": "Aktifkan fitur-fitur budget control yang dibutuhkan"
+    },
     {
       "fieldname": "enable_budget_lock",
       "label": "Enable Budget Lock",
       "fieldtype": "Check",
-      "default": "0"
+      "default": "0",
+      "description": "Kunci budget saat expense request disetujui"
     },
     {
       "fieldname": "enable_budget_reclass",
       "label": "Enable Budget Reclass",
       "fieldtype": "Check",
-      "default": "0"
+      "default": "0",
+      "description": "Izinkan pemindahan budget antar cost center/account"
+    },
+    {
+      "fieldname": "column_break_features",
+      "fieldtype": "Column Break"
     },
     {
       "fieldname": "enable_additional_budget",
       "label": "Enable Additional Budget",
       "fieldtype": "Check",
-      "default": "0"
+      "default": "0",
+      "description": "Izinkan penambahan budget di tengah periode"
     },
     {
       "fieldname": "enable_internal_charge",
       "label": "Enable Internal Charge",
       "fieldtype": "Check",
-      "default": "0"
+      "default": "0",
+      "description": "Aktifkan fitur internal charge antar departemen"
+    },
+
+    {
+      "fieldname": "budget_control_section",
+      "fieldtype": "Section Break",
+      "label": "Pengaturan Kontrol"
     },
     {
       "fieldname": "budget_controller_role",
       "label": "Budget Controller Role",
       "fieldtype": "Link",
       "options": "Role",
-      "default": "Budget Controller"
+      "default": "Budget Controller",
+      "description": "Role yang bertanggung jawab review budget"
     },
     {
       "fieldname": "require_budget_controller_review",
       "label": "Require Budget Controller Review",
       "fieldtype": "Check",
-      "default": "1"
+      "default": "1",
+      "description": "Wajib review oleh Budget Controller"
+    },
+    {
+      "fieldname": "column_break_control",
+      "fieldtype": "Column Break"
     },
     {
       "fieldname": "lock_on_workflow_state",
       "label": "Lock on Workflow State",
       "fieldtype": "Data",
-      "default": "Approved"
+      "default": "Approved",
+      "description": "Budget dikunci saat mencapai state ini"
     },
     {
       "fieldname": "enforce_mode",
       "label": "Enforce Mode",
       "fieldtype": "Select",
       "options": "Approval Only\nPI Submit Only\nBoth",
-      "default": "Both"
+      "default": "Both",
+      "description": "Kapan budget control diberlakukan"
     },
+
     {
-      "fieldname": "allow_budget_overrun_role",
-      "label": "Allow Budget Overrun Role",
-      "fieldtype": "Link",
-      "options": "Role"
-    },
-    {
-      "fieldname": "allow_reclass_override_role",
-      "label": "Allow Reclass Override Role",
-      "fieldtype": "Link",
-      "options": "Role"
-    },
-    {
-      "fieldname": "internal_charge_required_before_er_approval",
-      "label": "Internal Charge Required before ER Approval",
-      "fieldtype": "Check",
-      "default": "1"
-    },
-    {
-      "fieldname": "internal_charge_posting_mode",
-      "label": "Internal Charge Posting Mode",
-      "fieldtype": "Select",
-      "options": "None\nAuto JE on PI Submit",
-      "default": "Auto JE on PI Submit"
+      "fieldname": "dimension_section",
+      "fieldtype": "Section Break",
+      "label": "Dimensi Budget"
     },
     {
       "fieldname": "dimension_mode",
       "label": "Dimension Mode",
       "fieldtype": "Select",
       "options": "Native (Cost Center + Account)\nNative + Project (optional)\nNative + Branch (optional)",
-      "default": "Native (Cost Center + Account)"
+      "default": "Native (Cost Center + Account)",
+      "description": "Dimensi yang digunakan untuk tracking budget"
+    },
+
+    {
+      "fieldname": "override_section",
+      "fieldtype": "Section Break",
+      "label": "Hak Akses Override",
+      "collapsible": 1,
+      "collapsible_depends_on": "eval:!doc.allow_budget_overrun_role && !doc.allow_reclass_override_role"
+    },
+    {
+      "fieldname": "allow_budget_overrun_role",
+      "label": "Allow Budget Overrun Role",
+      "fieldtype": "Link",
+      "options": "Role",
+      "description": "Role yang boleh melebihi budget"
+    },
+    {
+      "fieldname": "column_break_override",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "allow_reclass_override_role",
+      "label": "Allow Reclass Override Role",
+      "fieldtype": "Link",
+      "options": "Role",
+      "description": "Role yang boleh override reclass tanpa approval"
+    },
+
+    {
+      "fieldname": "internal_charge_section",
+      "fieldtype": "Section Break",
+      "label": "Internal Charge",
+      "depends_on": "eval:doc.enable_internal_charge==1"
+    },
+    {
+      "fieldname": "internal_charge_required_before_er_approval",
+      "label": "Required before ER Approval",
+      "fieldtype": "Check",
+      "default": "1",
+      "description": "Internal Charge harus selesai sebelum Expense Request disetujui"
+    },
+    {
+      "fieldname": "column_break_internal",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "internal_charge_posting_mode",
+      "label": "Posting Mode",
+      "fieldtype": "Select",
+      "options": "None\nAuto JE on PI Submit",
+      "default": "Auto JE on PI Submit",
+      "description": "Cara posting jurnal internal charge"
     }
   ],
   "permissions": [
     {
-      "role": "System Manager"
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "print": 1,
+      "share": 1,
+      "export": 1
     },
     {
       "role": "Accounts Manager",
       "read": 1,
       "write": 1,
-      "create": 1,
-      "delete": 1,
-      "submit": 1,
-      "cancel": 1,
-      "amend": 1,
       "email": 1,
       "print": 1,
       "share": 1,
-      "report": 1,
       "export": 1
+    },
+    {
+      "role": "Accounts User",
+      "read": 1
     }
   ]
 }
