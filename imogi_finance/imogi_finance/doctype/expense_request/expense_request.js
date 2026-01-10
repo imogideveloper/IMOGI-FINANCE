@@ -107,6 +107,90 @@ function toggleAssetItemsBehavior(frm) {
   }
 }
 
+function formatCurrency(frm, value) {
+  return frappe.format(value, { fieldtype: 'Currency', options: frm.doc.currency });
+}
+
+function computeTotals(frm) {
+  const flt = frappe.utils.flt;
+  const totalExpense = flt(frm.doc.amount || 0);
+  const totalAsset = (frm.doc.asset_items || []).reduce(
+    (sum, row) => sum + flt(row.amount || 0),
+    0,
+  );
+  const itemPphTotal = (frm.doc.items || []).reduce(
+    (sum, row) => sum + (row.is_pph_applicable ? flt(row.pph_base_amount || 0) : 0),
+    0,
+  );
+  const totalPpn = flt(frm.doc.ti_fp_ppn || frm.doc.ppn || 0);
+  const totalPpnbm = flt(frm.doc.ti_fp_ppnbm || frm.doc.ppnbm || 0);
+  const totalPph = itemPphTotal || flt(frm.doc.pph_base_amount || 0);
+  const totalAmount = totalExpense + totalAsset + totalPpn + totalPpnbm + totalPph;
+
+  return {
+    totalExpense,
+    totalAsset,
+    totalPpn,
+    totalPpnbm,
+    totalPph,
+    totalAmount,
+  };
+}
+
+function renderTotalsHtml(frm, totals) {
+  const rows = [
+    ['Total Expense', totals.totalExpense],
+    ['Total Asset', totals.totalAsset],
+    ['Total PPN', totals.totalPpn],
+    ['Total PPnBM', totals.totalPpnbm],
+    ['Total PPh', totals.totalPph],
+    ['Total', totals.totalAmount],
+  ];
+
+  const cells = rows
+    .map(
+      ([label, value]) => `
+        <tr>
+          <td>${frappe.utils.escape_html(label)}</td>
+          <td class="text-right">${formatCurrency(frm, value)}</td>
+        </tr>
+      `,
+    )
+    .join('');
+
+  return `<table class="table table-bordered table-sm"><tbody>${cells}</tbody></table>`;
+}
+
+function updateTotalsSummary(frm) {
+  const totals = computeTotals(frm);
+  const fields = {
+    total_expense: totals.totalExpense,
+    total_asset: totals.totalAsset,
+    total_ppn: totals.totalPpn,
+    total_ppnbm: totals.totalPpnbm,
+    total_pph: totals.totalPph,
+    total_amount: totals.totalAmount,
+  };
+
+  Object.entries(fields).forEach(([field, value]) => {
+    if (!frm.fields_dict[field]) {
+      return;
+    }
+    if (frm.doc[field] !== value) {
+      frm.doc[field] = value;
+      frm.refresh_field(field);
+    }
+  });
+
+  const html = renderTotalsHtml(frm, totals);
+  ['items_totals_html', 'asset_totals_html'].forEach((fieldname) => {
+    const field = frm.fields_dict[fieldname];
+    if (field?.$wrapper) {
+      field.$wrapper.html(html);
+    }
+  });
+}
+
 async function setErUploadQuery(frm) {
   let usedUploads = [];
   let verifiedUploads = [];
@@ -187,6 +271,7 @@ frappe.ui.form.on('Expense Request', {
     await setErUploadQuery(frm);
     await syncErUpload(frm);
     maybeAddDeferredExpenseActions(frm);
+    updateTotalsSummary(frm);
 
     const addCheckRouteButton = () => {
       if (!frm.doc.cost_center) {
@@ -414,6 +499,30 @@ frappe.ui.form.on('Expense Request', {
 
     // Tax Invoice OCR actions are intentionally managed from the OCR Upload doctype.
   },
+  items_add(frm) {
+    updateTotalsSummary(frm);
+  },
+  items_remove(frm) {
+    updateTotalsSummary(frm);
+  },
+  asset_items_add(frm) {
+    updateTotalsSummary(frm);
+  },
+  asset_items_remove(frm) {
+    updateTotalsSummary(frm);
+  },
+  ti_fp_ppn(frm) {
+    updateTotalsSummary(frm);
+  },
+  ti_fp_ppnbm(frm) {
+    updateTotalsSummary(frm);
+  },
+  pph_base_amount(frm) {
+    updateTotalsSummary(frm);
+  },
+  is_pph_applicable(frm) {
+    updateTotalsSummary(frm);
+  },
 
   async ti_tax_invoice_upload(frm) {
     await syncErUpload(frm);
@@ -463,3 +572,24 @@ function maybeRenderInternalChargeButton(frm) {
     }
   }, __('Actions'));
 }
+
+frappe.ui.form.on('Expense Request Item', {
+  amount(frm) {
+    updateTotalsSummary(frm);
+  },
+  pph_base_amount(frm) {
+    updateTotalsSummary(frm);
+  },
+  is_pph_applicable(frm) {
+    updateTotalsSummary(frm);
+  },
+});
+
+frappe.ui.form.on('Expense Request Asset Item', {
+  amount(frm) {
+    updateTotalsSummary(frm);
+  },
+  qty(frm) {
+    updateTotalsSummary(frm);
+  },
+});

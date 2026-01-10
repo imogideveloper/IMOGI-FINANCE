@@ -55,33 +55,42 @@
     {
       "fieldname": "section_break_1",
       "fieldtype": "Section Break",
-      "depends_on": "eval:parent.request_type==\"Asset\""
+      "depends_on": "eval:parent.request_type==\"Asset\"",
+      "hidden": 1
     },
     {
       "fieldname": "asset_category",
       "fieldtype": "Link",
       "label": "Asset Category",
       "options": "Asset Category",
-      "depends_on": "eval:parent.request_type==\"Asset\""
+      "depends_on": "eval:parent.request_type==\"Asset\"",
+      "description": "Deprecated: gunakan Asset List pada Expense Request.",
+      "hidden": 1
     },
     {
       "fieldname": "asset_name",
       "fieldtype": "Data",
       "label": "Asset Name",
-      "depends_on": "eval:parent.request_type==\"Asset\""
+      "depends_on": "eval:parent.request_type==\"Asset\"",
+      "description": "Deprecated: gunakan Asset List pada Expense Request.",
+      "hidden": 1
     },
     {
       "fieldname": "asset_description",
       "fieldtype": "Small Text",
       "label": "Asset Description",
-      "depends_on": "eval:parent.request_type==\"Asset\""
+      "depends_on": "eval:parent.request_type==\"Asset\"",
+      "description": "Deprecated: gunakan Asset List pada Expense Request.",
+      "hidden": 1
     },
     {
       "fieldname": "asset_location",
       "fieldtype": "Link",
       "label": "Asset Location",
       "options": "Location",
-      "depends_on": "eval:parent.request_type==\"Asset\""
+      "depends_on": "eval:parent.request_type==\"Asset\"",
+      "description": "Deprecated: gunakan Asset List pada Expense Request.",
+      "hidden": 1
     }
   ],
   "index_web_pages_for_search": 1,

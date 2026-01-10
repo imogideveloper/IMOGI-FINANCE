@@ -9,6 +9,7 @@ from datetime import datetime
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import flt
 
 from imogi_finance import accounting, roles
 from imogi_finance.branching import apply_branch, resolve_branch
@@ -93,6 +94,29 @@ class ExpenseRequest(Document):
         self.amount = total
         self.expense_accounts = expense_accounts
         self.expense_account = expense_accounts[0] if len(expense_accounts) == 1 else None
+        self._set_totals()
+
+    def _set_totals(self):
+        items = self.get("items") or []
+        asset_items = self.get("asset_items") or []
+        total_expense = flt(getattr(self, "amount", 0) or 0)
+        total_asset = sum(flt(getattr(item, "amount", 0) or 0) for item in asset_items)
+        total_ppn = flt(getattr(self, "ti_fp_ppn", None) or getattr(self, "ppn", None) or 0)
+        total_ppnbm = flt(getattr(self, "ti_fp_ppnbm", None) or getattr(self, "ppnbm", None) or 0)
+        item_pph_total = sum(
+            flt(getattr(item, "pph_base_amount", 0) or 0)
+            for item in items
+            if getattr(item, "is_pph_applicable", 0)
+        )
+        total_pph = item_pph_total or flt(getattr(self, "pph_base_amount", 0) or 0)
+        total_amount = total_expense + total_asset + total_ppn + total_ppnbm + total_pph
+
+        self.total_expense = total_expense
+        self.total_asset = total_asset
+        self.total_ppn = total_ppn
+        self.total_ppnbm = total_ppnbm
+        self.total_pph = total_pph
+        self.total_amount = total_amount
 
     def apply_branch_defaults(self):
         try:
