@@ -542,13 +542,7 @@ class ExpenseRequest(Document):
         )
 
     def validate_close_permission(self):
-        """Validate that the user may close linked expense requests.
-
-        Closing is allowed when:
-        - The site configuration flag ``imogi_finance_allow_unrestricted_close`` is set.
-        - The user matches any routed approver user.
-        - The user has any routed approver role.
-        """
+        """Validate that the user may close linked expense requests."""
         if getattr(getattr(frappe, "conf", None), "imogi_finance_allow_unrestricted_close", False):
             self._add_unrestricted_close_audit()
             return
@@ -558,24 +552,13 @@ class ExpenseRequest(Document):
             target_amount, account_summary = accounting.summarize_request_items(self.get("items"))
             self.amount = target_amount
 
-        try:
-            setting_meta = get_active_setting_meta(self.cost_center)
-            fresh_route = get_approval_route(
-                self.cost_center, self._get_expense_accounts(), target_amount, setting_meta=setting_meta
-            )
-        except (frappe.DoesNotExistError, frappe.ValidationError) as exc:
-            log_route_resolution_error(
-                exc,
-                cost_center=self.cost_center,
-                accounts=self._get_expense_accounts(),
-                amount=target_amount,
-            )
-            fresh_route = None
+        # Simplified - no need for try/except since get_active_setting_meta returns None now
+        setting_meta = get_active_setting_meta(self.cost_center)
+        fresh_route = get_approval_route(
+            self.cost_center, self._get_expense_accounts(), target_amount, setting_meta=setting_meta
+        )
 
         route_for_close = fresh_route if self._route_has_approver(fresh_route) else None
-        if route_for_close is None:
-            snapshot_route = self.get_route_snapshot()
-            route_for_close = snapshot_route if self._route_has_approver(snapshot_route) else None
 
         if not route_for_close:
             frappe.throw(
@@ -667,9 +650,11 @@ class ExpenseRequest(Document):
         if not self.is_pending_review():
             return
 
-        try:
-            current_meta = get_active_setting_meta(self.cost_center)
-        except Exception:
+        # get_active_setting_meta returns None if not found (no exception)
+        current_meta = get_active_setting_meta(self.cost_center)
+        
+        # No approval setting = skip freshness check
+        if not current_meta:
             return
 
         stored_name = getattr(self, "approval_setting", None)
@@ -677,8 +662,8 @@ class ExpenseRequest(Document):
         metadata_missing = not stored_name and not stored_modified
         guard_injected_meta = getattr(self, "_approval_meta_recorded_during_guard", False)
 
-        current_name = current_meta.get("name")
-        current_modified = current_meta.get("modified")
+        current_name = current_meta.get("name")  # Now safe
+        current_modified = current_meta.get("modified")  # Now safe
 
         document_dt = self._parse_datetime(
             getattr(self, "modified", None) or getattr(self, "creation", None)

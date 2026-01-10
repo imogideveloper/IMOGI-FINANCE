@@ -19,20 +19,25 @@ def _normalize_accounts(accounts: str | Iterable[str]) -> tuple[str, ...]:
         if normalized:
             return normalized
 
-    raise frappe.ValidationError(_("At least one expense account is required for approval routing."))
+    # Return empty tuple instead of raising error for optional approval
+    return ()
 
 
-def get_active_setting_meta(cost_center: str) -> dict:
+def get_active_setting_meta(cost_center: str) -> dict | None:
+    """Return active approval setting metadata, or None if not found."""
+    if not cost_center:
+        return None
+        
     setting = frappe.db.get_value(
         "Expense Approval Setting",
         {"cost_center": cost_center, "is_active": 1},
         ["name", "modified"],
         as_dict=True,
     )
+    
+    # Return None instead of raising error
     if not setting:
-        raise frappe.DoesNotExistError(
-            _("No active Expense Approval Setting found for Cost Center {0}").format(cost_center)
-        )
+        return None
 
     if isinstance(setting, str):
         return {"name": setting, "modified": None}
@@ -46,7 +51,17 @@ def _normalize_route(route: dict) -> dict:
     return normalized
 
 
-def _get_route_for_account(setting_name: str, account: str, amount: float) -> dict:
+def _empty_route() -> dict:
+    """Return empty route for auto-approve scenarios."""
+    return {
+        "level_1": {"role": None, "user": None},
+        "level_2": {"role": None, "user": None},
+        "level_3": {"role": None, "user": None},
+    }
+
+
+def _get_route_for_account(setting_name: str, account: str, amount: float) -> dict | None:
+    """Get approval route for a specific account. Returns None if no match."""
     def _get_matching_line(filters: dict):
         return frappe.get_all(
             "Expense Approval Line",
@@ -87,10 +102,9 @@ def _get_route_for_account(setting_name: str, account: str, amount: float) -> di
             }
         )
 
+    # Return None instead of raising error
     if not approval_line:
-        raise frappe.ValidationError(
-            _("No approval rule matches account {0} and amount {1}".format(account, amount))
-        )
+        return None
 
     data = approval_line[0]
     for level in (1, 2, 3):
@@ -103,68 +117,69 @@ def _get_route_for_account(setting_name: str, account: str, amount: float) -> di
         if amount < min_amount or amount > max_amount:
             data[f"level_{level}_role"] = None
             data[f"level_{level}_user"] = None
+            
     return {
         "level_1": {"role": data.get("level_1_role"), "user": data.get("level_1_user")},
         "level_2": {"role": data.get("level_2_role"), "user": data.get("level_2_user")},
         "level_3": {"role": data.get("level_3_role"), "user": data.get("level_3_user")},
     }
 
-    def get_approval_route(
-        cost_center: str, accounts: str | Iterable[str], amount: float, *, setting_meta: dict | None = None
-    ) -> dict:
-        """Return approval route based on cost center, account(s) and amount.
-        
-        Returns empty route (for auto-approve) if no setting exists.
-        """
 
+def get_approval_route(
+    cost_center: str, accounts: str | Iterable[str], amount: float, *, setting_meta: dict | None = None
+) -> dict:
+    """Return approval route based on cost center, account(s) and amount.
+    
+    Returns empty route (for auto-approve) if no setting exists or no matching rules.
+    """
+    amount = flt(amount or 0)
+    
+    # Normalize accounts - return empty route if no accounts
+    try:
         normalized_accounts = _normalize_accounts(accounts)
-        amount = flt(amount or 0)
+    except Exception:
+        normalized_accounts = ()
+    
+    if not normalized_accounts:
+        return _empty_route()
+    
+    # Get setting, return empty route if not found
+    try:
+        route_setting = setting_meta if setting_meta is not None else get_active_setting_meta(cost_center)
+    except Exception:
+        route_setting = None
         
-        # Get setting, return empty route if not found
-        route_setting = setting_meta or get_active_setting_meta(cost_center)
-        if not route_setting:
-            # No approval setting = auto-approve (empty route)
-            return {
-                "level_1": {"role": None, "user": None},
-                "level_2": {"role": None, "user": None},
-                "level_3": {"role": None, "user": None},
-            }
+    if not route_setting:
+        return _empty_route()
+    
+    setting_name = route_setting.get("name") if isinstance(route_setting, dict) else None
+    if not setting_name:
+        return _empty_route()
+    
+    resolved_route = None
+
+    for account in normalized_accounts:
+        route = _get_route_for_account(setting_name, account, amount)
         
-        setting_name = route_setting.get("name") if isinstance(route_setting, dict) else None
-        if not setting_name:
-            return {
-                "level_1": {"role": None, "user": None},
-                "level_2": {"role": None, "user": None},
-                "level_3": {"role": None, "user": None},
-            }
-        
-        resolved_route = None
+        # Skip if no route found for this account
+        if route is None:
+            continue
 
-        for account in normalized_accounts:
-            try:
-                route = _get_route_for_account(setting_name, account, amount)
-            except frappe.ValidationError:
-                # No matching rule for this account/amount = skip this account
-                continue
+        if resolved_route is None:
+            resolved_route = route
+            continue
 
-            if resolved_route is None:
-                resolved_route = route
-                continue
+        # Check route consistency across accounts
+        if resolved_route != route:
+            raise frappe.ValidationError(
+                _("All expense accounts on the request must share the same approval route.")
+            )
 
-            if resolved_route != route:
-                raise frappe.ValidationError(
-                    _("All expense accounts on the request must share the same approval route.")
-                )
+    # No route found = auto-approve
+    if not resolved_route:
+        return _empty_route()
 
-        # No route found = auto-approve
-        if not resolved_route:
-            return {
-                "level_1": {"role": None, "user": None},
-                "level_2": {"role": None, "user": None},
-                "level_3": {"role": None, "user": None},
-            }
-
-        return _normalize_route(resolved_route)
+    return _normalize_route(resolved_route)
 
 
 def approval_setting_required_message(cost_center: str | None = None) -> str:
@@ -242,16 +257,24 @@ def check_expense_request_route(
 
     target_amount = amount if amount is not None else total
 
-    try:
-        route = get_approval_route(cost_center, parsed_accounts or [], target_amount or 0)
-        return {"ok": True, "route": route}
-    except (frappe.DoesNotExistError, frappe.ValidationError) as exc:
-        log_route_resolution_error(exc, cost_center=cost_center, accounts=parsed_accounts, amount=target_amount)
-        if docstatus == 0:
-            return {
-                "ok": False,
-                "message": _(
-                    "Approval route could not be determined yet. Draft requests can still be edited; configure an Expense Approval Setting before submitting."
-                ),
-            }
-        return {"ok": False, "message": approval_setting_required_message(cost_center)}
+    route = get_approval_route(cost_center, parsed_accounts or [], target_amount or 0)
+    
+    # Check if route has any approvers
+    has_approvers = any([
+        route.get("level_1", {}).get("role"),
+        route.get("level_1", {}).get("user"),
+        route.get("level_2", {}).get("role"),
+        route.get("level_2", {}).get("user"),
+        route.get("level_3", {}).get("role"),
+        route.get("level_3", {}).get("user"),
+    ])
+    
+    if not has_approvers:
+        return {
+            "ok": True,
+            "route": route,
+            "message": _("No approval setting configured. Request will be auto-approved."),
+            "auto_approve": True,
+        }
+    
+    return {"ok": True, "route": route, "auto_approve": False}
