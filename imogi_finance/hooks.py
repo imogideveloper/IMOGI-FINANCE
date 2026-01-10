@@ -149,9 +149,9 @@ before_migrate = "imogi_finance.fixtures.sanitize_fixture_files"
 # ---------------
 # Override standard doctype classes
 
-# override_doctype_class = {
-# 	"ToDo": "custom_app.overrides.CustomToDo"
-# }
+override_doctype_class = {
+    "Sales Invoice": "imogi_finance.overrides.sales_invoice.CustomSalesInvoice",
+}
 
 # Document Events
 # ---------------
