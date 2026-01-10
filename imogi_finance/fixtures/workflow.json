@@ -9,74 +9,42 @@
     "override_status": 1,
     "workflow_state_field": "workflow_state",
     "docstatus": 0,
-    "actions": [
-      {
-        "action": "Submit",
-        "allowed": "All"
-      },
-      {
-        "action": "Approve",
-        "allowed": "Expense Approver"
-      },
-      {
-        "action": "Reject",
-        "allowed": "Expense Approver"
-      }
-    ],
     "states": [
       {
         "doctype": "Workflow Document State",
         "state": "Draft",
         "doc_status": "0",
-        "allow_edit": "All",
-        "backflow_allowed": false
+        "allow_edit": "All"
       },
       {
         "doctype": "Workflow Document State",
         "state": "Pending Review",
         "doc_status": "1",
-        "allow_edit": "",
-        "backflow_allowed": false,
-        "acl": {
-          "roles": ["Expense Approver", "System Manager"],
-          "users": []
-        }
+        "allow_edit": "Expense Approver"
       },
       {
         "doctype": "Workflow Document State",
         "state": "Approved",
         "doc_status": "1",
-        "allow_edit": "",
-        "backflow_allowed": false,
-        "acl": {
-          "roles": ["System Manager"],
-          "users": []
-        }
+        "allow_edit": "Accounts Manager"
       },
       {
         "doctype": "Workflow Document State",
         "state": "Rejected",
         "doc_status": "1",
-        "allow_edit": "",
-        "backflow_allowed": false,
-        "acl": {
-          "roles": ["System Manager"],
-          "users": []
-        }
+        "allow_edit": "Accounts Manager"
       },
       {
         "doctype": "Workflow Document State",
         "state": "PI Created",
         "doc_status": "1",
-        "allow_edit": "",
-        "backflow_allowed": false
+        "allow_edit": "Accounts Manager"
       },
       {
         "doctype": "Workflow Document State",
         "state": "Paid",
         "doc_status": "1",
-        "allow_edit": "",
-        "backflow_allowed": false
+        "allow_edit": "Accounts Manager"
       }
     ],
     "transitions": [
@@ -104,6 +72,7 @@
         "state": "Pending Review",
         "next_state": "Pending Review",
         "allowed": "Expense Approver",
+        "allow_self_approval": 0,
         "condition": "((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_role') or doc.get('level_2_user') or doc.get('level_3_role') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and (doc.get('level_3_role') or doc.get('level_3_user')))"
       },
       {
@@ -112,6 +81,7 @@
         "state": "Pending Review",
         "next_state": "Approved",
         "allowed": "Expense Approver",
+        "allow_self_approval": 0,
         "condition": "not (((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_role') or doc.get('level_2_user') or doc.get('level_3_role') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and (doc.get('level_3_role') or doc.get('level_3_user'))))"
       },
       {
@@ -119,7 +89,8 @@
         "action": "Reject",
         "state": "Pending Review",
         "next_state": "Rejected",
-        "allowed": "Expense Approver"
+        "allowed": "Expense Approver",
+        "allow_self_approval": 0
       }
     ]
   },
@@ -133,64 +104,42 @@
     "override_status": 0,
     "workflow_state_field": "workflow_state",
     "docstatus": 0,
-    "actions": [
-      {
-        "action": "Submit for Approval",
-        "allowed": "All"
-      },
-      {
-        "action": "Approve",
-        "allowed": "Accounts Manager"
-      },
-      {
-        "action": "Reject",
-        "allowed": "Accounts Manager"
-      },
-      {
-        "action": "Post",
-        "allowed": "Accounts Manager"
-      },
-      {
-        "action": "Cancel",
-        "allowed": "Accounts Manager"
-      }
-    ],
     "states": [
       {
         "doctype": "Workflow Document State",
         "state": "Draft",
         "doc_status": "0",
-        "allow_edit": "Owner"
+        "allow_edit": "All"
       },
       {
         "doctype": "Workflow Document State",
         "state": "Pending Approval",
         "doc_status": "0",
-        "allow_edit": "Owner"
+        "allow_edit": "Accounts Manager"
       },
       {
         "doctype": "Workflow Document State",
         "state": "Approved",
         "doc_status": "0",
-        "allow_edit": "System Manager"
+        "allow_edit": "Accounts Manager"
       },
       {
         "doctype": "Workflow Document State",
         "state": "Posted",
         "doc_status": "1",
-        "allow_edit": "System Manager"
+        "allow_edit": "Accounts Manager"
       },
       {
         "doctype": "Workflow Document State",
         "state": "Rejected",
         "doc_status": "0",
-        "allow_edit": "System Manager"
+        "allow_edit": "Accounts Manager"
       },
       {
         "doctype": "Workflow Document State",
         "state": "Cancelled",
         "doc_status": "2",
-        "allow_edit": "System Manager"
+        "allow_edit": "Accounts Manager"
       }
     ],
     "transitions": [
@@ -246,30 +195,12 @@
     "override_status": 0,
     "workflow_state_field": "workflow_state",
     "docstatus": 0,
-    "actions": [
-      {
-        "action": "Submit for Review",
-        "allowed": "Accounts User"
-      },
-      {
-        "action": "Approve Transfer",
-        "allowed": "Accounts Manager"
-      },
-      {
-        "action": "Release to Bank",
-        "allowed": "Accounts User"
-      },
-      {
-        "action": "Mark Paid",
-        "allowed": "Accounts Manager"
-      }
-    ],
     "states": [
       {
         "doctype": "Workflow Document State",
         "state": "Draft",
         "doc_status": "0",
-        "allow_edit": "Owner"
+        "allow_edit": "All"
       },
       {
         "doctype": "Workflow Document State",
@@ -293,7 +224,7 @@
         "doctype": "Workflow Document State",
         "state": "Paid",
         "doc_status": "1",
-        "allow_edit": "System Manager"
+        "allow_edit": "Accounts Manager"
       }
     ],
     "transitions": [
