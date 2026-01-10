@@ -130,9 +130,37 @@ def _get_template(branch: Optional[str], letter_type: str = "Payment Letter"):
 def _resolve_amount(doc: Any) -> tuple[float, Optional[str]]:
     amount = getattr(doc, "amount", None)
     if amount is None:
-        amount = getattr(doc, "total_amount", None) or getattr(doc, "grand_total", None) or 0
+        amount = (
+            getattr(doc, "total_amount", None)
+            or getattr(doc, "grand_total", None)
+            or getattr(doc, "rounded_total", None)
+            or getattr(doc, "net_total", None)
+            or 0
+        )
     currency = getattr(doc, "currency", None) or getattr(doc, "company_currency", None)
     return float(amount or 0), currency
+
+
+def _resolve_customer_name(doc: Any) -> str:
+    return (
+        getattr(doc, "customer_name", None)
+        or getattr(doc, "customer", None)
+        or getattr(doc, "supplier_name", None)
+        or getattr(doc, "supplier", None)
+        or getattr(doc, "party_name", None)
+        or getattr(doc, "pay_to", None)
+        or ""
+    )
+
+
+def _resolve_invoice_number(doc: Any) -> Optional[str]:
+    return (
+        getattr(doc, "invoice_number", None)
+        or getattr(doc, "reference_no", None)
+        or getattr(doc, "name", None)
+        or getattr(doc, "sales_invoice", None)
+        or getattr(doc, "sales_order", None)
+    )
 
 
 def build_payment_letter_context(doc: Any, letter_type: str = "Payment Letter") -> Dict[str, Any]:
@@ -167,16 +195,14 @@ def build_payment_letter_context(doc: Any, letter_type: str = "Payment Letter") 
         "letter_number": getattr(doc, "name", ""),
         "letter_type": getattr(doc, "letter_type", None) or letter_type,
         "subject": _("Permintaan Pembayaran via Transfer"),
-        "customer_name": getattr(doc, "customer_name", None)
-        or getattr(doc, "supplier_name", None)
-        or getattr(doc, "pay_to", None)
+        "customer_name": _resolve_customer_name(doc),
+        "customer_address": getattr(doc, "customer_address", None)
+        or getattr(doc, "address", None)
+        or getattr(doc, "address_display", None)
         or "",
-        "customer_address": getattr(doc, "customer_address", None) or getattr(doc, "address", None) or "",
         "customer_city": getattr(doc, "customer_city", None) or "",
         "transaction_type": getattr(doc, "transaction_type", None) or "pembelian barang/jasa",
-        "invoice_number": getattr(doc, "invoice_number", None)
-        or getattr(doc, "reference_no", None)
-        or getattr(doc, "name", None),
+        "invoice_number": _resolve_invoice_number(doc),
         "invoice_date": formatdate(invoice_date) if invoice_date else "",
         "amount": formatted_amount,
         "amount_in_words": amount_words,
