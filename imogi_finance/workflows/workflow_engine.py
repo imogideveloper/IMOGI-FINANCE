@@ -89,15 +89,13 @@ class WorkflowEngine:
         if action in {"Reopen", "Backflow"}:
             self._guard_elevated_action(doc=doc, action=action, current_state=current_state, next_state=next_state)
 
-        # Derive required roles/users from doc-level route fields
+        # Derive required users from doc-level route fields
         level = self._current_level_from_state(doc, current_state)
-        role_field = f"level_{level}_role" if level else None
         user_field = f"level_{level}_user" if level else None
-        expected_roles = {getattr(doc, role_field)} if role_field and getattr(doc, role_field, None) else set()
         expected_users = {getattr(doc, user_field)} if user_field and getattr(doc, user_field, None) else set()
 
-        if expected_roles or expected_users:
-            guard = AuthorizationGuard(roles=expected_roles, users=expected_users)
+        if expected_users:
+            guard = AuthorizationGuard(roles=set(), users=expected_users)
             guard.require(action=action, level=level)
 
         if action == "Approve" and next_state == "Approved":
@@ -119,9 +117,9 @@ class WorkflowEngine:
 
     @staticmethod
     def _validate_not_skipping(doc: Any, level: str | None):
-        if level == "1" and (getattr(doc, "level_2_role", None) or getattr(doc, "level_2_user", None) or getattr(doc, "level_3_role", None) or getattr(doc, "level_3_user", None)):
+        if level == "1" and (getattr(doc, "level_2_user", None) or getattr(doc, "level_3_user", None)):
             frappe.throw(_("Cannot approve directly when further levels are configured."))
-        if level == "2" and (getattr(doc, "level_3_role", None) or getattr(doc, "level_3_user", None)):
+        if level == "2" and getattr(doc, "level_3_user", None):
             frappe.throw(_("Cannot approve directly when further levels are configured."))
 
     def _validate_state_acl(self, state: str):

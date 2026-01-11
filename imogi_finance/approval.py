@@ -47,9 +47,9 @@ def get_active_setting_meta(cost_center: str) -> dict | None:
 def _empty_route() -> dict:
     """Return empty route for auto-approve scenarios."""
     return {
-        "level_1": {"role": None, "user": None},
-        "level_2": {"role": None, "user": None},
-        "level_3": {"role": None, "user": None},
+        "level_1": {"user": None},
+        "level_2": {"user": None},
+        "level_3": {"user": None},
     }
 
 
@@ -67,9 +67,9 @@ def _get_route_for_account(setting_name: str, account: str, amount: float) -> di
             "expense_account": account,
         },
         fields=[
-            "level_1_role", "level_1_user", "level_1_min_amount", "level_1_max_amount",
-            "level_2_role", "level_2_user", "level_2_min_amount", "level_2_max_amount",
-            "level_3_role", "level_3_user", "level_3_min_amount", "level_3_max_amount",
+            "level_1_user", "level_1_min_amount", "level_1_max_amount",
+            "level_2_user", "level_2_min_amount", "level_2_max_amount",
+            "level_3_user", "level_3_min_amount", "level_3_max_amount",
         ],
         limit=1,
     )
@@ -83,9 +83,9 @@ def _get_route_for_account(setting_name: str, account: str, amount: float) -> di
                 "is_default": 1,
             },
             fields=[
-                "level_1_role", "level_1_user", "level_1_min_amount", "level_1_max_amount",
-                "level_2_role", "level_2_user", "level_2_min_amount", "level_2_max_amount",
-                "level_3_role", "level_3_user", "level_3_min_amount", "level_3_max_amount",
+                "level_1_user", "level_1_min_amount", "level_1_max_amount",
+                "level_2_user", "level_2_min_amount", "level_2_max_amount",
+                "level_3_user", "level_3_min_amount", "level_3_max_amount",
             ],
             limit=1,
         )
@@ -95,20 +95,19 @@ def _get_route_for_account(setting_name: str, account: str, amount: float) -> di
 
     data = approval_line[0]
     route = {
-        "level_1": {"role": None, "user": None},
-        "level_2": {"role": None, "user": None},
-        "level_3": {"role": None, "user": None},
+        "level_1": {"user": None},
+        "level_2": {"user": None},
+        "level_3": {"user": None},
     }
 
     # Filter each level by amount range
     for level in (1, 2, 3):
-        role = data.get(f"level_{level}_role")
         user = data.get(f"level_{level}_user")
         min_amount = data.get(f"level_{level}_min_amount")
         max_amount = data.get(f"level_{level}_max_amount")
 
         # Skip if no approver configured for this level
-        if not role and not user:
+        if not user:
             continue
 
         # Skip if amount range not configured
@@ -120,7 +119,7 @@ def _get_route_for_account(setting_name: str, account: str, amount: float) -> di
 
         # Check if amount falls within this level's range
         if min_amount <= amount <= max_amount:
-            route[f"level_{level}"] = {"role": role, "user": user}
+            route[f"level_{level}"] = {"user": user}
 
     return route
 
@@ -320,11 +319,8 @@ def check_expense_request_route(
 
     # Check if route has any approvers
     has_approvers = any([
-        route.get("level_1", {}).get("role"),
         route.get("level_1", {}).get("user"),
-        route.get("level_2", {}).get("role"),
         route.get("level_2", {}).get("user"),
-        route.get("level_3", {}).get("role"),
         route.get("level_3", {}).get("user"),
     ])
     

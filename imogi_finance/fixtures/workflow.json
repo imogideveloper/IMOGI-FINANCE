@@ -55,7 +55,7 @@
         "next_state": "Pending Review",
         "allowed": "All",
         "allow_self_approval": 0,
-        "condition": "doc.get('level_1_role') or doc.get('level_1_user') or doc.get('level_2_role') or doc.get('level_2_user') or doc.get('level_3_role') or doc.get('level_3_user')"
+        "condition": "doc.get('level_1_user') or doc.get('level_2_user') or doc.get('level_3_user')"
       },
       {
         "doctype": "Workflow Transition",
@@ -64,7 +64,7 @@
         "next_state": "Approved",
         "allowed": "All",
         "allow_self_approval": 0,
-        "condition": "not (doc.get('level_1_role') or doc.get('level_1_user') or doc.get('level_2_role') or doc.get('level_2_user') or doc.get('level_3_role') or doc.get('level_3_user'))"
+        "condition": "not (doc.get('level_1_user') or doc.get('level_2_user') or doc.get('level_3_user'))"
       },
       {
         "doctype": "Workflow Transition",
@@ -73,7 +73,7 @@
         "next_state": "Pending Review",
         "allowed": "Expense Approver",
         "allow_self_approval": 0,
-        "condition": "((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_role') or doc.get('level_2_user') or doc.get('level_3_role') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and (doc.get('level_3_role') or doc.get('level_3_user')))"
+        "condition": "((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_user') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and doc.get('level_3_user'))"
       },
       {
         "doctype": "Workflow Transition",
@@ -82,7 +82,7 @@
         "next_state": "Approved",
         "allowed": "Expense Approver",
         "allow_self_approval": 0,
-        "condition": "not (((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_role') or doc.get('level_2_user') or doc.get('level_3_role') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and (doc.get('level_3_role') or doc.get('level_3_user'))))"
+        "condition": "not (((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_user') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and doc.get('level_3_user')))"
       },
       {
         "doctype": "Workflow Transition",
