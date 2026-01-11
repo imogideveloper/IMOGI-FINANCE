@@ -468,6 +468,7 @@ class ExpenseRequest(Document):
 
     def on_update_after_submit(self):
         self.sync_status_with_workflow_state()
+        self._ensure_budget_lock_synced_after_approval()
 
     def _auto_submit_if_skip_approval(self):
         if getattr(self, "docstatus", 0) != 0:
@@ -1019,6 +1020,60 @@ class ExpenseRequest(Document):
             _("Edits while pending are restricted to routed approvers or the document owner. Please request an authorized user to update or log an audit note."),
             title=_("Not Allowed"),
         )
+
+    def _ensure_budget_lock_synced_after_approval(self):
+        """Best-effort guard to ensure budget reservations exist after approval.
+
+        In normal flows, budget control is driven via handle_expense_request_workflow
+        from on_workflow_action. This helper covers edge cases where status is
+        already Approved but no reservation entries were created (for example,
+        migrated documents or non-standard transitions).
+        """
+        try:
+            from imogi_finance.budget_control import utils as budget_utils  # type: ignore
+            from imogi_finance.budget_control import workflow as budget_workflow  # type: ignore
+        except Exception:
+            return
+
+        try:
+            settings = budget_utils.get_settings()
+        except Exception:
+            return
+
+        if not settings.get("enable_budget_lock"):
+            return
+
+        target_state = settings.get("lock_on_workflow_state") or "Approved"
+        if getattr(self, "status", None) != target_state:
+            return
+
+        name = getattr(self, "name", None)
+        if not name:
+            return
+
+        try:
+            existing = frappe.get_all(
+                "Budget Control Entry",
+                filters={
+                    "ref_doctype": "Expense Request",
+                    "ref_name": name,
+                    "entry_type": "RESERVATION",
+                    "docstatus": 1,
+                },
+                limit=1,
+            )
+        except Exception:
+            existing = []
+
+        if existing:
+            return
+
+        try:
+            budget_workflow.reserve_budget_for_request(self, trigger_action="Approve", next_state=target_state)
+        except Exception:
+            # Fail silently; core validation and guards in budget workflow already
+            # enforce consistency when features are enabled.
+            return
 
     def validate_route_users_exist(self, route: dict | None = None):
         """Validate approval route users still exist and are enabled."""
