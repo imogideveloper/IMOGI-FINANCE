@@ -91,6 +91,22 @@
         "next_state": "Rejected",
         "allowed": "Expense Approver",
         "allow_self_approval": 0
+      },
+      {
+        "doctype": "Workflow Transition",
+        "action": "Create PI",
+        "state": "Approved",
+        "next_state": "PI Created",
+        "allowed": "Accounts User",
+        "allow_self_approval": 1
+      },
+      {
+        "doctype": "Workflow Transition",
+        "action": "Mark Paid",
+        "state": "PI Created",
+        "next_state": "Paid",
+        "allowed": "Accounts Manager",
+        "allow_self_approval": 0
       }
     ]
   },

@@ -440,12 +440,11 @@ class ExpenseRequest(Document):
         release_budget_for_request(self, reason="Cancel")
 
     def on_submit(self):
-        self._auto_create_purchase_invoice()
+        # Purchase Invoice creation is handled manually via action button.
+        pass
 
     def on_update_after_submit(self):
-        previous = self._get_previous_doc()
-        previous_status = getattr(previous, "status", None) if previous else None
-        self._auto_create_purchase_invoice(previous_status=previous_status)
+        self.sync_status_with_workflow_state()
 
     def _auto_submit_if_skip_approval(self):
         if getattr(self, "docstatus", 0) != 0:
@@ -1133,26 +1132,6 @@ class ExpenseRequest(Document):
         """Block status mutations that bypass workflow enforcement."""
         self._workflow_service.guard_status_changes(self)
 
-    def _auto_create_purchase_invoice(self, *, previous_status: str | None = None):
-        if getattr(self, "docstatus", 0) != 1:
-            return
-
-        if getattr(self, "status", None) != "Approved":
-            return
-
-        if previous_status == "Approved":
-            return
-
-        if getattr(self, "linked_purchase_invoice", None) or getattr(self, "pending_purchase_invoice", None):
-            return
-
-        if getattr(self, "request_type", None) not in accounting.PURCHASE_INVOICE_REQUEST_TYPES:
-            return
-
-        pi_name = accounting.create_purchase_invoice_from_request(self.name)
-        if pi_name:
-            self.pending_purchase_invoice = pi_name
-
     @staticmethod
     def _get_value(source, field):
         if hasattr(source, "get"):
@@ -1498,4 +1477,38 @@ class ExpenseRequest(Document):
 @frappe.whitelist()
 def create_purchase_invoice(expense_request: str) -> str:
     """Whitelisted helper to build a Purchase Invoice from an Expense Request."""
-    return accounting.create_purchase_invoice_from_request(expense_request)
+    pi_name = accounting.create_purchase_invoice_from_request(expense_request)
+
+    if pi_name:
+        frappe.db.set_value(
+            "Expense Request",
+            expense_request,
+            {
+                "workflow_state": "PI Created",
+                "status": "PI Created",
+                "linked_purchase_invoice": pi_name,
+                "pending_purchase_invoice": None,
+            },
+            update_modified=True,
+        )
+        frappe.db.commit()
+
+    return pi_name
+
+
+@frappe.whitelist()
+def mark_as_paid(expense_request: str, payment_entry: str | None = None) -> bool:
+    """Mark expense request as Paid after payment is completed."""
+    er = frappe.get_doc("Expense Request", expense_request)
+
+    if er.status != "PI Created":
+        frappe.throw(_("Expense Request must be in 'PI Created' status to mark as Paid."))
+
+    er.db_set("workflow_state", "Paid")
+    er.db_set("status", "Paid")
+
+    if payment_entry:
+        er.db_set("linked_payment_entry", payment_entry)
+
+    frappe.db.commit()
+    return True

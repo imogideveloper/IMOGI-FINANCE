@@ -403,99 +403,33 @@ frappe.ui.form.on('Expense Request', {
     maybeRenderInternalChargeButton(frm);
 
     const isSubmitted = frm.doc.docstatus === 1;
-    const allowedStatuses = ['Approved'];
-    const isAllowedStatus = allowedStatuses.includes(frm.doc.status);
-    const isLinked = frm.doc.status === 'PI Created';
-    const hasLinkedPurchaseInvoice = Boolean(frm.doc.linked_purchase_invoice);
-    const canCreatePurchaseInvoice = isSubmitted && isAllowedStatus && !hasLinkedPurchaseInvoice;
-
-    const showPurchaseInvoiceAvailability = () => {
-      if (hasLinkedPurchaseInvoice) {
-        frm.dashboard.set_headline(__('Purchase Invoice {0} already linked to this request.', [
-          frm.doc.linked_purchase_invoice,
-        ]));
-        return;
-      }
-
-      if (!isAllowedStatus) {
-        frappe.show_alert({
-          message: __('Purchase Invoice can be created after this request is Approved.'),
-          indicator: 'orange',
-        });
-      }
-    };
-
-    if (isSubmitted && isLinked && hasLinkedPurchaseInvoice) {
-      frm.dashboard.set_headline(__('Purchase Invoice {0} already linked to this request.', [
-        frm.doc.linked_purchase_invoice,
-      ]));
-    }
-
-    if (isSubmitted && isAllowedStatus && !hasLinkedPurchaseInvoice) {
+    if (frm.doc.status === 'Approved') {
       frm.dashboard.set_headline(
         '<span class="indicator orange">' +
-        __('Expense Request is Approved and awaiting Purchase Invoice creation.') +
-        '</span>',
+        __('Expense Request is Approved. Ready to create Purchase Invoice.') +
+        '</span>'
+      );
+    } else if (frm.doc.status === 'PI Created') {
+      frm.dashboard.set_headline(
+        '<span class="indicator blue">' +
+        __('Purchase Invoice {0} created. Awaiting payment.', [frm.doc.linked_purchase_invoice]) +
+        '</span>'
+      );
+    } else if (frm.doc.status === 'Paid') {
+      frm.dashboard.set_headline(
+        '<span class="indicator green">' +
+        __('Expense Request completed and paid.') +
+        '</span>'
       );
     }
 
-    const maybeRenderPurchaseInvoiceButton = async () => {
-      if (!canCreatePurchaseInvoice) {
-        showPurchaseInvoiceAvailability();
-        return;
-      }
+    if (isSubmitted && frm.doc.status === 'Approved' && !frm.doc.linked_purchase_invoice) {
+      await maybeRenderPurchaseInvoiceButton(frm);
+    }
 
-      const [ocrEnabled, requireVerified] = await Promise.all([
-        frappe.db.get_single_value('Tax Invoice OCR Settings', 'enable_tax_invoice_ocr'),
-        frappe.db.get_single_value(
-          'Tax Invoice OCR Settings',
-          'require_verification_before_create_pi_from_expense_request'
-        ),
-      ]);
-
-      const gateByVerification = Boolean(ocrEnabled && requireVerified);
-      const isVerified = frm.doc.ti_verification_status === 'Verified';
-      const allowButton = !gateByVerification || isVerified;
-
-      if (!allowButton) {
-        frappe.show_alert({
-          message: __('Please verify the Tax Invoice before creating a Purchase Invoice.'),
-          indicator: 'orange',
-        });
-        return;
-      }
-
-      const purchaseInvoiceBtn = frm.add_custom_button(__('Create Purchase Invoice'), async () => {
-        purchaseInvoiceBtn.prop('disabled', true);
-
-        try {
-          const r = await frm.call('create_purchase_invoice', {
-            expense_request: frm.doc.name,
-          });
-
-          if (r && r.message) {
-            frappe.msgprint({
-              title: __('Purchase Invoice Created'),
-              message: __('Purchase Invoice {0} created from this request.', [r.message]),
-              indicator: 'green',
-            });
-            frm.reload_doc();
-          }
-        } catch (error) {
-          frappe.msgprint({
-            title: __('Unable to Create Purchase Invoice'),
-            message: error && error.message
-              ? error.message
-              : __('An unexpected error occurred while creating the Purchase Invoice. Please try again.'),
-            indicator: 'red',
-          });
-        } finally {
-          purchaseInvoiceBtn.prop('disabled', false);
-        }
-      }, __('Create'));
-    };
-
-    maybeRenderPurchaseInvoiceButton();
+    if (isSubmitted && frm.doc.status === 'PI Created' && frm.doc.linked_purchase_invoice) {
+      await maybeRenderMarkPaidButton(frm);
+    }
 
     // Tax Invoice OCR actions are intentionally managed from the OCR Upload doctype.
   },
@@ -571,6 +505,126 @@ function maybeRenderInternalChargeButton(frm) {
       });
     }
   }, __('Actions'));
+}
+
+async function maybeRenderPurchaseInvoiceButton(frm) {
+  const [ocrEnabled, requireVerified] = await Promise.all([
+    frappe.db.get_single_value('Tax Invoice OCR Settings', 'enable_tax_invoice_ocr'),
+    frappe.db.get_single_value(
+      'Tax Invoice OCR Settings',
+      'require_verification_before_create_pi_from_expense_request'
+    ),
+  ]);
+
+  const gateByVerification = Boolean(ocrEnabled && requireVerified);
+  const isVerified = frm.doc.ti_verification_status === 'Verified';
+  const allowButton = !gateByVerification || isVerified;
+
+  if (!allowButton) {
+    frm.dashboard.add_indicator(
+      __('Please verify Tax Invoice before creating Purchase Invoice'),
+      'orange'
+    );
+    return;
+  }
+
+  frm.add_custom_button(__('Create Purchase Invoice'), async () => {
+    frappe.confirm(
+      __('Are you sure you want to create a Purchase Invoice from this Expense Request?'),
+      async () => {
+        try {
+          frappe.show_progress(__('Creating...'), 0, 100);
+
+          const { message } = await frappe.call({
+            method: 'imogi_finance.imogi_finance.doctype.expense_request.expense_request.create_purchase_invoice',
+            args: { expense_request: frm.doc.name },
+            freeze: true,
+            freeze_message: __('Creating Purchase Invoice...'),
+          });
+
+          frappe.hide_progress();
+
+          if (message) {
+            frappe.show_alert({
+              message: __('Purchase Invoice {0} created successfully!', [message]),
+              indicator: 'green',
+            }, 5);
+            frm.reload_doc();
+          }
+        } catch (error) {
+          frappe.hide_progress();
+          frappe.msgprint({
+            title: __('Error'),
+            message: error?.message || __('Failed to create Purchase Invoice'),
+            indicator: 'red',
+          });
+        }
+      }
+    );
+  }, __('Actions'));
+}
+
+async function maybeRenderMarkPaidButton(frm) {
+  if (!frm.doc.linked_purchase_invoice) {
+    return;
+  }
+
+  const piStatus = await frappe.db.get_value(
+    'Purchase Invoice',
+    frm.doc.linked_purchase_invoice,
+    'docstatus'
+  );
+
+  if (piStatus?.message?.docstatus !== 1) {
+    frm.dashboard.add_indicator(
+      __('Submit Purchase Invoice {0} before marking as Paid', [frm.doc.linked_purchase_invoice]),
+      'orange'
+    );
+    return;
+  }
+
+  const hasPayment = await frappe.db.get_value(
+    'Payment Entry Reference',
+    {
+      reference_doctype: 'Purchase Invoice',
+      reference_name: frm.doc.linked_purchase_invoice,
+      docstatus: 1,
+    },
+    'parent'
+  );
+
+  if (hasPayment?.message?.parent) {
+    frm.add_custom_button(__('Mark as Paid'), async () => {
+      try {
+        await frappe.call({
+          method: 'imogi_finance.imogi_finance.doctype.expense_request.expense_request.mark_as_paid',
+          args: {
+            expense_request: frm.doc.name,
+            payment_entry: hasPayment.message.parent,
+          },
+          freeze: true,
+          freeze_message: __('Updating status...'),
+        });
+
+        frappe.show_alert({
+          message: __('Expense Request marked as Paid'),
+          indicator: 'green',
+        }, 5);
+        frm.reload_doc();
+      } catch (error) {
+        frappe.msgprint({
+          title: __('Error'),
+          message: error?.message || __('Failed to mark as Paid'),
+          indicator: 'red',
+        });
+      }
+    }, __('Actions'));
+  } else {
+    frm.dashboard.add_indicator(
+      __('Create Payment Entry for PI {0} to mark as Paid', [frm.doc.linked_purchase_invoice]),
+      'blue'
+    );
+  }
 }
 
 frappe.ui.form.on('Expense Request Item', {

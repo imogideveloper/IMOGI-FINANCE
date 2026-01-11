@@ -11,6 +11,14 @@
     {
       "action": "Reject",
       "allowed": "All"
+    },
+    {
+      "action": "Create PI",
+      "allowed": "All"
+    },
+    {
+      "action": "Mark Paid",
+      "allowed": "All"
     }
   ],
   "creation": "",
@@ -113,8 +121,21 @@
       "state": "Pending Review",
       "next_state": "Rejected",
       "doc_status": 1
+    },
+    {
+      "action": "Create PI",
+      "allowed": "All",
+      "state": "Approved",
+      "next_state": "PI Created",
+      "doc_status": 1
+    },
+    {
+      "action": "Mark Paid",
+      "allowed": "All",
+      "state": "PI Created",
+      "next_state": "Paid",
+      "doc_status": 1
     }
   ],
   "workflow_state_field": "workflow_state"
 }
-
