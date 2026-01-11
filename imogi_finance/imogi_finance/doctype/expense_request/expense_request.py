@@ -533,6 +533,7 @@ class ExpenseRequest(Document):
 
         payment_entry = getattr(self, "linked_payment_entry", None)
         purchase_invoice = getattr(self, "linked_purchase_invoice", None)
+        pending_purchase_invoice = getattr(self, "pending_purchase_invoice", None)
         asset = getattr(self, "linked_asset", None)
 
         if payment_entry and _is_active("Payment Entry", payment_entry):
@@ -540,6 +541,13 @@ class ExpenseRequest(Document):
 
         if purchase_invoice and _is_active("Purchase Invoice", purchase_invoice):
             active_links.append(_("Purchase Invoice {0}").format(purchase_invoice))
+
+        if (
+            pending_purchase_invoice
+            and pending_purchase_invoice != purchase_invoice
+            and _is_active("Purchase Invoice", pending_purchase_invoice)
+        ):
+            active_links.append(_("Purchase Invoice {0}").format(pending_purchase_invoice))
 
         if asset and _is_active("Asset", asset):
             active_links.append(_("Asset {0}").format(asset))
@@ -587,6 +595,7 @@ class ExpenseRequest(Document):
 
         payment_entry = getattr(self, "linked_payment_entry", None)
         purchase_invoice = getattr(self, "linked_purchase_invoice", None)
+        pending_purchase_invoice = getattr(self, "pending_purchase_invoice", None)
         asset = getattr(self, "linked_asset", None)
 
         if payment_entry and _is_active("Payment Entry", payment_entry):
@@ -594,6 +603,13 @@ class ExpenseRequest(Document):
 
         if purchase_invoice and _is_active("Purchase Invoice", purchase_invoice):
             active_links.append(_("Purchase Invoice {0}").format(purchase_invoice))
+
+        if (
+            pending_purchase_invoice
+            and pending_purchase_invoice != purchase_invoice
+            and _is_active("Purchase Invoice", pending_purchase_invoice)
+        ):
+            active_links.append(_("Purchase Invoice {0}").format(pending_purchase_invoice))
 
         if asset and _is_active("Asset", asset):
             active_links.append(_("Asset {0}").format(asset))

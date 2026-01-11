@@ -764,6 +764,7 @@ def test_cancel_requires_downstream_links_cleared(monkeypatch):
         status="PI Created",
         docstatus=1,
         linked_purchase_invoice="PI-100",
+        pending_purchase_invoice="PI-101",
         linked_payment_entry="PE-200",
         linked_asset="AST-300",
     )
