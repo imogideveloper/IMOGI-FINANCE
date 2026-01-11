@@ -88,7 +88,7 @@
       "state": "Draft",
       "next_state": "Pending Review",
       "condition": "doc.get('level_1_user') or doc.get('level_2_user') or doc.get('level_3_user')",
-      "doc_status": 1
+      "doc_status": 0
     },
     {
       "action": "Submit",
@@ -97,7 +97,7 @@
       "state": "Draft",
       "next_state": "Approved",
       "condition": "not (doc.get('level_1_user') or doc.get('level_2_user') or doc.get('level_3_user'))",
-      "doc_status": 1
+      "doc_status": 0
     },
     {
       "action": "Approve",
