@@ -108,6 +108,12 @@ class BranchExpenseRequest(Document):
 
         self.validate_initial_approver(route)
         initial_level = self._get_initial_approval_level(route)
+        # Set workflow_action_allowed flag for ERPNext v15+ compatibility
+        flags = getattr(self, "flags", None)
+        if flags is None:
+            flags = type("Flags", (), {})()
+            self.flags = flags
+        self.flags.workflow_action_allowed = True
         self._set_pending_review(level=initial_level)
 
     def on_workflow_action(self, action, next_state=None):
