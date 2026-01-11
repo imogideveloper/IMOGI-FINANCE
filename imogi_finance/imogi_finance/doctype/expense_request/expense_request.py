@@ -68,6 +68,7 @@ class ExpenseRequest(Document):
         self.validate_tax_fields()
         self.validate_deferred_expense()
         validate_tax_invoice_upload_link(self, "Expense Request")
+        self._prepare_route_for_workflow()
         self.sync_status_with_workflow_state()
         self.handle_key_field_changes_after_submit()
         self.validate_pending_edit_restrictions()
@@ -77,6 +78,18 @@ class ExpenseRequest(Document):
     def _prepare_route_for_submit(self):
         """Deprecated - route resolution now happens in before_submit only."""
         return
+
+    def _prepare_route_for_workflow(self):
+        if getattr(self, "docstatus", 0) != 0:
+            return
+
+        if not getattr(self, "cost_center", None):
+            return
+
+        if not self._get_expense_accounts():
+            return
+
+        self._resolve_and_apply_route()
 
     def validate_amounts(self):
         total, expense_accounts = FinanceValidator.validate_amounts(self.get("items"))
@@ -427,7 +440,19 @@ class ExpenseRequest(Document):
 
     def on_submit(self):
         # Purchase Invoice creation is handled manually via action button.
-        pass
+        if self._should_skip_approval():
+            target_state = "Approved"
+            if getattr(self, "workflow_state", None) != target_state:
+                self.db_set("workflow_state", target_state)
+                self.workflow_state = target_state
+            if getattr(self, "status", None) != target_state:
+                self.db_set("status", target_state)
+                self.status = target_state
+
+        flags = getattr(self, "flags", None)
+        workflow_action_allowed = bool(flags and getattr(flags, "workflow_action_allowed", False))
+        if not workflow_action_allowed:
+            handle_expense_request_workflow(self, "Submit", getattr(self, "status", None))
 
     def on_update_after_submit(self):
         self.sync_status_with_workflow_state()

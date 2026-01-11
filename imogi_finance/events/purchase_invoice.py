@@ -94,6 +94,11 @@ def on_submit(doc, method=None):
     maybe_post_internal_charge_je(doc, expense_request=request)
 
 
+def before_cancel(doc, method=None):
+    if doc.get("imogi_expense_request"):
+        doc.flags.ignore_links = True
+
+
 def on_cancel(doc, method=None):
     request = doc.get("imogi_expense_request")
     if not request:
