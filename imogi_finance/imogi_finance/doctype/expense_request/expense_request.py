@@ -654,11 +654,8 @@ class ExpenseRequest(Document):
 
     def apply_route(self, route: dict, *, setting_meta: dict | None = None):
         """Store approval route on the document for audit and workflow guards."""
-        self.level_1_role = route.get("level_1", {}).get("role")
         self.level_1_user = route.get("level_1", {}).get("user")
-        self.level_2_role = route.get("level_2", {}).get("role")
         self.level_2_user = route.get("level_2", {}).get("user")
-        self.level_3_role = route.get("level_3", {}).get("role")
         self.level_3_user = route.get("level_3", {}).get("user")
         self._approval_meta_recorded_during_guard = False
         self._record_route_setting_meta(setting_meta)
@@ -750,9 +747,9 @@ class ExpenseRequest(Document):
             return snapshot
 
         return {
-            "level_1": {"role": getattr(self, "level_1_role", None), "user": getattr(self, "level_1_user", None)},
-            "level_2": {"role": getattr(self, "level_2_role", None), "user": getattr(self, "level_2_user", None)},
-            "level_3": {"role": getattr(self, "level_3_role", None), "user": getattr(self, "level_3_user", None)},
+            "level_1": {"user": getattr(self, "level_1_user", None)},
+            "level_2": {"user": getattr(self, "level_2_user", None)},
+            "level_3": {"user": getattr(self, "level_3_user", None)},
         }
 
     def record_approval_route_snapshot(self):
@@ -787,9 +784,9 @@ class ExpenseRequest(Document):
             # Return empty route instead of marking as failed
             # This allows auto-approve when no setting exists
             return {
-                "level_1": {"role": None, "user": None},
-                "level_2": {"role": None, "user": None},
-                "level_3": {"role": None, "user": None},
+                "level_1": {"user": None},
+                "level_2": {"user": None},
+                "level_3": {"user": None},
             }, None, False  # <-- changed: failed = False
 
         return route, setting_meta, False
@@ -823,11 +820,8 @@ class ExpenseRequest(Document):
 
         return any(
             [
-                route.get("level_1", {}).get("role"),
                 route.get("level_1", {}).get("user"),
-                route.get("level_2", {}).get("role"),
                 route.get("level_2", {}).get("user"),
-                route.get("level_3", {}).get("role"),
                 route.get("level_3", {}).get("user"),
             ]
         )
@@ -865,7 +859,7 @@ class ExpenseRequest(Document):
         route = route or self.get_route_snapshot()
         for level in (1, 2, 3):
             target = route.get(f"level_{level}", {}) if isinstance(route, dict) else {}
-            if target.get("role") or target.get("user"):
+            if target.get("user"):
                 return level
         return 1
 
@@ -876,9 +870,8 @@ class ExpenseRequest(Document):
         if level not in {1, 2, 3}:
             return False
 
-        role = self.get(f"level_{level}_role")
         user = self.get(f"level_{level}_user")
-        return bool(role or user)
+        return bool(user)
 
     def has_next_approval_level(self) -> bool:
         current = getattr(self, "current_approval_level", None) or 1
@@ -991,16 +984,6 @@ class ExpenseRequest(Document):
         if not audited_fields:
             return
 
-        allowed_roles = {
-            role
-            for role in {
-                getattr(self, "level_1_role", None),
-                getattr(self, "level_2_role", None),
-                getattr(self, "level_3_role", None),
-                roles.SYSTEM_MANAGER,
-            }
-            if role
-        }
         allowed_users = {
             user
             for user in {
@@ -1012,12 +995,11 @@ class ExpenseRequest(Document):
             if user
         }
 
-        role_allowed = bool(set(frappe.get_roles()) & allowed_roles)
         user_allowed = session_user in allowed_users
 
-        self._add_pending_edit_audit(previous, changed_fields=audited_fields, denied=not (role_allowed or user_allowed))
+        self._add_pending_edit_audit(previous, changed_fields=audited_fields, denied=not user_allowed)
 
-        if role_allowed or user_allowed:
+        if user_allowed:
             return
 
         frappe.throw(

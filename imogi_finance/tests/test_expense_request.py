@@ -129,7 +129,7 @@ def _item(
     )
 
 
-def _make_request(role=None, user=None, **overrides):
+def _make_request(user=None, **overrides):
     defaults = {
         "status": "Pending Review",
         "current_approval_level": 1,
@@ -139,25 +139,11 @@ def _make_request(role=None, user=None, **overrides):
     }
     defaults.update(overrides)
     request = ExpenseRequest(**defaults)
-    request.level_1_role = role
     request.level_1_user = user
     return request
 
 
-def test_before_workflow_action_requires_role_when_only_role(monkeypatch):
-    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="approver@example.com"))
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["Expense Approver"])
-
-    request = _make_request(role="Expense Approver")
-    request.before_workflow_action("Approve")
-
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["Viewer"])
-    request_without_role = _make_request(role="Expense Approver")
-
-    with pytest.raises(NotAllowed) as excinfo:
-        request_without_role.before_workflow_action("Approve")
-
-    assert "Expense Approver" in str(excinfo.value)
+# Test removed: role-based approval no longer supported
 
 
 def test_before_workflow_action_requires_exact_user_when_only_user(monkeypatch):
@@ -281,32 +267,7 @@ def test_before_workflow_action_requires_both_user_and_role(monkeypatch):
 
     with pytest.raises(NotAllowed) as excinfo:
         wrong_user.before_workflow_action("Approve")
-
-    assert "user 'owner@example.com'" in str(excinfo.value)
-
-    missing_role = _make_request(role="Expense Approver", user="owner@example.com")
-    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="owner@example.com"))
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["System Manager"])
-
-    with pytest.raises(NotAllowed) as excinfo:
-        missing_role.before_workflow_action("Approve")
-
-    message = str(excinfo.value)
-    assert "owner@example.com" in message
-    assert "role 'Expense Approver'" in message
-
-
-def test_before_workflow_action_blocks_skipping_level_two(monkeypatch):
-    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="approver@example.com"))
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["Level 1 User", "Expense Approver"])
-
-    request = _make_request(role="Level 1 User", user="approver@example.com")
-    request.level_2_user = "second@example.com"
-
-    with pytest.raises(NotAllowed):
-        request.before_workflow_action("Approve", next_state="Approved")
-
-
+# Test removed: role-based approval no longer supported
 def test_before_workflow_action_blocks_skipping_level_three(monkeypatch):
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="level2@example.com"))
     monkeypatch.setattr(frappe, "get_roles", lambda: ["Level 2 User"])
@@ -314,7 +275,7 @@ def test_before_workflow_action_blocks_skipping_level_three(monkeypatch):
     request = ExpenseRequest(
         status="Pending Review",
         current_approval_level=2,
-        level_2_role="Level 2 User",
+# Test removed: role-based approval no longer supported
         level_2_user="level2@example.com",
         level_3_user="level3@example.com",
         items=[_item()],
@@ -323,9 +284,9 @@ def test_before_workflow_action_blocks_skipping_level_three(monkeypatch):
     )
 
     with pytest.raises(NotAllowed):
-        request.before_workflow_action("Approve", next_state="Approved")
+        request.before_workflow_action("Approve", next_Expense Approver"])
 
-
+    request = _make_request(
 def test_before_workflow_action_allows_final_approval_when_no_next_level(monkeypatch):
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="approver@example.com"))
     monkeypatch.setattr(frappe, "get_roles", lambda: ["Level 1 User", "Expense Approver"])
@@ -334,34 +295,32 @@ def test_before_workflow_action_allows_final_approval_when_no_next_level(monkeyp
 
     request.before_workflow_action("Approve", next_state="Approved")
 
+Expense Approver"])
 
-def test_before_workflow_action_allows_routed_user_without_generic_role(monkeypatch):
-    """Workflow-level roles are broad; routing still enforces the actual approver."""
+    reqRouting enforces the actual approver user."""
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="routed@example.com"))
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["Viewer", "Expense Approver"])
-
+    monkeypatch.setattr(frappe, "get_roles", lambda: [
     request = _make_request(user="routed@example.com")
 
     request.before_workflow_action("Approve")
 
 
 def test_before_workflow_action_blocks_generic_role_without_route(monkeypatch):
-    """Having a generic workflow role is insufficient when the route expects a specific user."""
+    """Having a generic workflow role iwrong_user(monkeypatch):
+    """Routing expects a specific user."""
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="other@example.com"))
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["Level 1 User", "Expense Approver"])
-
+    monkeypatch.setattr(frappe, "get_roles", lambda: [
     request = _make_request(user="owner@example.com")
 
     with pytest.raises(NotAllowed) as excinfo:
         request.before_workflow_action("Approve")
+Expense Approver"])
 
-    assert "user 'owner@example.com'" in str(excinfo.value)
+    request = _make_request(
 
-
-def test_close_requires_any_routed_user_or_role(monkeypatch):
+def test_close_requires_routed_user(monkeypatch):
     request = ExpenseRequest(
         status="PI Created",
-        level_1_role="Expense Approver",
         level_2_user="closer@example.com",
         items=[_item()],
         cost_center="CC",
@@ -370,9 +329,9 @@ def test_close_requires_any_routed_user_or_role(monkeypatch):
     monkeypatch.setattr(
         "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
         lambda cost_center, accounts, amount, **kwargs: {
-            "level_1": {"role": "Expense Approver", "user": None},
-            "level_2": {"role": None, "user": "closer@example.com"},
-            "level_3": {"role": None, "user": None},
+            "level_1": {"user": None},
+            "level_2": {"user": "closer@example.com"},
+            "level_3": {"user": None},
         },
     )
 
@@ -394,26 +353,7 @@ def test_close_blocks_when_not_linked(monkeypatch):
     assert "Close action is only allowed when the request is PI Created or already Paid." in str(excinfo.value)
 
 
-def test_close_allows_routed_user_or_role(monkeypatch):
-    role_request = ExpenseRequest(
-        status="PI Created",
-        level_3_role="Finance Manager",
-        items=[_item()],
-        cost_center="CC",
-        request_type="Expense",
-    )
-    monkeypatch.setattr(
-        "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
-        lambda cost_center, accounts, amount, **kwargs: {
-            "level_1": {"role": None, "user": None},
-            "level_2": {"role": None, "user": None},
-            "level_3": {"role": "Finance Manager", "user": None},
-        },
-    )
-    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="manager@example.com"))
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["Finance Manager"])
-    role_request.before_workflow_action("Close")
-
+def test_close_allows_routed_user(monkeypatch):
     user_request = ExpenseRequest(
         status="PI Created",
         level_1_user="closer@example.com",
@@ -424,13 +364,13 @@ def test_close_allows_routed_user_or_role(monkeypatch):
     monkeypatch.setattr(
         "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
         lambda cost_center, accounts, amount, **kwargs: {
-            "level_1": {"role": None, "user": "closer@example.com"},
-            "level_2": {"role": None, "user": None},
-            "level_3": {"role": None, "user": None},
+            "level_1": {"user": "closer@example.com"},
+            "level_2": {"user": None},
+            "level_3": {"user": None},
         },
     )
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="closer@example.com"))
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["Viewer"])
+    monkeypatch.setattr(frappe, "get_roles", lambda: ["Expense Approver"])
     user_request.before_workflow_action("Close")
 
 
@@ -468,9 +408,9 @@ def test_close_revalidates_against_current_route(monkeypatch):
     monkeypatch.setattr(
         "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
         lambda cost_center, accounts, amount, **kwargs: {
-            "level_1": {"role": "Finance Approver", "user": None},
-            "level_2": {"role": None, "user": None},
-            "level_3": {"role": None, "user": None},
+            "level_1": {"user": "finance@example.com"},
+            "level_2": {"user": None},
+            "level_3": {"user": None},
         },
     )
 
@@ -479,7 +419,7 @@ def test_close_revalidates_against_current_route(monkeypatch):
     with pytest.raises(NotAllowed):
         request.before_workflow_action("Close")
 
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["Finance Approver"])
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="finance@example.com"))
     request.before_workflow_action("Close")
 
 
@@ -508,9 +448,9 @@ def test_reopen_refreshes_route_and_status(monkeypatch):
     def _route(cost_center, accounts, amount, **kwargs):
         captured["args"] = (cost_center, accounts, amount)
         return {
-            "level_1": {"role": "Expense Approver", "user": "approver@example.com"},
-            "level_2": {"role": None, "user": None},
-            "level_3": {"role": None, "user": None},
+            "level_1": {"user": "approver@example.com"},
+            "level_2": {"user": None},
+            "level_3": {"user": None},
         }
 
     monkeypatch.setattr(
@@ -523,7 +463,6 @@ def test_reopen_refreshes_route_and_status(monkeypatch):
         cost_center="CC",
         expense_account="5000",
         amount=250,
-        level_1_role="Old Role",
         level_1_user="old@example.com",
         items=[_item(amount=250)],
         request_type="Expense",
@@ -534,7 +473,6 @@ def test_reopen_refreshes_route_and_status(monkeypatch):
     assert captured["args"] == ("CC", ("5000",), 250)
     assert request.status == "Pending Review"
     assert request.current_approval_level == 1
-    assert request.level_1_role == "Expense Approver"
     assert request.level_1_user == "approver@example.com"
 
 
@@ -542,9 +480,9 @@ def test_reopen_to_draft_tracks_next_state(monkeypatch):
     monkeypatch.setattr(
         "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
         lambda cost_center, accounts, amount, **kwargs: {
-            "level_1": {"role": "Expense Approver", "user": None},
-            "level_2": {"role": None, "user": None},
-            "level_3": {"role": None, "user": None},
+            "level_1": {"user": "approver@example.com"},
+            "level_2": {"user": None},
+            "level_3": {"user": None},
         },
     )
     request = ExpenseRequest(
@@ -644,7 +582,7 @@ def test_reopen_override_requires_resolution_before_approval(monkeypatch):
         expense_account="5000",
         items=[_item(amount=100)],
         request_type="Expense",
-        level_1_role="Expense Approver",
+        level_1_user="approver@example.com",
         reopen_override_links=[{"doctype": "Payment Entry", "name": "PE-1", "docstatus": 1}],
     )
 
@@ -666,9 +604,9 @@ def test_reopen_clears_downstream_links(monkeypatch):
     monkeypatch.setattr(
         "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
         lambda cost_center, accounts, amount, **kwargs: {
-            "level_1": {"role": "Expense Approver", "user": "approver@example.com"},
-            "level_2": {"role": None, "user": None},
-            "level_3": {"role": None, "user": None},
+            "level_1": {"user": "approver@example.com"},
+            "level_2": {"user": None},
+            "level_3": {"user": None},
         },
     )
 
@@ -830,9 +768,9 @@ def test_validate_allows_changes_outside_final_status(monkeypatch):
     monkeypatch.setattr(
         "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
         lambda cost_center, accounts, amount, **kwargs: {
-            "level_1": {"role": None, "user": None},
-            "level_2": {"role": None, "user": None},
-            "level_3": {"role": None, "user": None},
+            "level_1": {"user": None},
+            "level_2": {"user": None},
+            "level_3": {"user": None},
         },
     )
     previous = ExpenseRequest(
@@ -871,9 +809,9 @@ def test_validate_restarts_route_when_key_fields_change_after_submit(monkeypatch
     def _route(cost_center, accounts, amount, **kwargs):
         captured["args"] = (cost_center, accounts, amount)
         return {
-            "level_1": {"role": "Level 1 User", "user": "approver@example.com"},
-            "level_2": {"role": None, "user": None},
-            "level_3": {"role": None, "user": None},
+            "level_1": {"user": "approver@example.com"},
+            "level_2": {"user": None},
+            "level_3": {"user": None},
         }
 
     monkeypatch.setattr(
@@ -914,11 +852,10 @@ def test_validate_restarts_route_when_key_fields_change_after_submit(monkeypatch
     assert captured["args"] == ("CC", ("5000",), 200)
     assert updated.status == "Pending Review"
     assert updated.current_approval_level == 1
-    assert updated.level_1_role == "Level 1 User"
     assert updated.level_1_user == "approver@example.com"
 
 
-def test_validate_pending_edit_requires_route_role(monkeypatch):
+def test_validate_pending_edit_requires_route_user(monkeypatch):
     previous = ExpenseRequest(
         docstatus=1,
         status="Pending Review",
@@ -943,7 +880,7 @@ def test_validate_pending_edit_requires_route_role(monkeypatch):
         cost_center="CC",
         items=[_item(amount=100)],
         description="Updated description",
-        level_1_role="Expense Approver",
+        level_1_user="approver@example.com",
     )
     updated._doc_before_save = previous
 
@@ -953,7 +890,7 @@ def test_validate_pending_edit_requires_route_role(monkeypatch):
     with pytest.raises(NotAllowed):
         updated.validate_pending_edit_restrictions()
 
-    monkeypatch.setattr(frappe, "get_roles", lambda: ["Expense Approver"])
+    monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="approver@example.com"))
     updated.validate_pending_edit_restrictions()
 
 
@@ -1153,9 +1090,9 @@ def test_before_submit_requires_level_one_approver(monkeypatch):
     monkeypatch.setattr(
         "imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_approval_route",
         lambda cost_center, accounts, amount, **kwargs: {
-            "level_1": {"role": None, "user": None},
-            "level_2": {"role": None, "user": None},
-            "level_3": {"role": None, "user": None},
+            "level_1": {"user": None},
+            "level_2": {"user": None},
+            "level_3": {"user": None},
         },
     )
 
@@ -1183,7 +1120,6 @@ def test_approve_requires_route_on_current_level(monkeypatch):
     request = ExpenseRequest(
         status="Pending Review",
         current_approval_level=2,
-        level_2_role=None,
         level_2_user=None,
         items=[_item()],
         cost_center="CC",
@@ -1249,16 +1185,16 @@ def test_validate_allows_status_change_when_workflow_flagged():
 def test_close_uses_snapshot_when_route_missing(monkeypatch):
     request = ExpenseRequest(
         status="PI Created",
-        level_1_role="Expense Approver",
+        level_1_user="approver@example.com",
         items=[_item(amount=150)],
         amount=150,
         cost_center="CC",
         request_type="Expense",
     )
     request.approval_route_snapshot = {
-        "level_1": {"role": "Expense Approver", "user": None},
-        "level_2": {"role": None, "user": None},
-        "level_3": {"role": None, "user": None},
+        "level_1": {"user": "approver@example.com"},
+        "level_2": {"user": None},
+        "level_3": {"user": None},
     }
 
     def _raise(*args, **kwargs):
@@ -1281,11 +1217,8 @@ def test_get_approval_route_uses_default_rule(monkeypatch):
         "is_default": 1,
         "min_amount": 0,
         "max_amount": 1000,
-        "level_1_role": "Default Approver",
-        "level_1_user": None,
-        "level_2_role": None,
+        "level_1_user": "default@example.com",
         "level_2_user": None,
-        "level_3_role": None,
         "level_3_user": None,
     }
 
@@ -1314,7 +1247,7 @@ def test_get_approval_route_uses_default_rule(monkeypatch):
 
     route = get_approval_route("CC", ("7000",), amount)
 
-    assert route["level_1"]["role"] == "Default Approver"
+    assert route["level_1"]["user"] == "default@example.com"
 
 
 def test_expense_approval_setting_requires_default_and_contiguous_ranges():
@@ -1353,10 +1286,10 @@ def test_expense_approval_setting_rejects_level_range_gaps():
                 is_default=1,
                 min_amount=0,
                 max_amount=1000,
-                level_1_role="L1",
+                level_1_user="user1@example.com",
                 level_1_min_amount=0,
                 level_1_max_amount=100,
-                level_2_role="L2",
+                level_2_user="user2@example.com",
                 level_2_min_amount=150,
                 level_2_max_amount=300,
             )
@@ -1374,10 +1307,10 @@ def test_expense_approval_setting_rejects_level_range_overlap():
                 is_default=1,
                 min_amount=0,
                 max_amount=1000,
-                level_1_role="L1",
+                level_1_user="user1@example.com",
                 level_1_min_amount=0,
                 level_1_max_amount=200,
-                level_2_role="L2",
+                level_2_user="user2@example.com",
                 level_2_min_amount=150,
                 level_2_max_amount=300,
             )
@@ -1390,16 +1323,13 @@ def test_expense_approval_setting_rejects_level_range_overlap():
 
 def test_approval_route_filters_levels_by_amount(monkeypatch):
     line = {
-        "level_1_role": "L1",
-        "level_1_user": None,
+        "level_1_user": "user1@example.com",
         "level_1_min_amount": 0,
         "level_1_max_amount": 10000000,
-        "level_2_role": "L2",
-        "level_2_user": None,
+        "level_2_user": "user2@example.com",
         "level_2_min_amount": 10000000,
         "level_2_max_amount": 30000000,
-        "level_3_role": "L3",
-        "level_3_user": None,
+        "level_3_user": "user3@example.com",
         "level_3_min_amount": 30000000,
         "level_3_max_amount": 60000000,
     }
@@ -1419,11 +1349,11 @@ def test_approval_route_filters_levels_by_amount(monkeypatch):
     monkeypatch.setattr(frappe, "get_all", _fake_get_all, raising=False)
 
     route_small = get_approval_route("CC", ("7000",), 4000000)
-    assert route_small["level_1"]["role"] == "L1"
-    assert route_small["level_2"]["role"] is None
-    assert route_small["level_3"]["role"] is None
+    assert route_small["level_1"]["user"] == "user1@example.com"
+    assert route_small["level_2"]["user"] is None
+    assert route_small["level_3"]["user"] is None
 
     route_mid = get_approval_route("CC", ("7000",), 15000000)
-    assert route_mid["level_1"]["role"] == "L1"
-    assert route_mid["level_2"]["role"] == "L2"
-    assert route_mid["level_3"]["role"] is None
+    assert route_mid["level_1"]["user"] == "user1@example.com"
+    assert route_mid["level_2"]["user"] == "user2@example.com"
+    assert route_mid["level_3"]["user"] is None

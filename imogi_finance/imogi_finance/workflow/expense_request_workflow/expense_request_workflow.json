@@ -87,7 +87,7 @@
       "allowed": "All",
       "state": "Draft",
       "next_state": "Pending Review",
-      "condition": "doc.get('level_1_role') or doc.get('level_1_user') or doc.get('level_2_role') or doc.get('level_2_user') or doc.get('level_3_role') or doc.get('level_3_user')",
+      "condition": "doc.get('level_1_user') or doc.get('level_2_user') or doc.get('level_3_user')",
       "doc_status": 1
     },
     {
@@ -96,7 +96,7 @@
       "allowed": "All",
       "state": "Draft",
       "next_state": "Approved",
-      "condition": "not (doc.get('level_1_role') or doc.get('level_1_user') or doc.get('level_2_role') or doc.get('level_2_user') or doc.get('level_3_role') or doc.get('level_3_user'))",
+      "condition": "not (doc.get('level_1_user') or doc.get('level_2_user') or doc.get('level_3_user'))",
       "doc_status": 1
     },
     {
@@ -104,7 +104,7 @@
       "allowed": "All",
       "state": "Pending Review",
       "next_state": "Pending Review",
-      "condition": "((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_role') or doc.get('level_2_user') or doc.get('level_3_role') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and (doc.get('level_3_role') or doc.get('level_3_user')))",
+      "condition": "((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_user') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and doc.get('level_3_user'))",
       "doc_status": 1
     },
     {
@@ -112,7 +112,7 @@
       "allowed": "All",
       "state": "Pending Review",
       "next_state": "Approved",
-      "condition": "not (((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_role') or doc.get('level_2_user') or doc.get('level_3_role') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and (doc.get('level_3_role') or doc.get('level_3_user'))))",
+      "condition": "not (((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_user') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and doc.get('level_3_user')))",
       "doc_status": 1
     },
     {

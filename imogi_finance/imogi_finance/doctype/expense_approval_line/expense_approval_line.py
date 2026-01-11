@@ -17,11 +17,10 @@ class ExpenseApprovalLine(Document):
         for level in (1, 2, 3):
             min_amt = getattr(self, f"level_{level}_min_amount", None)
             max_amt = getattr(self, f"level_{level}_max_amount", None)
-            role = getattr(self, f"level_{level}_role", None)
             user = getattr(self, f"level_{level}_user", None)
 
             # Skip if level not configured
-            if not role and not user:
+            if not user:
                 continue
 
             # If level has approver, amount range is required

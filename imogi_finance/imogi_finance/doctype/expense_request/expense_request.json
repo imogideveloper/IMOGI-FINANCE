@@ -78,13 +78,10 @@
     "current_approval_level",
     "column_break_approval_status",
     "approvers_section",
-    "level_1_role",
     "level_1_user",
     "column_break_approver_2",
-    "level_2_role",
     "level_2_user",
     "column_break_approver_3",
-    "level_3_role",
     "level_3_user",
 
     "tab_integration",
@@ -504,16 +501,9 @@
       "label": "Daftar Approver"
     },
     {
-      "fieldname": "level_1_role",
-      "fieldtype": "Link",
-      "label": "Level 1 - Role",
-      "options": "Role",
-      "read_only": 1
-    },
-    {
       "fieldname": "level_1_user",
       "fieldtype": "Link",
-      "label": "Level 1 - User",
+      "label": "Level 1 - Approver",
       "options": "User",
       "read_only": 1
     },
@@ -522,16 +512,9 @@
       "fieldtype": "Column Break"
     },
     {
-      "fieldname": "level_2_role",
-      "fieldtype": "Link",
-      "label": "Level 2 - Role",
-      "options": "Role",
-      "read_only": 1
-    },
-    {
       "fieldname": "level_2_user",
       "fieldtype": "Link",
-      "label": "Level 2 - User",
+      "label": "Level 2 - Approver",
       "options": "User",
       "read_only": 1
     },
@@ -540,16 +523,9 @@
       "fieldtype": "Column Break"
     },
     {
-      "fieldname": "level_3_role",
-      "fieldtype": "Link",
-      "label": "Level 3 - Role",
-      "options": "Role",
-      "read_only": 1
-    },
-    {
       "fieldname": "level_3_user",
       "fieldtype": "Link",
-      "label": "Level 3 - User",
+      "label": "Level 3 - Approver",
       "options": "User",
       "read_only": 1
     },
