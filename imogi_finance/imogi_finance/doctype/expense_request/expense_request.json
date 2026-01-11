@@ -67,13 +67,6 @@
     "deferred_periods",
 
     "tab_asset",
-    "asset_section",
-    "asset_category",
-    "asset_name",
-    "column_break_asset",
-    "asset_location",
-    "section_break_asset_desc",
-    "asset_description",
     "asset_items_section",
     "build_cumulative_asset_from_items",
     "asset_items",
@@ -449,43 +442,6 @@
       "fieldname": "tab_asset",
       "fieldtype": "Tab Break",
       "label": "Asset"
-    },
-    {
-      "fieldname": "asset_section",
-      "fieldtype": "Section Break",
-      "label": "Informasi Asset"
-    },
-    {
-      "fieldname": "asset_category",
-      "fieldtype": "Link",
-      "label": "Kategori Asset",
-      "options": "Asset Category",
-      "mandatory_depends_on": "eval:doc.request_type=='Asset'"
-    },
-    {
-      "fieldname": "asset_name",
-      "fieldtype": "Data",
-      "label": "Nama Asset",
-      "mandatory_depends_on": "eval:doc.request_type=='Asset'"
-    },
-    {
-      "fieldname": "column_break_asset",
-      "fieldtype": "Column Break"
-    },
-    {
-      "fieldname": "asset_location",
-      "fieldtype": "Link",
-      "label": "Lokasi Asset",
-      "options": "Location"
-    },
-    {
-      "fieldname": "section_break_asset_desc",
-      "fieldtype": "Section Break"
-    },
-    {
-      "fieldname": "asset_description",
-      "fieldtype": "Small Text",
-      "label": "Deskripsi Asset"
     },
     {
       "fieldname": "asset_items_section",
