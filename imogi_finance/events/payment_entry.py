@@ -5,6 +5,8 @@ from imogi_finance.branching import get_branch_settings, validate_branch_alignme
 from imogi_finance.events.utils import (
     get_approved_expense_request,
     get_cancel_updates,
+    get_expense_request_links,
+    get_expense_request_status,
 )
 
 
@@ -41,6 +43,46 @@ def on_change_expense_request(doc, method=None):
         pass
 
 
+def after_insert(doc, method=None):
+    """Link Payment Entry to Expense Request immediately on draft creation."""
+    request_name = doc.get("imogi_expense_request")
+    if not request_name:
+        return
+
+    # Validate ER is in correct status
+    request = get_approved_expense_request(
+        request_name, _("Payment Entry"), allowed_statuses=frozenset({"PI Created"})
+    )
+
+    # Check no other PE is already linked
+    linked_payment_entry = getattr(request, "linked_payment_entry", None)
+    if linked_payment_entry and linked_payment_entry != doc.name:
+        frappe.throw(
+            _("Expense Request already linked to Payment Entry {0}").format(
+                linked_payment_entry
+            )
+        )
+
+    # Check no other active PE exists for this ER
+    existing_payment_entry = frappe.db.exists(
+        "Payment Entry",
+        {"imogi_expense_request": request.name, "docstatus": ["!=", 2], "name": ["!=", doc.name]},
+    )
+    if existing_payment_entry:
+        frappe.throw(
+            _("An active Payment Entry {0} already exists for Expense Request {1}").format(
+                existing_payment_entry, request.name
+            )
+        )
+
+    # Set linked_payment_entry immediately, status remains PI Created
+    frappe.db.set_value(
+        "Expense Request",
+        request.name,
+        {"linked_payment_entry": doc.name},
+    )
+
+
 def on_submit(doc, method=None):
     request = doc.get("imogi_expense_request")
     if not request:
@@ -50,22 +92,12 @@ def on_submit(doc, method=None):
         request, _("Payment Entry"), allowed_statuses=frozenset({"PI Created"})
     )
 
+    # Validate this PE is the one linked to ER (set in after_insert)
     linked_payment_entry = getattr(request, "linked_payment_entry", None)
-    if linked_payment_entry:
+    if linked_payment_entry and linked_payment_entry != doc.name:
         frappe.throw(
-            _("Expense Request already linked to Payment Entry {0}").format(
+            _("Expense Request already linked to a different Payment Entry {0}").format(
                 linked_payment_entry
-            )
-        )
-
-    existing_payment_entry = frappe.db.exists(
-        "Payment Entry",
-        {"imogi_expense_request": request.name, "docstatus": ["!=", 2]},
-    )
-    if existing_payment_entry:
-        frappe.throw(
-            _("An active Payment Entry {0} already exists for Expense Request {1}").format(
-                existing_payment_entry, request.name
             )
         )
 
@@ -106,10 +138,11 @@ def on_submit(doc, method=None):
             label=_("Payment Entry"),
         )
 
+    # Update status to Paid now that PE is submitted
     frappe.db.set_value(
         "Expense Request",
         request.name,
-        {"linked_payment_entry": doc.name, "status": "Paid"},
+        {"status": "Paid", "workflow_state": "Paid"},
     )
 
 
@@ -121,3 +154,26 @@ def on_cancel(doc, method=None):
     updates = get_cancel_updates(request, "linked_payment_entry")
 
     frappe.db.set_value("Expense Request", request, updates)
+
+
+def on_trash(doc, method=None):
+    """Clear linked_payment_entry when Payment Entry is deleted."""
+    request = doc.get("imogi_expense_request")
+    if not request:
+        return
+
+    request_links = get_expense_request_links(request)
+    
+    # Only clear if this PE is the linked one
+    if request_links.get("linked_payment_entry") != doc.name:
+        return
+
+    remaining_links = dict(request_links)
+    remaining_links["linked_payment_entry"] = None
+    next_status = get_expense_request_status(remaining_links)
+
+    frappe.db.set_value(
+        "Expense Request",
+        request,
+        {"linked_payment_entry": None, "status": next_status, "workflow_state": next_status},
+    )

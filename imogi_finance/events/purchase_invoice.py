@@ -59,12 +59,13 @@ def on_submit(doc, method=None):
         return
 
     request = get_approved_expense_request(
-        request, _("Purchase Invoice"), allowed_statuses=PURCHASE_INVOICE_ALLOWED_STATUSES
+        request, _("Purchase Invoice"), allowed_statuses=PURCHASE_INVOICE_ALLOWED_STATUSES | {"PI Created"}
     )
 
-    if request.linked_purchase_invoice:
+    # Validate linked_purchase_invoice matches this PI
+    if request.linked_purchase_invoice and request.linked_purchase_invoice != doc.name:
         frappe.throw(
-            _("Expense Request is already linked to Purchase Invoice {0}.").format(
+            _("Expense Request is already linked to a different Purchase Invoice {0}.").format(
                 request.linked_purchase_invoice
             )
         )
@@ -84,12 +85,12 @@ def on_submit(doc, method=None):
             label=_("Purchase Invoice"),
         )
 
+    # Update status to PI Created now that PI is submitted
     frappe.db.set_value(
         "Expense Request",
         request.name,
-        {"linked_purchase_invoice": doc.name, "pending_purchase_invoice": None, "status": "PI Created"},
+        {"status": "PI Created", "workflow_state": "PI Created", "pending_purchase_invoice": None},
     )
-    request.pending_purchase_invoice = None
     consume_budget_for_purchase_invoice(doc, expense_request=request)
     maybe_post_internal_charge_je(doc, expense_request=request)
 

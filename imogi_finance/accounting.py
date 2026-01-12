@@ -130,19 +130,14 @@ def _validate_request_type(
 
 def _validate_no_existing_purchase_invoice(request: frappe.model.document.Document) -> None:
     if request.linked_purchase_invoice:
-        frappe.throw(
-            _("Expense Request is already linked to Purchase Invoice {0}.").format(
-                request.linked_purchase_invoice
+        # Check if linked PI still exists and is not cancelled
+        pi_docstatus = frappe.db.get_value("Purchase Invoice", request.linked_purchase_invoice, "docstatus")
+        if pi_docstatus is not None and pi_docstatus != 2:
+            frappe.throw(
+                _("Expense Request is already linked to Purchase Invoice {0}.").format(
+                    request.linked_purchase_invoice
+                )
             )
-        )
-
-    pending_pi = getattr(request, "pending_purchase_invoice", None)
-    if pending_pi:
-        frappe.throw(
-            _("Expense Request already has draft Purchase Invoice {0}. Submit or cancel it before creating another.").format(
-                pending_pi
-            )
-        )
 
 
 def _update_request_purchase_invoice_links(
@@ -150,13 +145,11 @@ def _update_request_purchase_invoice_links(
     purchase_invoice: frappe.model.document.Document,
     mark_pending: bool = True,
 ) -> None:
-    is_submitted = getattr(purchase_invoice, "docstatus", 0) == 1
-    pending_invoice = purchase_invoice.name if mark_pending and not is_submitted else None
-    linked_invoice = purchase_invoice.name if is_submitted else None
-
+    # Always set linked_purchase_invoice immediately, even for draft PI
+    # Status remains "Approved" - will change to "PI Created" on PI submit
     updates = {
-        "linked_purchase_invoice": linked_invoice,
-        "pending_purchase_invoice": pending_invoice,
+        "linked_purchase_invoice": purchase_invoice.name,
+        "pending_purchase_invoice": None,
     }
 
     if hasattr(request, "db_set"):

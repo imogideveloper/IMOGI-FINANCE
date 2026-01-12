@@ -42,14 +42,31 @@ def has_active_links(request_links, exclude: frozenset[str] | None = None):
     )
 
 
-def get_expense_request_status(request_links: dict) -> str:
+def get_expense_request_status(request_links: dict, *, check_pi_docstatus: bool = False) -> str:
+    """Determine Expense Request status based on linked documents.
+    
+    Args:
+        request_links: Dict with linked_payment_entry, linked_purchase_invoice, linked_asset
+        check_pi_docstatus: If True, verify PI is submitted before returning PI Created
+    """
     if request_links.get("linked_payment_entry"):
         return "Paid"
-    if any(
-        request_links.get(field)
-        for field in ("linked_purchase_invoice", "linked_asset", "pending_purchase_invoice")
-    ):
+    
+    linked_pi = request_links.get("linked_purchase_invoice")
+    linked_asset = request_links.get("linked_asset")
+    
+    if linked_pi and check_pi_docstatus:
+        # Only return PI Created if PI is actually submitted
+        import frappe
+        pi_docstatus = frappe.db.get_value("Purchase Invoice", linked_pi, "docstatus")
+        if pi_docstatus == 1:
+            return "PI Created"
+        # PI is draft or cancelled - status should be Approved
+        return "Approved"
+    
+    if linked_pi or linked_asset:
         return "PI Created"
+    
     return "Approved"
 
 

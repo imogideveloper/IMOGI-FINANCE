@@ -219,6 +219,9 @@ doc_events = {
             "imogi_finance.transfer_application.payment_entry_hooks.validate_transfer_application_link",
             "imogi_finance.advance_payment.workflow.on_payment_entry_validate",
         ],
+        "after_insert": [
+            "imogi_finance.events.payment_entry.after_insert",
+        ],
         "before_submit": [
             "imogi_finance.receipt_control.payment_entry_hooks.validate_customer_receipt_link",
         ],
@@ -233,6 +236,9 @@ doc_events = {
             "imogi_finance.receipt_control.payment_entry_hooks.remove_payment_entry",
             "imogi_finance.transfer_application.payment_entry_hooks.on_cancel",
             "imogi_finance.advance_payment.workflow.on_payment_entry_cancel",
+        ],
+        "on_trash": [
+            "imogi_finance.events.payment_entry.on_trash",
         ],
         "on_update_after_submit": [
             "imogi_finance.advance_payment.workflow.on_payment_entry_update_after_submit",
