@@ -30,7 +30,7 @@
     {
       "doctype": "Workflow Document State",
       "state": "Rejected",
-      "doc_status": "2",
+      "doc_status": "0",
       "allow_edit": "Owner"
     },
     {
@@ -63,16 +63,7 @@
     },
     {
       "doctype": "Workflow Transition",
-      "action": "Approve (Level 1)",
-      "state": "Pending Review",
-      "next_state": "Approved",
-      "allowed": "Expense Approver",
-      "allow_self_approval": 0,
-      "condition": "doc.get('current_approval_level') == 1 and not (doc.get('level_2_user') or doc.get('level_3_user'))"
-    },
-    {
-      "doctype": "Workflow Transition",
-      "action": "Approve (Continue)",
+      "action": "Approve",
       "state": "Pending Review",
       "next_state": "Pending Review",
       "allowed": "Expense Approver",
@@ -81,12 +72,12 @@
     },
     {
       "doctype": "Workflow Transition",
-      "action": "Approve (Final)",
+      "action": "Approve",
       "state": "Pending Review",
       "next_state": "Approved",
       "allowed": "Expense Approver",
       "allow_self_approval": 0,
-      "condition": "(doc.get('current_approval_level') == 2 and not doc.get('level_3_user')) or doc.get('current_approval_level') == 3"
+      "condition": "not ((doc.get('current_approval_level') == 1 and (doc.get('level_2_user') or doc.get('level_3_user'))) or (doc.get('current_approval_level') == 2 and doc.get('level_3_user')))"
     },
     {
       "doctype": "Workflow Transition",
@@ -133,6 +124,14 @@
       "doctype": "Workflow Transition",
       "action": "Cancel",
       "state": "PI Created",
+      "next_state": "Cancelled",
+      "allowed": "Accounts Manager",
+      "allow_self_approval": 0
+    },
+    {
+      "doctype": "Workflow Transition",
+      "action": "Cancel",
+      "state": "Paid",
       "next_state": "Cancelled",
       "allowed": "Accounts Manager",
       "allow_self_approval": 0
