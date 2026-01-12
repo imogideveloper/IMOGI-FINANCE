@@ -354,6 +354,30 @@ class ExpenseRequest(Document):
             self.validate_reopen_override_resolution()
             return
 
+        # Handle "Create PI" workflow action
+        if action == "Create PI":
+            next_state = kwargs.get("next_state")
+            if next_state == "PI Created":
+                # Call the actual Purchase Invoice creation logic
+                try:
+                    pi_name = accounting.create_purchase_invoice_from_request(self.name)
+                    if not pi_name:
+                        frappe.throw(
+                            _("Failed to create Purchase Invoice. Please check validation requirements."),
+                            title=_("PI Creation Failed")
+                        )
+                    # Update the document with the PI link
+                    self.linked_purchase_invoice = pi_name
+                    self.pending_purchase_invoice = None
+                except Exception as e:
+                    # Re-throw with clear message
+                    error_msg = str(e)
+                    frappe.throw(
+                        _("Cannot complete 'Create PI' action: {0}").format(error_msg),
+                        title=_("Purchase Invoice Creation Error")
+                    )
+            return
+
         self._workflow_engine.guard_action(
             doc=self,
             action=action,
@@ -435,6 +459,19 @@ class ExpenseRequest(Document):
             # Ensure approval audit fields are cleared when rejected
             self.approved_on = None
             self.rejected_on = now_datetime()
+
+        # Validate "Create PI" action - ensure PI was actually created
+        if action == "Create PI" and next_state == "PI Created":
+            if not getattr(self, "linked_purchase_invoice", None):
+                frappe.throw(
+                    _("Cannot set status to 'PI Created' without a linked Purchase Invoice. "
+                      "The Purchase Invoice creation may have failed. Please check error logs."),
+                    title=_("Invalid State Transition")
+                )
+            self.status = next_state
+            self.workflow_state = next_state
+            # Don't call handle_expense_request_workflow for Create PI action
+            return
 
         if action in {"Approve", "Reject"} and next_state:
             self.status = next_state

@@ -15,10 +15,6 @@
     {
       "action": "Create PI",
       "allowed": "All"
-    },
-    {
-      "action": "Mark Paid",
-      "allowed": "All"
     }
   ],
   "creation": "",
@@ -28,7 +24,7 @@
   "is_active": 1,
   "module": "Imogi Finance",
   "name": "Expense Request Workflow",
-  "notes": "Roles are intentionally broad; approval enforcement happens in ExpenseRequest.before_workflow_action based on the dynamically resolved route.",
+  "notes": "Roles are intentionally broad; approval enforcement happens in ExpenseRequest.before_workflow_action based on the dynamically resolved route. The 'Create PI' action automatically creates a Purchase Invoice document via accounting.create_purchase_invoice_from_request(). Status 'Paid' is set automatically by Payment Entry on_submit hook, not via workflow action.",
   "override_status": 1,
   "states": [
     {
@@ -127,13 +123,6 @@
       "allowed": "All",
       "state": "Approved",
       "next_state": "PI Created",
-      "doc_status": 1
-    },
-    {
-      "action": "Mark Paid",
-      "allowed": "All",
-      "state": "PI Created",
-      "next_state": "Paid",
       "doc_status": 1
     }
   ],
