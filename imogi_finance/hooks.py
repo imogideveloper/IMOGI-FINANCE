@@ -211,6 +211,7 @@ doc_events = {
     "Expense Request": {
         "validate": [
             "imogi_finance.tax_operations.validate_tax_period_lock",
+            "imogi_finance.events.expense_request.validate_workflow_action",
         ]
     },
     "Payment Entry": {

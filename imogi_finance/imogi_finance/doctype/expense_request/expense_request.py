@@ -87,11 +87,6 @@ class ExpenseRequest(Document):
 
     def before_workflow_action(self, action, **kwargs):
         """Gate workflow actions using ApprovalService + route validation."""
-        # DEBUG: Log that this hook is called
-        frappe.log_error(
-            title="DEBUG: before_workflow_action called",
-            message=f"Action: {action}, User: {frappe.session.user}, Level: {getattr(self, 'current_approval_level', 'N/A')}, L1: {getattr(self, 'level_1_user', 'N/A')}"
-        )
         approval_service = ApprovalService("Expense Request", state_field="workflow_state")
         route = self._get_route_snapshot()
         approval_service.before_workflow_action(self, action, next_state=kwargs.get("next_state"), route=route)
