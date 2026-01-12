@@ -1,282 +1,141 @@
-[
-  {
-    "doctype": "Workflow",
-    "name": "Expense Request Workflow",
-    "workflow_name": "Expense Request Workflow",
-    "document_type": "Expense Request",
-    "is_active": 1,
-    "module": "Imogi Finance",
-    "override_status": 1,
-    "workflow_state_field": "workflow_state",
-    "docstatus": 0,
-    "states": [
-      {
-        "doctype": "Workflow Document State",
-        "state": "Draft",
-        "doc_status": "0",
-        "allow_edit": "All"
-      },
-      {
-        "doctype": "Workflow Document State",
-        "state": "Pending Review",
-        "doc_status": "1",
-        "allow_edit": "Expense Approver"
-      },
-      {
-        "doctype": "Workflow Document State",
-        "state": "Approved",
-        "doc_status": "1",
-        "allow_edit": "Accounts Manager"
-      },
-      {
-        "doctype": "Workflow Document State",
-        "state": "Rejected",
-        "doc_status": "1",
-        "allow_edit": "Accounts Manager"
-      },
-      {
-        "doctype": "Workflow Document State",
-        "state": "PI Created",
-        "doc_status": "1",
-        "allow_edit": "Accounts Manager"
-      },
-      {
-        "doctype": "Workflow Document State",
-        "state": "Paid",
-        "doc_status": "1",
-        "allow_edit": "Accounts Manager"
-      }
-    ],
-    "transitions": [
-      {
-        "doctype": "Workflow Transition",
-        "action": "Submit",
-        "state": "Draft",
-        "next_state": "Pending Review",
-        "allowed": "All",
-        "allow_self_approval": 0,
-        "condition": "doc.get('level_1_user') or doc.get('level_2_user') or doc.get('level_3_user')"
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Submit",
-        "state": "Draft",
-        "next_state": "Approved",
-        "allowed": "All",
-        "allow_self_approval": 0,
-        "condition": "not (doc.get('level_1_user') or doc.get('level_2_user') or doc.get('level_3_user'))"
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Approve",
-        "state": "Pending Review",
-        "next_state": "Pending Review",
-        "allowed": "Expense Approver",
-        "allow_self_approval": 0,
-        "condition": "((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_user') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and doc.get('level_3_user'))"
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Approve",
-        "state": "Pending Review",
-        "next_state": "Approved",
-        "allowed": "Expense Approver",
-        "allow_self_approval": 0,
-        "condition": "not (((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_user') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and doc.get('level_3_user')))"
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Reject",
-        "state": "Pending Review",
-        "next_state": "Rejected",
-        "allowed": "Expense Approver",
-        "allow_self_approval": 0
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Create PI",
-        "state": "Approved",
-        "next_state": "PI Created",
-        "allowed": "Accounts User",
-        "allow_self_approval": 1
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Mark Paid",
-        "state": "PI Created",
-        "next_state": "Paid",
-        "allowed": "Accounts Manager",
-        "allow_self_approval": 0
-      }
-    ]
-  },
-  {
-    "doctype": "Workflow",
-    "name": "Administrative Payment Voucher Workflow",
-    "workflow_name": "Administrative Payment Voucher Workflow",
-    "document_type": "Administrative Payment Voucher",
-    "is_active": 1,
-    "module": "Imogi Finance",
-    "override_status": 0,
-    "workflow_state_field": "workflow_state",
-    "docstatus": 0,
-    "states": [
-      {
-        "doctype": "Workflow Document State",
-        "state": "Draft",
-        "doc_status": "0",
-        "allow_edit": "All"
-      },
-      {
-        "doctype": "Workflow Document State",
-        "state": "Pending Approval",
-        "doc_status": "0",
-        "allow_edit": "Accounts Manager"
-      },
-      {
-        "doctype": "Workflow Document State",
-        "state": "Approved",
-        "doc_status": "0",
-        "allow_edit": "Accounts Manager"
-      },
-      {
-        "doctype": "Workflow Document State",
-        "state": "Posted",
-        "doc_status": "1",
-        "allow_edit": "Accounts Manager"
-      },
-      {
-        "doctype": "Workflow Document State",
-        "state": "Rejected",
-        "doc_status": "0",
-        "allow_edit": "Accounts Manager"
-      },
-      {
-        "doctype": "Workflow Document State",
-        "state": "Cancelled",
-        "doc_status": "2",
-        "allow_edit": "Accounts Manager"
-      }
-    ],
-    "transitions": [
-      {
-        "doctype": "Workflow Transition",
-        "action": "Submit for Approval",
-        "state": "Draft",
-        "next_state": "Pending Approval",
-        "allowed": "All",
-        "allow_self_approval": 0
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Approve",
-        "state": "Pending Approval",
-        "next_state": "Approved",
-        "allowed": "Accounts Manager",
-        "allow_self_approval": 0
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Reject",
-        "state": "Pending Approval",
-        "next_state": "Rejected",
-        "allowed": "Accounts Manager",
-        "allow_self_approval": 0
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Post",
-        "state": "Approved",
-        "next_state": "Posted",
-        "allowed": "Accounts Manager",
-        "allow_self_approval": 0
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Cancel",
-        "state": "Posted",
-        "next_state": "Cancelled",
-        "allowed": "Accounts Manager",
-        "allow_self_approval": 0
-      }
-    ]
-  },
-  {
-    "doctype": "Workflow",
-    "name": "Transfer Application Workflow",
-    "workflow_name": "Transfer Application Workflow",
-    "document_type": "Transfer Application",
-    "is_active": 1,
-    "module": "Imogi Finance",
-    "override_status": 0,
-    "workflow_state_field": "workflow_state",
-    "docstatus": 0,
-    "states": [
-      {
-        "doctype": "Workflow Document State",
-        "state": "Draft",
-        "doc_status": "0",
-        "allow_edit": "All"
-      },
-      {
-        "doctype": "Workflow Document State",
-        "state": "Finance Review",
-        "doc_status": "0",
-        "allow_edit": "Accounts User"
-      },
-      {
-        "doctype": "Workflow Document State",
-        "state": "Approved for Transfer",
-        "doc_status": "0",
-        "allow_edit": "Accounts Manager"
-      },
-      {
-        "doctype": "Workflow Document State",
-        "state": "Awaiting Bank Confirmation",
-        "doc_status": "0",
-        "allow_edit": "Accounts User"
-      },
-      {
-        "doctype": "Workflow Document State",
-        "state": "Paid",
-        "doc_status": "1",
-        "allow_edit": "Accounts Manager"
-      }
-    ],
-    "transitions": [
-      {
-        "doctype": "Workflow Transition",
-        "action": "Submit for Review",
-        "state": "Draft",
-        "next_state": "Finance Review",
-        "allowed": "Accounts User",
-        "allow_self_approval": 0
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Approve Transfer",
-        "state": "Finance Review",
-        "next_state": "Approved for Transfer",
-        "allowed": "Accounts Manager",
-        "allow_self_approval": 0
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Release to Bank",
-        "state": "Approved for Transfer",
-        "next_state": "Awaiting Bank Confirmation",
-        "allowed": "Accounts User",
-        "allow_self_approval": 0
-      },
-      {
-        "doctype": "Workflow Transition",
-        "action": "Mark Paid",
-        "state": "Awaiting Bank Confirmation",
-        "next_state": "Paid",
-        "allowed": "Accounts Manager",
-        "allow_self_approval": 0,
-        "condition": "doc.payment_entry and frappe.db.get_value('Payment Entry', doc.payment_entry, 'docstatus') == 1"
-      }
-    ]
-  }
-]
+{
+  "doctype": "Workflow",
+  "name": "Expense Request Workflow",
+  "workflow_name": "Expense Request Workflow",
+  "document_type": "Expense Request",
+  "is_active": 1,
+  "module": "Imogi Finance",
+  "override_status": 1,
+  "workflow_state_field": "workflow_state",
+  "docstatus": 0,
+  "states": [
+    {
+      "doctype": "Workflow Document State",
+      "state": "Draft",
+      "doc_status": "0",
+      "allow_edit": "All"
+    },
+    {
+      "doctype": "Workflow Document State",
+      "state": "Pending Review",
+      "doc_status": "0",
+      "allow_edit": "Owner"
+    },
+    {
+      "doctype": "Workflow Document State",
+      "state": "Approved",
+      "doc_status": "1",
+      "allow_edit": "Accounts Manager"
+    },
+    {
+      "doctype": "Workflow Document State",
+      "state": "Rejected",
+      "doc_status": "2",
+      "allow_edit": "Owner"
+    },
+    {
+      "doctype": "Workflow Document State",
+      "state": "PI Created",
+      "doc_status": "1",
+      "allow_edit": "Accounts Manager"
+    },
+    {
+      "doctype": "Workflow Document State",
+      "state": "Paid",
+      "doc_status": "1",
+      "allow_edit": "Accounts Manager"
+    },
+    {
+      "doctype": "Workflow Document State",
+      "state": "Cancelled",
+      "doc_status": "2",
+      "allow_edit": "Accounts Manager"
+    }
+  ],
+  "transitions": [
+    {
+      "doctype": "Workflow Transition",
+      "action": "Submit for Review",
+      "state": "Draft",
+      "next_state": "Pending Review",
+      "allowed": "All",
+      "allow_self_approval": 0
+    },
+    {
+      "doctype": "Workflow Transition",
+      "action": "Approve (Level 1)",
+      "state": "Pending Review",
+      "next_state": "Approved",
+      "allowed": "Expense Approver",
+      "allow_self_approval": 0,
+      "condition": "doc.get('current_approval_level') == 1 and not (doc.get('level_2_user') or doc.get('level_3_user'))"
+    },
+    {
+      "doctype": "Workflow Transition",
+      "action": "Approve (Continue)",
+      "state": "Pending Review",
+      "next_state": "Pending Review",
+      "allowed": "Expense Approver",
+      "allow_self_approval": 0,
+      "condition": "(doc.get('current_approval_level') == 1 and (doc.get('level_2_user') or doc.get('level_3_user'))) or (doc.get('current_approval_level') == 2 and doc.get('level_3_user'))"
+    },
+    {
+      "doctype": "Workflow Transition",
+      "action": "Approve (Final)",
+      "state": "Pending Review",
+      "next_state": "Approved",
+      "allowed": "Expense Approver",
+      "allow_self_approval": 0,
+      "condition": "(doc.get('current_approval_level') == 2 and not doc.get('level_3_user')) or doc.get('current_approval_level') == 3"
+    },
+    {
+      "doctype": "Workflow Transition",
+      "action": "Reject",
+      "state": "Pending Review",
+      "next_state": "Rejected",
+      "allowed": "Expense Approver",
+      "allow_self_approval": 0
+    },
+    {
+      "doctype": "Workflow Transition",
+      "action": "Revise",
+      "state": "Rejected",
+      "next_state": "Draft",
+      "allowed": "Owner",
+      "allow_self_approval": 1
+    },
+    {
+      "doctype": "Workflow Transition",
+      "action": "Create Purchase Invoice",
+      "state": "Approved",
+      "next_state": "PI Created",
+      "allowed": "Accounts User",
+      "allow_self_approval": 1
+    },
+    {
+      "doctype": "Workflow Transition",
+      "action": "Mark as Paid",
+      "state": "PI Created",
+      "next_state": "Paid",
+      "allowed": "Accounts Manager",
+      "allow_self_approval": 0,
+      "condition": "doc.purchase_invoice and frappe.db.get_value('Purchase Invoice', doc.purchase_invoice, 'docstatus') == 1"
+    },
+    {
+      "doctype": "Workflow Transition",
+      "action": "Cancel",
+      "state": "Approved",
+      "next_state": "Cancelled",
+      "allowed": "Accounts Manager",
+      "allow_self_approval": 0
+    },
+    {
+      "doctype": "Workflow Transition",
+      "action": "Cancel",
+      "state": "PI Created",
+      "next_state": "Cancelled",
+      "allowed": "Accounts Manager",
+      "allow_self_approval": 0
+    }
+  ]
+}
