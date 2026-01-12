@@ -27,6 +27,10 @@ frappe.get_doc = None
 frappe.new_doc = None
 frappe.get_cached_value = None
 
+frappe_utils = types.ModuleType("frappe.utils")
+frappe_utils.cint = lambda value=0: 0 if value is None else int(value)
+sys.modules["frappe.utils"] = frappe_utils
+
 from imogi_finance import accounting
 
 
@@ -656,3 +660,84 @@ def test_create_purchase_invoice_rejects_when_draft_exists(monkeypatch):
             accounting.create_purchase_invoice_from_request("ER-004")
     finally:
         frappe.throw = previous_throw
+
+
+def test_create_purchase_invoice_requires_verification_for_ppn_when_setting_enabled(monkeypatch):
+    request = _make_expense_request(
+        name="ER-PPN-VERIFY",
+        is_ppn_applicable=1,
+        ti_verification_status="Pending",
+    )
+
+    def fake_get_doc(doctype, name):
+        assert doctype == "Expense Request"
+        return request
+
+    def fake_get_value(doctype, name, fieldname, *args, **kwargs):
+        if doctype == "Cost Center":
+            return "Test Company"
+        if doctype == "Tax Invoice OCR Settings":
+            # Simulate OCR enabled + require verification ON
+            if fieldname == "enable_tax_invoice_ocr":
+                return 1
+            if fieldname == "require_verification_before_create_pi_from_expense_request":
+                return 1
+        return None
+
+    monkeypatch.setattr(frappe, "get_doc", fake_get_doc)
+    monkeypatch.setattr(frappe.db, "get_value", fake_get_value)
+
+    previous_throw = frappe.throw
+    frappe.throw = _throw
+    try:
+        with pytest.raises(_Throw) as excinfo:
+            accounting.create_purchase_invoice_from_request("ER-PPN-VERIFY")
+    finally:
+        frappe.throw = previous_throw
+
+    assert "Tax Invoice must be verified" in str(excinfo.value)
+
+
+def test_create_purchase_invoice_does_not_require_verification_for_non_ppn(monkeypatch):
+    request = _make_expense_request(
+        name="ER-NON-PPN",
+        is_ppn_applicable=0,
+        ti_verification_status="Pending",
+    )
+
+    created_pi = _doc_with_defaults(frappe._dict(), linked_purchase_invoice=None, docstatus=0)
+
+    def fake_get_doc(doctype, name):
+        assert doctype == "Expense Request"
+        return request
+
+    def fake_get_value(doctype, name, fieldname, *args, **kwargs):
+        if doctype == "Cost Center":
+            return "Test Company"
+        if doctype == "Tax Invoice OCR Settings":
+            # Same settings: OCR enabled + require verification ON
+            if fieldname == "enable_tax_invoice_ocr":
+                return 1
+            if fieldname == "require_verification_before_create_pi_from_expense_request":
+                return 1
+        return None
+
+    def fake_new_doc(doctype):
+        assert doctype == "Purchase Invoice"
+        return created_pi
+
+    def fake_insert(ignore_permissions=False):
+        created_pi.name = "PI-NON-PPN"
+
+    created_pi.insert = fake_insert
+    created_pi.append = lambda *args, **kwargs: None
+
+    request.db_set = lambda values: setattr(created_pi, "db_set_called_with", values)
+
+    monkeypatch.setattr(frappe, "get_doc", fake_get_doc)
+    monkeypatch.setattr(frappe, "new_doc", fake_new_doc)
+    monkeypatch.setattr(frappe.db, "get_value", fake_get_value)
+
+    pi_name = accounting.create_purchase_invoice_from_request("ER-NON-PPN")
+
+    assert pi_name == "PI-NON-PPN"
