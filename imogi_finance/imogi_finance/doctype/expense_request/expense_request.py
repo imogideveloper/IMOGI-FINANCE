@@ -305,46 +305,45 @@ class ExpenseRequest(Document):
             self.current_approval_level = 0
 
     def before_submit(self):
-	    """Resolve approval route and set initial workflow state."""
-	    self.validate_amounts()
-	    self.validate_submit_permission()
-	    self.validate_reopen_override_resolution()
-	    
-	    route = self._resolve_and_apply_route()
-	    
-	    # Jika tidak ada approval setting atau route kosong, auto-approve
-	    if self._skip_approval_route or not self._route_has_approver(route):
-	        self.current_approval_level = 0
-	        self.status = "Approved"
-	        self.workflow_state = "Approved"
-	        self._set_approval_audit()
-	        self.record_approval_route_snapshot()
-	        
-	        # Log untuk audit
-	        self._log_missing_approval_setting()
-	        
-	        frappe.msgprint(
-	            _("No approval route configured for Cost Center {0}. Request auto-approved.").format(
-	                self.cost_center
-	            ),
-	            alert=True,
-	            indicator="green",
-	        )
-	        return
-			
-		self._ensure_route_ready(route)
-	    self.validate_route_users_exist(route)
-	    self.validate_initial_approver(route)
+        """Resolve approval route and set initial workflow state."""
+        self.validate_amounts()
+        self.validate_submit_permission()
+        self.validate_reopen_override_resolution()
+
+        route = self._resolve_and_apply_route()
+
+        # Jika tidak ada approval setting atau route kosong, auto-approve
+        if self._skip_approval_route or not self._route_has_approver(route):
+            self.current_approval_level = 0
+            self.status = "Approved"
+            self.workflow_state = "Approved"
+            self._set_approval_audit()
+            self.record_approval_route_snapshot()
+
+            # Log untuk audit
+            self._log_missing_approval_setting()
+
+            frappe.msgprint(
+                _("No approval route configured for Cost Center {0}. Request auto-approved.").format(
+                    self.cost_center
+                ),
+                alert=True,
+                indicator="green",
+            )
+            return
+
+        self._ensure_route_ready(route)
+        self.validate_route_users_exist(route)
         self.validate_initial_approver(route)
         initial_level = self._get_initial_approval_level(route)
         # Set workflow_action_allowed flag for ERPNext v15+ compatibility
         flags = getattr(self, "flags", None)
-	    if flags is None:
-	        flags = type("Flags", (), {})()
-	        self.flags = flags
-	    self.flags.workflow_action_allowed = True
-	    
-	    self._set_pending_review(level=initial_level)
+        if flags is None:
+            flags = type("Flags", (), {})()
+            self.flags = flags
+        self.flags.workflow_action_allowed = True
+
+        self._set_pending_review(level=initial_level)
 
     def before_workflow_action(self, action, **kwargs):
         """Gate workflow transitions by the resolved approver route.
