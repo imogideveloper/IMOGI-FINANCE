@@ -68,7 +68,8 @@ class ExpenseRequest(Document):
         # Resolve approval route for this request
         route, setting_meta, failed = self._resolve_approval_route()
         self._ensure_route_ready(route, failed)
-        self.apply_route(route, setting_meta)
+        # self.apply_route(route, setting_meta)
+		self.apply_route(route, setting_meta=setting_meta)
         self.record_approval_route_snapshot(route)
         self.validate_route_users_exist(route)
 
