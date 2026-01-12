@@ -1,0 +1,34 @@
+[
+	{
+		"actions": [
+			{"action": "Submit", "allowed": "All"},
+			{"action": "Approve", "allowed": "All"},
+			{"action": "Reject", "allowed": "All"}
+		],
+		"creation": "",
+		"docstatus": 0,
+		"doctype": "Workflow",
+		"document_type": "Expense Request",
+		"is_active": 1,
+		"module": "Imogi Finance",
+		"name": "Expense Request Workflow",
+		"notes": "Roles are intentionally broad; approval enforcement happens in ExpenseRequest.before_workflow_action based on the dynamically resolved route. Purchase Invoice creation is now done via the 'Create Purchase Invoice' button on the form (not a workflow action). Status 'Paid' is set automatically by Payment Entry on_submit hook.",
+		"override_status": 1,
+		"states": [
+			{"state": "Draft", "doc_status": 0, "allow_edit": "All"},
+			{"state": "Pending Review", "doc_status": 1, "allow_edit": ""},
+			{"state": "Approved", "doc_status": 1, "allow_edit": ""},
+			{"state": "Rejected", "doc_status": 1, "allow_edit": ""},
+			{"state": "PI Created", "doc_status": 1, "allow_edit": ""},
+			{"state": "Paid", "doc_status": 1, "allow_edit": ""}
+		],
+		"transitions": [
+			{"action": "Submit", "allow_self_approval": 0, "allowed": "All", "state": "Draft", "next_state": "Pending Review", "condition": "doc.get('level_1_user') or doc.get('level_2_user') or doc.get('level_3_user')", "doc_status": 0},
+			{"action": "Submit", "allow_self_approval": 0, "allowed": "All", "state": "Draft", "next_state": "Approved", "condition": "not (doc.get('level_1_user') or doc.get('level_2_user') or doc.get('level_3_user'))", "doc_status": 0},
+			{"action": "Approve", "allowed": "All", "state": "Pending Review", "next_state": "Pending Review", "condition": "((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_user') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and doc.get('level_3_user'))", "doc_status": 1},
+			{"action": "Approve", "allowed": "All", "state": "Pending Review", "next_state": "Approved", "condition": "not (((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_user') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and doc.get('level_3_user')))", "doc_status": 1},
+			{"action": "Reject", "allowed": "All", "state": "Pending Review", "next_state": "Rejected", "doc_status": 1}
+		],
+		"workflow_state_field": "workflow_state"
+	}
+]
