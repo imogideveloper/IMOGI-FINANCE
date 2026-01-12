@@ -51,16 +51,19 @@ def _parse_date(value) -> date | None:
         return None
 
 
-def _coerce_branches(branches) -> list[str] | None:
-    if branches is None:
+def _coerce_list(value) -> list[str] | None:
+    if value is None:
         return None
-    if isinstance(branches, str):
-        return [branches]
-    return [str(b) for b in branches if b]
+    if isinstance(value, str):
+        return [value]
+    return [str(v) for v in value if v]
 
 
 def fetch_bank_transactions(
-    report_date: date | None, *, branches: Sequence[str] | None = None
+    report_date: date | None,
+    *,
+    branches: Sequence[str] | None = None,
+    bank_accounts: Sequence[str] | None = None,
 ) -> list[dict[str, object]]:
     """Fetch bank transactions up to and including the report date."""
 
@@ -70,14 +73,25 @@ def fetch_bank_transactions(
     filters = {}
     if report_date:
         filters["transaction_date"] = ("<=", report_date)
-    branch_filter = _coerce_branches(branches)
+    branch_filter = _coerce_list(branches)
     if branch_filter:
         filters["branch"] = ("in", branch_filter)
+    bank_filter = _coerce_list(bank_accounts)
+    if bank_filter:
+        filters["bank_account"] = ("in", bank_filter)
 
     rows = frappe.get_all(
         "Bank Transaction",
         filters=filters,
-        fields=["name", "branch", "transaction_date", "deposit", "withdrawal", "reference_number"],
+        fields=[
+            "name",
+            "branch",
+            "bank_account",
+            "transaction_date",
+            "deposit",
+            "withdrawal",
+            "reference_number",
+        ],
         order_by="transaction_date asc",
     )
 
@@ -93,6 +107,7 @@ def fetch_bank_transactions(
                 "direction": direction,
                 "reference": row.get("reference_number") or row.get("name"),
                 "posting_date": row.get("transaction_date"),
+                "bank_account": row.get("bank_account"),
             }
         )
     return transactions
@@ -121,12 +136,18 @@ def derive_opening_balances(
 
 
 def load_daily_inputs(
-    report_date: date | None, branches: Sequence[str] | None = None
+    report_date: date | None,
+    branches: Sequence[str] | None = None,
+    bank_accounts: Sequence[str] | None = None,
 ) -> tuple[list[dict[str, object]], dict[str, float]]:
     """Return (transactions_for_day, opening_balances) for daily reporting."""
 
     resolved_date = report_date or date.today()
-    all_transactions = fetch_bank_transactions(resolved_date, branches=branches)
+    all_transactions = fetch_bank_transactions(
+        resolved_date,
+        branches=branches,
+        bank_accounts=bank_accounts,
+    )
 
     day_transactions: list[dict[str, object]] = []
     for tx in all_transactions:

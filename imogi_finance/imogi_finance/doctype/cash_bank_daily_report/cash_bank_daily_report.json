@@ -1,0 +1,154 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "format:CBDR-{YYYY}-{MM}-{DD}-{#####}",
+  "creation": "2026-01-01 00:00:00.000000",
+  "default_view": "List",
+  "doctype": "DocType",
+  "editable_grid": 0,
+  "engine": "InnoDB",
+  "field_order": [
+    "report_date",
+    "branches",
+    "bank_account",
+    "section_snapshot",
+    "status",
+    "opening_balance",
+    "inflow",
+    "outflow",
+    "closing_balance",
+    "snapshot_json",
+    "section_preview",
+    "preview_html"
+  ],
+  "fields": [
+    {
+      "fieldname": "report_date",
+      "fieldtype": "Date",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Report Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "branches",
+      "fieldtype": "Small Text",
+      "label": "Branches Filter",
+      "description": "Optional: comma-separated Branch names; leave empty for all branches"
+    },
+    {
+      "fieldname": "bank_account",
+      "fieldtype": "Link",
+      "label": "Bank / Cash Account",
+      "options": "Bank Account",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "description": "Filter report to a specific Bank/Cash Account"
+    },
+    {
+      "fieldname": "section_snapshot",
+      "fieldtype": "Section Break",
+      "label": "Snapshot"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Status",
+      "read_only": 1
+    },
+    {
+      "fieldname": "opening_balance",
+      "fieldtype": "Currency",
+      "label": "Opening Balance",
+      "read_only": 1
+    },
+    {
+      "fieldname": "inflow",
+      "fieldtype": "Currency",
+      "label": "Inflow",
+      "read_only": 1
+    },
+    {
+      "fieldname": "outflow",
+      "fieldtype": "Currency",
+      "label": "Outflow",
+      "read_only": 1
+    },
+    {
+      "fieldname": "closing_balance",
+      "fieldtype": "Currency",
+      "label": "Closing Balance",
+      "read_only": 1
+    },
+    {
+      "fieldname": "snapshot_json",
+      "fieldtype": "Code",
+      "label": "Snapshot JSON",
+      "options": "JSON",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_preview",
+      "fieldtype": "Section Break",
+      "label": "Preview"
+    },
+    {
+      "fieldname": "preview_html",
+      "fieldtype": "HTML",
+      "label": "Daily Report Preview"
+    }
+  ],
+  "hide_toolbar": 0,
+  "idx": 0,
+  "issingle": 0,
+  "links": [],
+  "modified": "2026-01-01 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Imogi Finance",
+  "name": "Cash Bank Daily Report",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts User",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "quick_entry": 0,
+  "show_name_in_global_search": 1,
+  "sort_field": "report_date",
+  "sort_order": "DESC",
+  "track_changes": 1
+}

@@ -1,0 +1,133 @@
+{% set bundle = frappe.parse_json(doc.snapshot_json or '{}') %}
+{% set consolidated = bundle.get('consolidated') or {} %}
+{% set branches = bundle.get('branches') or [] %}
+{% set signers = bundle.get('signers') or {} %}
+
+<style>
+  body { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 11px; }
+  .cb-container { max-width: 1000px; margin: 0 auto; padding: 18px 22px; }
+  .cb-header { text-align: left; margin-bottom: 16px; }
+  .cb-title { font-size: 16px; font-weight: 600; text-transform: uppercase; }
+  .cb-subtitle { color: #555; font-size: 11px; }
+  .cb-summary-table, .cb-branch-table, .cb-tx-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+  .cb-summary-table th, .cb-summary-table td,
+  .cb-branch-table th, .cb-branch-table td,
+  .cb-tx-table th, .cb-tx-table td { border: 1px solid #e5e5e5; padding: 6px 8px; font-size: 11px; }
+  .cb-summary-table th, .cb-branch-table th, .cb-tx-table th { background: #f5f5f5; text-align: left; text-transform: uppercase; font-size: 10px; }
+  .text-right { text-align: right; }
+  .cb-branch-section { margin-top: 10px; page-break-inside: avoid; }
+  .cb-branch-heading { font-size: 11px; font-weight: 600; margin: 6px 0; }
+  .cb-signers { margin-top: 24px; display: flex; justify-content: space-between; font-size: 11px; }
+  .cb-signers div { text-align: center; width: 32%; }
+  .cb-signers .label { font-weight: 600; margin-bottom: 40px; }
+  @media print {
+    @page { margin: 10mm 8mm; }
+    .cb-container { padding: 10px 14px; }
+  }
+</style>
+
+<div class="cb-container">
+  <div class="cb-header">
+    <div class="cb-title">Cash / Bank Daily Report</div>
+    <div class="cb-subtitle">
+      {{ frappe.utils.format_date(doc.report_date) }}
+      {% if doc.branches %}
+        · Branches: {{ doc.branches }}
+      {% else %}
+        · All Branches
+      {% endif %}
+      {% if doc.bank_account %}
+        · Account: {{ doc.bank_account }}
+      {% endif %}
+    </div>
+  </div>
+
+  <table class="cb-summary-table">
+    <thead>
+      <tr>
+        <th>{{ _("Opening Balance") }}</th>
+        <th>{{ _("Inflow") }}</th>
+        <th>{{ _("Outflow") }}</th>
+        <th>{{ _("Closing Balance") }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="text-right">{{ frappe.utils.fmt_money(consolidated.get('opening_balance') or doc.opening_balance or 0) }}</td>
+        <td class="text-right">{{ frappe.utils.fmt_money(consolidated.get('inflow') or doc.inflow or 0) }}</td>
+        <td class="text-right">{{ frappe.utils.fmt_money(consolidated.get('outflow') or doc.outflow or 0) }}</td>
+        <td class="text-right">{{ frappe.utils.fmt_money(consolidated.get('closing_balance') or doc.closing_balance or 0) }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="cb-branch-table">
+    <thead>
+      <tr>
+        <th style="width:25%">{{ _("Branch") }}</th>
+        <th style="width:18%" class="text-right">{{ _("Opening") }}</th>
+        <th style="width:18%" class="text-right">{{ _("Inflow") }}</th>
+        <th style="width:18%" class="text-right">{{ _("Outflow") }}</th>
+        <th style="width:21%" class="text-right">{{ _("Closing") }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for br in branches %}
+      <tr>
+        <td>{{ br.get('branch') }}</td>
+        <td class="text-right">{{ frappe.utils.fmt_money(br.get('opening_balance') or 0) }}</td>
+        <td class="text-right">{{ frappe.utils.fmt_money(br.get('inflow') or 0) }}</td>
+        <td class="text-right">{{ frappe.utils.fmt_money(br.get('outflow') or 0) }}</td>
+        <td class="text-right">{{ frappe.utils.fmt_money(br.get('closing_balance') or 0) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {# Detail transaksi per cabang: diambil dari br.transactions yang sudah berisi Bank Transaction #}
+  {% for br in branches %}
+    {% set txs = br.get('transactions') or [] %}
+    {% if txs %}
+    <div class="cb-branch-section">
+      <div class="cb-branch-heading">{{ _("Branch") }}: {{ br.get('branch') }}</div>
+      <table class="cb-tx-table">
+        <thead>
+          <tr>
+            <th style="width:18%">{{ _("Date") }}</th>
+            <th style="width:32%">{{ _("Reference") }}</th>
+            <th style="width:20%" class="text-right">{{ _("Direction") }}</th>
+            <th style="width:30%" class="text-right">{{ _("Amount") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tx in txs %}
+          <tr>
+            <td>{{ frappe.utils.format_date(tx.get('posting_date')) }}</td>
+            <td>{{ tx.get('reference') }}</td>
+            <td class="text-right">{{ (tx.get('direction') or '').upper() }}</td>
+            <td class="text-right">{{ frappe.utils.fmt_money(tx.get('amount') or 0) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  {% endfor %}
+
+  {% if signers %}
+  <div class="cb-signers">
+    <div>
+      <div class="label">{{ _("Prepared By") }}</div>
+      <div>{{ signers.get('prepared_by') or "" }}</div>
+    </div>
+    <div>
+      <div class="label">{{ _("Approved By") }}</div>
+      <div>{{ signers.get('approved_by') or "" }}</div>
+    </div>
+    <div>
+      <div class="label">{{ _("Acknowledged By") }}</div>
+      <div>{{ signers.get('acknowledged_by') or "" }}</div>
+    </div>
+  </div>
+  {% endif %}
+</div>

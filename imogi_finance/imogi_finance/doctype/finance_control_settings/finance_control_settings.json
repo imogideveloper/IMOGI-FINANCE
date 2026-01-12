@@ -29,6 +29,8 @@
     "daily_report_preparer",
     "daily_report_approver",
     "daily_report_acknowledger",
+    "daily_report_view_only",
+    "daily_report_signer_rules",
     "section_administrative_payments",
     "enforce_branch",
     "enforce_cost_center",
@@ -162,6 +164,19 @@
       "fieldtype": "Link",
       "label": "Daily Report Acknowledged By",
       "options": "User"
+    },
+    {
+      "fieldname": "daily_report_signer_rules",
+      "fieldtype": "Table",
+      "label": "Per-Account Signer Rules",
+      "options": "Daily Report Signer Rule"
+    },
+    {
+      "default": "0",
+      "fieldname": "daily_report_view_only",
+      "fieldtype": "Check",
+      "label": "Cash/Bank Daily Report View Only",
+      "description": "If enabled, block creation of new Cash Bank Daily Report documents; existing reports remain viewable/printable."
     },
     {
       "fieldname": "section_administrative_payments",

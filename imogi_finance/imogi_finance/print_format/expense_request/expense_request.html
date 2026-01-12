@@ -7,25 +7,26 @@
   
 	body {
 		background: #fafafa;
+		font-size: 11px;
 	}
   
 	.modern-container {
-		max-width: 1200px;
+		max-width: 1000px;
 		margin: 0 auto;
-		padding: 40px;
+		padding: 18px 22px;
 		background: #ffffff;
 	}
   
 	.modern-header {
 		background: #1a1a1a;
 		color: white;
-		padding: 40px 48px;
-		margin-bottom: 40px;
+		padding: 18px 22px;
+		margin-bottom: 18px;
 		border-bottom: 3px solid #333333;
 	}
   
 	.modern-header h1 {
-		font-size: 24px;
+		font-size: 18px;
 		font-weight: 600;
 		margin: 0 0 12px 0;
 		letter-spacing: 0.5px;
@@ -42,9 +43,9 @@
   
 	.status-badge {
 		display: inline-block;
-		padding: 6px 18px;
+		padding: 4px 12px;
 		margin-top: 14px;
-		font-size: 11px;
+		font-size: 10px;
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 1px;
@@ -60,13 +61,13 @@
 	.info-grid {
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
-		gap: 24px;
-		margin-bottom: 40px;
+		gap: 14px;
+		margin-bottom: 18px;
 	}
   
 	.info-card {
 		background: #fafafa;
-		padding: 28px;
+		padding: 14px 16px;
 		border-left: 3px solid #333333;
 	}
   
@@ -82,7 +83,7 @@
 	.info-row {
 		display: flex;
 		justify-content: space-between;
-		padding: 10px 0;
+		padding: 6px 0;
 		border-bottom: 1px solid #e5e5e5;
 		align-items: baseline;
 	}
@@ -93,22 +94,22 @@
   
 	.info-label {
 		color: #737373;
-		font-size: 13px;
+		font-size: 11px;
 		font-weight: 400;
 	}
   
 	.info-value {
 		color: #1a1a1a;
-		font-size: 13px;
+		font-size: 11px;
 		font-weight: 600;
 		text-align: right;
 	}
   
 	.purpose-section {
 		background: #fafafa;
-		padding: 28px;
+		padding: 12px 16px;
 		border-left: 3px solid #525252;
-		margin-bottom: 40px;
+		margin-bottom: 18px;
 	}
   
 	.purpose-section h3 {
@@ -123,15 +124,15 @@
 	.purpose-section p {
 		margin: 0;
 		color: #404040;
-		line-height: 1.7;
-		font-size: 14px;
+		line-height: 1.4;
+		font-size: 11px;
 		font-weight: 400;
 	}
   
 	.modern-table {
 		width: 100%;
 		border-collapse: collapse;
-		margin-bottom: 40px;
+		margin-bottom: 18px;
 		border: 1px solid #e5e5e5;
 	}
   
@@ -141,9 +142,9 @@
 	}
   
 	.modern-table thead th {
-		padding: 16px 14px;
+		padding: 8px 10px;
 		text-align: left;
-		font-size: 11px;
+		font-size: 10px;
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 1px;
@@ -167,8 +168,8 @@
 	}
   
 	.modern-table tbody td {
-		padding: 14px 14px;
-		font-size: 13px;
+		padding: 8px 10px;
+		font-size: 11px;
 		color: #404040;
 		font-weight: 400;
 	}
@@ -185,8 +186,8 @@
 	}
   
 	.modern-table tfoot th {
-		padding: 18px 14px;
-		font-size: 13px;
+		padding: 10px 10px;
+		font-size: 11px;
 		color: #1a1a1a;
 		font-weight: 700;
 	}
@@ -198,13 +199,13 @@
 	.detail-grid {
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
-		gap: 24px;
-		margin-bottom: 20px;
+		gap: 14px;
+		margin-bottom: 10px;
 	}
   
 	.detail-card {
 		background: #fafafa;
-		padding: 28px;
+		padding: 14px 16px;
 		border-left: 3px solid #525252;
 	}
   
@@ -220,8 +221,8 @@
 	}
   
 	.detail-item {
-		margin-bottom: 14px;
-		font-size: 13px;
+		margin-bottom: 8px;
+		font-size: 11px;
 		display: flex;
 		justify-content: space-between;
 		align-items: baseline;
@@ -247,9 +248,9 @@
 	.badge-yes {
 		background: #2d2d2d;
 		color: #ffffff;
-		padding: 3px 10px;
+		padding: 2px 8px;
 		border-radius: 3px;
-		font-size: 11px;
+		font-size: 10px;
 		font-weight: 700;
 		letter-spacing: 0.5px;
 	}
@@ -257,9 +258,9 @@
 	.badge-no {
 		background: #f5f5f5;
 		color: #737373;
-		padding: 3px 10px;
+		padding: 2px 8px;
 		border-radius: 3px;
-		font-size: 11px;
+		font-size: 10px;
 		font-weight: 700;
 		letter-spacing: 0.5px;
 		border: 1px solid #e5e5e5;
@@ -270,11 +271,14 @@
 	.budget-over { color: #1a1a1a; font-weight: 700; }
   
 	@media print {
+		@page {
+			margin: 10mm 8mm;
+		}
 		body {
 			background: white;
 		}
 		.modern-container {
-			padding: 20px;
+			padding: 10px 14px;
 		}
 		.modern-header {
 			background: #1a1a1a !important;

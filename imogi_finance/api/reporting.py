@@ -43,22 +43,53 @@ def _get_settings():
     return {}
 
 
-def _extract_signers_from_settings(doc) -> dict:
+def _extract_signers_from_settings(doc, bank_account: str | None = None) -> dict:
+    """Return signer mapping, allowing per-account overrides.
+
+    Priority:
+    1) Per-account rule from Finance Control Settings.daily_report_signer_rules
+    2) Global defaults on the same settings doc.
+    """
+
     if not doc:
         return {}
-    return {
+
+    base = {
         "prepared_by": getattr(doc, "daily_report_preparer", None),
         "approved_by": getattr(doc, "daily_report_approver", None),
         "acknowledged_by": getattr(doc, "daily_report_acknowledger", None),
     }
 
+    if not bank_account:
+        return base
+
+    # Look for a matching rule in the child table (if present)
+    rules = getattr(doc, "daily_report_signer_rules", []) or []
+    for row in rules:
+        if getattr(row, "bank_account", None) == bank_account:
+            overrides = {
+                "prepared_by": getattr(row, "prepared_by", None) or base.get("prepared_by"),
+                "approved_by": getattr(row, "approved_by", None) or base.get("approved_by"),
+                "acknowledged_by": getattr(row, "acknowledged_by", None)
+                or base.get("acknowledged_by"),
+            }
+            return overrides
+
+    return base
+
 
 @frappe.whitelist()
-def preview_daily_report(branches=None, report_date=None):
-    signers = resolve_signers(_extract_signers_from_settings(_get_settings()))
+def preview_daily_report(branches=None, report_date=None, bank_account=None):
+    settings = _get_settings()
+    signers = resolve_signers(_extract_signers_from_settings(settings, bank_account))
     report_date_obj = date.fromisoformat(report_date) if report_date else None
     branch_filter = branches or None
-    transactions, opening_balances = load_daily_inputs(report_date_obj, branch_filter)
+    bank_filter = bank_account or None
+    transactions, opening_balances = load_daily_inputs(
+        report_date_obj,
+        branches=branch_filter,
+        bank_accounts=[bank_filter] if isinstance(bank_filter, str) and bank_filter else bank_filter,
+    )
     bundle = build_daily_report(
         transactions,
         opening_balances=opening_balances,
@@ -71,11 +102,17 @@ def preview_daily_report(branches=None, report_date=None):
 
 
 @frappe.whitelist()
-def get_dashboard_snapshot(branches=None, report_date=None):
-    signers = resolve_signers(_extract_signers_from_settings(_get_settings()))
+def get_dashboard_snapshot(branches=None, report_date=None, bank_account=None):
+    settings = _get_settings()
+    signers = resolve_signers(_extract_signers_from_settings(settings, bank_account))
     report_date_obj = date.fromisoformat(report_date) if report_date else None
     branch_filter = branches or None
-    transactions, opening_balances = load_daily_inputs(report_date_obj, branch_filter)
+    bank_filter = bank_account or None
+    transactions, opening_balances = load_daily_inputs(
+        report_date_obj,
+        branches=branch_filter,
+        bank_accounts=[bank_filter] if isinstance(bank_filter, str) and bank_filter else bank_filter,
+    )
     snapshot = build_dashboard_snapshot(
         transactions=transactions,
         opening_balances=opening_balances,
