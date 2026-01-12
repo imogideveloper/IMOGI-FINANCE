@@ -11,12 +11,13 @@ from frappe.utils import flt, now_datetime
 
 from imogi_finance import accounting, roles
 from imogi_finance.branching import apply_branch, resolve_branch
-from imogi_finance.approval import get_active_setting_meta
+from imogi_finance.approval import get_active_setting_meta, approval_setting_required_message
 from imogi_finance.budget_control.workflow import handle_expense_request_workflow, release_budget_for_request
 from imogi_finance.services.approval_route_service import ApprovalRouteService
 from imogi_finance.services.approval_service import ApprovalService
 from imogi_finance.services.deferred_expense import generate_amortization_schedule
 from imogi_finance.tax_invoice_ocr import sync_tax_invoice_upload, validate_tax_invoice_upload_link
+from imogi_finance.tax_invoice_fields import get_upload_link_field
 from imogi_finance.validators.finance_validator import FinanceValidator
 
 
@@ -68,7 +69,7 @@ class ExpenseRequest(Document):
         # Resolve approval route for this request
         route, setting_meta, failed = self._resolve_approval_route()
         self._ensure_route_ready(route, failed)
-        self.apply_route(route, setting_meta)
+        self.apply_route(route, setting_meta=setting_meta)
         self.record_approval_route_snapshot(route)
         self.validate_route_users_exist(route)
         # Use ApprovalService to set initial approval state
@@ -86,39 +87,14 @@ class ExpenseRequest(Document):
 
     def before_workflow_action(self, action, **kwargs):
         """Gate workflow actions using ApprovalService + route validation."""
-        # Build ApprovalService and delegate
         approval_service = ApprovalService("Expense Request", state_field="workflow_state")
         route = self._get_route_snapshot()
-        
-        # Special handling for "Create PI" action
-        if action == "Create PI":
-            next_state = kwargs.get("next_state")
-            if next_state == "PI Created":
-                try:
-                    pi_name = accounting.create_purchase_invoice_from_request(self.name)
-                    if not pi_name:
-                        frappe.throw(_("Failed to create Purchase Invoice."), title=_("PI Creation Error"))
-                    self.linked_purchase_invoice = pi_name
-                    self.pending_purchase_invoice = None
-                except Exception as e:
-                    frappe.throw(_("Cannot create PI: {0}").format(str(e)), title=_("PI Creation Error"))
-            return
-        
-        # Delegate to ApprovalService for standard actions
         approval_service.before_workflow_action(self, action, next_state=kwargs.get("next_state"), route=route)
 
     def on_workflow_action(self, action, **kwargs):
         """Handle state transitions via ApprovalService."""
         approval_service = ApprovalService("Expense Request", state_field="workflow_state")
         next_state = kwargs.get("next_state")
-
-        # Create PI doesn't need service update (already handled in before_workflow_action)
-        if action == "Create PI":
-            self.workflow_state = next_state
-            self.status = next_state
-            return
-
-        # All other actions: delegate to service
         approval_service.on_workflow_action(self, action, next_state=next_state)
 
         # Post-action: sync related systems
@@ -162,20 +138,33 @@ class ExpenseRequest(Document):
             pass
 
     def on_trash(self):
-        """Allow safe deletion by checking if OCR uploads can be deleted.
-        OCR uploads linked to this ER should be deleted/unlinked first."""
-        # Check for linked OCR uploads
-        linked_ocr_count = frappe.db.count(
-            "Tax Invoice OCR Upload",
-            filters={"parent_expense_request": self.name}
+        """Allow safe deletion by checking OCR links/monitoring.
+
+        Expense Request cannot be deleted while it is still linked to a
+        Tax Invoice OCR Upload or has monitoring records pointing to it.
+        """
+
+        upload_field = get_upload_link_field("Expense Request")
+        linked_upload = getattr(self, upload_field, None) if upload_field else None
+
+        has_monitoring = frappe.db.exists(
+            "Tax Invoice OCR Monitoring",
+            {"target_doctype": "Expense Request", "target_name": self.name},
         )
-        if linked_ocr_count > 0:
+
+        if linked_upload or has_monitoring:
+            reasons = []
+            if linked_upload:
+                reasons.append(_("a linked Tax Invoice OCR Upload"))
+            if has_monitoring:
+                reasons.append(_("Tax Invoice OCR Monitoring records"))
+
             frappe.throw(
                 _(
-                    "Cannot delete Expense Request with linked Tax Invoice OCR uploads. "
-                    "Please remove OCR uploads first or delete them separately."
-                ),
-                title=_("Linked Records Exist")
+                    "Cannot delete Expense Request because it is still linked to {0}. "
+                    "Please clear OCR links and monitoring records first."
+                ).format(" and ".join(reasons)),
+                title=_("Linked OCR Records Exist"),
             )
 
     # ===================== Business Logic =====================
@@ -379,15 +368,26 @@ class ExpenseRequest(Document):
         """Get approval route for this request."""
         try:
             setting = get_active_setting_meta(self.cost_center)
-            route = get_approval_route(self.cost_center, self._get_expense_accounts(), self.amount, setting_meta=setting)
-            return (route, setting, False) if route else ({}, None, False)
+            route = get_approval_route(
+                self.cost_center,
+                self._get_expense_accounts(),
+                self.amount,
+                setting_meta=setting,
+            )
+            return route or {}, setting, False
         except Exception:
-            return {}, None, False
+            return {}, None, True
 
     def _ensure_route_ready(self, route: dict, failed: bool = False) -> None:
-        """Validate route is ready (allow auto-approve if no route)."""
+        """Validate route is ready; require at least one configured approver.
+
+        For Expense Request, we do **not** auto-approve when there is no
+        approver/route. Instead we force configuration of an Expense
+        Approval Setting before submit.
+        """
         if failed or not self._has_approver(route):
-            return
+            message = approval_setting_required_message(getattr(self, "cost_center", None))
+            frappe.throw(message, title=_("Approval Route Not Found"))
 
     def apply_route(self, route: dict, *, setting_meta: dict | None = None) -> None:
         """Store approval route on document."""
