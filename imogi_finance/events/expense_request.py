@@ -35,10 +35,6 @@ def validate_workflow_action(doc, method=None):
     
     session_user = frappe.session.user
     
-    # Administrator can always approve (optional - remove if strict enforcement needed)
-    if session_user == "Administrator":
-        return
-    
     if session_user != expected_user:
         frappe.throw(
             _("You are not authorized to approve at level {0}. Required: {1}.").format(
