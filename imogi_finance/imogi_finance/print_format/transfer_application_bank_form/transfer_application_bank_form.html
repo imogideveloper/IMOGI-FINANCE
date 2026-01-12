@@ -1,18 +1,18 @@
 {% set company_logo = frappe.db.get_value("Company", doc.company, "company_logo") if doc.company else None %}
 <style>
-  .ta-container { font-size: 9pt; }
-  .ta-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .ta-header .title { font-size: 14pt; font-weight: bold; letter-spacing: 0.5px; }
-  .ta-logo { max-height: 50px; max-width: 130px; object-fit: contain; }
-  .ta-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-  .ta-table th, .ta-table td { border: 1px solid #ccc; padding: 4px; vertical-align: top; }
+  .ta-container { font-size: 8pt; }
+  .ta-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .ta-header .title { font-size: 12pt; font-weight: bold; letter-spacing: 0.4px; }
+  .ta-logo { max-height: 42px; max-width: 130px; object-fit: contain; }
+  .ta-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+  .ta-table th, .ta-table td { border: 1px solid #ccc; padding: 3px; vertical-align: top; }
   .ta-table th { background: #f7f7f7; text-align: left; }
-  .ta-signature { display: flex; justify-content: space-around; margin-top: 16px; gap: 18px; }
+  .ta-signature { display: flex; justify-content: space-around; margin-top: 10px; gap: 12px; }
   .ta-signature .slot { width: 45%; text-align: center; }
-  .ta-signature .label { font-weight: bold; margin-bottom: 32px; }
-  .ta-signature .line { border-top: 1px solid #555; margin: 0 10px; padding-top: 4px; }
-  .ta-meta { margin-bottom: 8px; }
-  .ta-meta div { margin-bottom: 4px; }
+  .ta-signature .label { font-weight: bold; margin-bottom: 24px; }
+  .ta-signature .line { border-top: 1px solid #555; margin: 0 10px; padding-top: 2px; }
+  .ta-meta { margin-bottom: 6px; }
+  .ta-meta div { margin-bottom: 2px; }
   @media print {
     @page { margin: 10mm 8mm; }
   }

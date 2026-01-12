@@ -26,21 +26,21 @@
 {% set receipt_logo = design.custom_logo if logo_mode == "Custom" and design.custom_logo else company_logo %}
 
 <style>
-  .receipt-container { position: relative; font-size: 9pt; }
-  .receipt-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-  .receipt-title { font-size: 14pt; font-weight: bold; letter-spacing: 0.8px; }
-  .receipt-brand { display: flex; align-items: flex-start; gap: 10px; }
-  .receipt-logo { max-height: 48px; max-width: 110px; object-fit: contain; }
-  .receipt-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-  .receipt-table th, .receipt-table td { border: 1px solid #ccc; padding: 4px; }
-  .stamp-box { border: 1px dashed #777; text-align: center; font-size: 8pt; color: #555; position: absolute; }
+  .receipt-container { position: relative; font-size: 8pt; }
+  .receipt-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+  .receipt-title { font-size: 12pt; font-weight: bold; letter-spacing: 0.6px; }
+  .receipt-brand { display: flex; align-items: flex-start; gap: 8px; }
+  .receipt-logo { max-height: 40px; max-width: 110px; object-fit: contain; }
+  .receipt-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  .receipt-table th, .receipt-table td { border: 1px solid #ccc; padding: 3px; }
+  .stamp-box { border: 1px dashed #777; text-align: center; font-size: 7pt; color: #555; position: absolute; }
   .stamp-top-right { top: 0; right: 0; }
   .stamp-top-left { top: 0; left: 0; }
   .stamp-bottom-right { bottom: 0; right: 0; }
   .stamp-bottom-left { bottom: 0; left: 0; }
   .stamp-watermark { position: absolute; top: 40%; left: 10%; right: 10%; text-align: center; font-size: 18pt; color: rgba(180,0,0,0.35); transform: rotate(-18deg); font-weight: bold; }
-  .signature-block { margin-top: 16px; text-align: right; }
-  .signature-line { margin-top: 40px; border-top: 1px solid #555; display: inline-block; min-width: 140px; }
+  .signature-block { margin-top: 10px; text-align: right; }
+  .signature-line { margin-top: 24px; border-top: 1px solid #555; display: inline-block; min-width: 120px; }
   @media print {
     @page { margin: 10mm 8mm; }
   }

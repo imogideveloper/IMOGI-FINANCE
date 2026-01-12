@@ -7,35 +7,42 @@
   
 	body {
 		background: #fafafa;
-		font-size: 11px;
+		font-size: 9px;
 	}
   
 	.modern-container {
 		max-width: 1000px;
 		margin: 0 auto;
-		padding: 18px 22px;
+		padding: 6px 10px;
 		background: #ffffff;
 	}
   
 	.modern-header {
 		background: #1a1a1a;
 		color: white;
-		padding: 18px 22px;
-		margin-bottom: 18px;
+		padding: 6px 10px;
+		margin-bottom: 6px;
 		border-bottom: 3px solid #333333;
+	}
+
+	.modern-header-inner {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 8px;
 	}
   
 	.modern-header h1 {
-		font-size: 18px;
+		font-size: 12px;
 		font-weight: 600;
-		margin: 0 0 12px 0;
+		margin: 0 0 2px 0;
 		letter-spacing: 0.5px;
 		text-transform: uppercase;
 		color: #ffffff;
 	}
   
 	.modern-header .doc-id {
-		font-size: 15px;
+		font-size: 9px;
 		font-weight: 400;
 		color: #d1d5db;
 		letter-spacing: 0.3px;
@@ -43,9 +50,9 @@
   
 	.status-badge {
 		display: inline-block;
-		padding: 4px 12px;
-		margin-top: 14px;
-		font-size: 10px;
+		padding: 2px 8px;
+		margin-top: 0;
+		font-size: 8px;
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 1px;
@@ -61,21 +68,21 @@
 	.info-grid {
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
-		gap: 14px;
-		margin-bottom: 18px;
+		gap: 6px;
+		margin-bottom: 6px;
 	}
   
 	.info-card {
-		background: #fafafa;
-		padding: 14px 16px;
-		border-left: 3px solid #333333;
+		background: #ffffff;
+		padding: 6px 8px;
+		border-left: 2px solid #333333;
 	}
   
 	.info-card h3 {
-		font-size: 11px;
+		font-size: 9px;
 		color: #1a1a1a;
 		font-weight: 700;
-		margin: 0 0 20px 0;
+		margin: 0 0 8px 0;
 		text-transform: uppercase;
 		letter-spacing: 1.2px;
 	}
@@ -83,7 +90,7 @@
 	.info-row {
 		display: flex;
 		justify-content: space-between;
-		padding: 6px 0;
+		padding: 2px 0;
 		border-bottom: 1px solid #e5e5e5;
 		align-items: baseline;
 	}
@@ -94,29 +101,29 @@
   
 	.info-label {
 		color: #737373;
-		font-size: 11px;
+		font-size: 9px;
 		font-weight: 400;
 	}
   
 	.info-value {
 		color: #1a1a1a;
-		font-size: 11px;
+		font-size: 9px;
 		font-weight: 600;
 		text-align: right;
 	}
   
 	.purpose-section {
-		background: #fafafa;
-		padding: 12px 16px;
+		background: #ffffff;
+		padding: 6px 8px;
 		border-left: 3px solid #525252;
-		margin-bottom: 18px;
+		margin-bottom: 6px;
 	}
   
 	.purpose-section h3 {
-		font-size: 11px;
+		font-size: 9px;
 		color: #1a1a1a;
 		font-weight: 700;
-		margin: 0 0 14px 0;
+		margin: 0 0 6px 0;
 		text-transform: uppercase;
 		letter-spacing: 1.2px;
 	}
@@ -125,14 +132,14 @@
 		margin: 0;
 		color: #404040;
 		line-height: 1.4;
-		font-size: 11px;
+		font-size: 9px;
 		font-weight: 400;
 	}
   
 	.modern-table {
 		width: 100%;
 		border-collapse: collapse;
-		margin-bottom: 18px;
+		margin-bottom: 10px;
 		border: 1px solid #e5e5e5;
 	}
   
@@ -142,9 +149,9 @@
 	}
   
 	.modern-table thead th {
-		padding: 8px 10px;
+		padding: 6px 8px;
 		text-align: left;
-		font-size: 10px;
+		font-size: 9px;
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 1px;
@@ -168,8 +175,8 @@
 	}
   
 	.modern-table tbody td {
-		padding: 8px 10px;
-		font-size: 11px;
+		padding: 4px 8px;
+		font-size: 10px;
 		color: #404040;
 		font-weight: 400;
 	}
@@ -186,8 +193,8 @@
 	}
   
 	.modern-table tfoot th {
-		padding: 10px 10px;
-		font-size: 11px;
+		padding: 6px 8px;
+		font-size: 10px;
 		color: #1a1a1a;
 		font-weight: 700;
 	}
@@ -198,31 +205,31 @@
   
 	.detail-grid {
 		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 14px;
-		margin-bottom: 10px;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 8px;
+		margin-bottom: 4px;
 	}
   
 	.detail-card {
 		background: #fafafa;
-		padding: 14px 16px;
+		padding: 10px 12px;
 		border-left: 3px solid #525252;
 	}
   
 	.detail-card h3 {
-		font-size: 11px;
+		font-size: 10px;
 		color: #1a1a1a;
 		font-weight: 700;
-		margin: 0 0 20px 0;
+		margin: 0 0 8px 0;
 		text-transform: uppercase;
 		letter-spacing: 1.2px;
-		padding-bottom: 14px;
+		padding-bottom: 6px;
 		border-bottom: 1px solid #d4d4d4;
 	}
   
 	.detail-item {
-		margin-bottom: 8px;
-		font-size: 11px;
+		margin-bottom: 4px;
+		font-size: 10px;
 		display: flex;
 		justify-content: space-between;
 		align-items: baseline;
@@ -236,7 +243,7 @@
 		color: #737373;
 		font-weight: 400;
 		flex-shrink: 0;
-		margin-right: 16px;
+		margin-right: 8px;
 	}
   
 	.detail-value {
@@ -248,9 +255,9 @@
 	.badge-yes {
 		background: #2d2d2d;
 		color: #ffffff;
-		padding: 2px 8px;
+		padding: 1px 6px;
 		border-radius: 3px;
-		font-size: 10px;
+		font-size: 9px;
 		font-weight: 700;
 		letter-spacing: 0.5px;
 	}
@@ -258,9 +265,9 @@
 	.badge-no {
 		background: #f5f5f5;
 		color: #737373;
-		padding: 2px 8px;
+		padding: 1px 6px;
 		border-radius: 3px;
-		font-size: 10px;
+		font-size: 9px;
 		font-weight: 700;
 		letter-spacing: 0.5px;
 		border: 1px solid #e5e5e5;
@@ -306,13 +313,17 @@
 <div class="modern-container">
 	<!-- Header -->
 	<div class="modern-header">
-		<h1>{{ _("Expense Request") }}</h1>
-		<div class="doc-id">{{ doc.name }}</div>
-		{% if doc.workflow_state %}
-		<span class="status-badge status-{{ (doc.workflow_state or '').lower().replace(' ', '-') }}">
-			{{ doc.workflow_state }}
-		</span>
-		{% endif %}
+		<div class="modern-header-inner">
+			<div>
+				<h1>{{ _("Expense Request") }}</h1>
+				<div class="doc-id">{{ doc.name }}</div>
+			</div>
+			{% if doc.workflow_state %}
+			<span class="status-badge status-{{ (doc.workflow_state or '').lower().replace(' ', '-') }}">
+				{{ doc.workflow_state }}
+			</span>
+			{% endif %}
+		</div>
 	</div>
 
 	<!-- Main Info Grid -->
