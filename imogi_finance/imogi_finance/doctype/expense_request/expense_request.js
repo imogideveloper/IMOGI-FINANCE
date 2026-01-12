@@ -595,8 +595,8 @@ async function maybeRenderPurchaseInvoiceButton(frm) {
           frappe.show_progress(__('Creating...'), 0, 100);
 
           const { message } = await frappe.call({
-            method: 'imogi_finance.imogi_finance.doctype.expense_request.expense_request.create_purchase_invoice',
-            args: { expense_request: frm.doc.name },
+            method: 'imogi_finance.accounting.create_purchase_invoice_from_request',
+            args: { expense_request_name: frm.doc.name },
             freeze: true,
             freeze_message: __('Creating Purchase Invoice...'),
           });
