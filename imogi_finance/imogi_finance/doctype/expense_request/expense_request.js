@@ -261,6 +261,67 @@ function maybeAddDeferredExpenseActions(frm) {
   }, __('Actions'));
 }
 
+function maybeRenderCancelDeleteActions(frm) {
+  if (frm.is_new()) {
+    return;
+  }
+
+  const isSubmitted = frm.doc.docstatus === 1;
+  const isCancelled = frm.doc.docstatus === 2;
+  const canDelete = frm.doc.docstatus === 0 || isCancelled;
+
+  if (isSubmitted) {
+    frm.add_custom_button(__('Cancel'), () => {
+      frappe.confirm(
+        __('Are you sure you want to cancel this Expense Request?'),
+        async () => {
+          try {
+            await frm.cancel();
+          } catch (error) {
+            frappe.msgprint({
+              title: __('Error'),
+              message: error?.message || __('Failed to cancel Expense Request.'),
+              indicator: 'red',
+            });
+          }
+        }
+      );
+    }, __('Actions'));
+  }
+
+  if (canDelete) {
+    frm.add_custom_button(__('Delete'), () => {
+      frappe.confirm(
+        __('Are you sure you want to delete this Expense Request?'),
+        async () => {
+          try {
+            await frappe.call({
+              method: 'frappe.client.delete',
+              args: {
+                doctype: frm.doc.doctype,
+                name: frm.doc.name,
+              },
+              freeze: true,
+              freeze_message: __('Deleting Expense Request...'),
+            });
+            frappe.show_alert({
+              message: __('Expense Request deleted.'),
+              indicator: 'green',
+            }, 5);
+            frappe.set_route('List', frm.doc.doctype);
+          } catch (error) {
+            frappe.msgprint({
+              title: __('Error'),
+              message: error?.message || __('Failed to delete Expense Request.'),
+              indicator: 'red',
+            });
+          }
+        }
+      );
+    }, __('Actions'));
+  }
+}
+
 frappe.ui.form.on('Expense Request', {
   async refresh(frm) {
     hideErOcrStatus(frm);
@@ -271,6 +332,7 @@ frappe.ui.form.on('Expense Request', {
     await setErUploadQuery(frm);
     await syncErUpload(frm);
     maybeAddDeferredExpenseActions(frm);
+    maybeRenderCancelDeleteActions(frm);
     updateTotalsSummary(frm);
 
     const addCheckRouteButton = () => {
