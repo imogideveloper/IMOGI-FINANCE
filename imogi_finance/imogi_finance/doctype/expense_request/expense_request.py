@@ -552,87 +552,94 @@ class ExpenseRequest(Document):
         self.sync_status_with_workflow_state()
         self._ensure_budget_lock_synced_after_approval()
 
-	def _has_active_approval_setting(self) -> bool:
-	    """Check if cost center has active approval setting."""
-	    if not getattr(self, "cost_center", None):
-	        return False
-	    
-	    try:
-	        exists = frappe.db.exists('Expense Approval Setting', {
-	            'cost_center': self.cost_center,
-	            'is_active': 1
-	        })
-	        return bool(exists)
-	    except Exception as e:
-	        frappe.logger("imogi_finance").error(
-	            f"Error checking approval setting for {self.cost_center}: {str(e)}"
-	        )
-	        return False
+    def _has_active_approval_setting(self) -> bool:
+        """Check if cost center has active approval setting."""
+        if not getattr(self, "cost_center", None):
+            return False
+
+        try:
+            exists = frappe.db.exists(
+                "Expense Approval Setting",
+                {
+                    "cost_center": self.cost_center,
+                    "is_active": 1,
+                },
+            )
+            return bool(exists)
+        except Exception as exc:
+            frappe.logger("imogi_finance").error(
+                f"Error checking approval setting for {self.cost_center}: {str(exc)}"
+            )
+            return False
 
     def _auto_submit_if_skip_approval(self):
-	    """Auto submit dan approve jika tidak ada approval setting untuk cost center."""
-	    if getattr(self, "docstatus", 0) != 0:
-	        return
-	
-	    if getattr(self, "status", None) not in {None, "", "Draft"}:
-	        return
-	
-	    # Cek apakah ada Expense Approval Setting untuk cost center ini
-	    if not getattr(self, "cost_center", None):
-	        return
-	
-	    # Cek apakah cost center terdaftar di Expense Approval Setting yang aktif
-	    if self._has_active_approval_setting():
-	        # Ada approval setting, tidak auto-approve
-	        frappe.logger("imogi_finance").info(
-	            f"Expense Request requires approval - Cost Center {self.cost_center} has active Expense Approval Setting"
-	        )
-	        return
-	
-	    # Tidak ada approval setting, proceed dengan auto-approve
-	    frappe.logger("imogi_finance").info(
-	        f"Auto-approving Expense Request - No active Expense Approval Setting for Cost Center {self.cost_center}"
-	    )
-	
-	    # Set flag untuk skip approval
-	    route = {
-	        "level_1": {"user": None},
-	        "level_2": {"user": None},
-	        "level_3": {"user": None},
-	    }
-	    self.apply_route(route, setting_meta=None)
-	    self._skip_approval_route = True
-	
-	    # Set workflow state dan status langsung ke Approved
-	    self.workflow_state = "Approved"
-	    self.status = "Approved"
-	    self.current_approval_level = 0
-	    self._set_approval_audit()
-	
-	    # Set flag untuk allow workflow action
-	    flags = getattr(self, "flags", None)
-	    if flags is None:
-	        flags = type("Flags", (), {})()
-	        self.flags = flags
-	    self.flags.workflow_action_allowed = True
-	
-	    try:
-	        # Submit document
-	        self.submit()
-	        frappe.msgprint(
-	            _("No approval required for Cost Center {0}. Request auto-approved.").format(self.cost_center),
-	            alert=True,
-	            indicator="green",
-	        )
-	    except Exception as e:
-	        frappe.logger("imogi_finance").error(
-	            f"Failed to auto-submit Expense Request: {str(e)}"
-	        )
-	        # Rollback status changes jika submit gagal
-	        self.workflow_state = None
-	        self.status = "Draft"
-	        self.current_approval_level = 0
-	        raise
+        """Auto submit dan approve jika tidak ada approval setting untuk cost center."""
+        if getattr(self, "docstatus", 0) != 0:
+            return
+
+        if getattr(self, "status", None) not in {None, "", "Draft"}:
+            return
+
+        # Cek apakah ada Expense Approval Setting untuk cost center ini
+        if not getattr(self, "cost_center", None):
+            return
+
+        # Cek apakah cost center terdaftar di Expense Approval Setting yang aktif
+        if self._has_active_approval_setting():
+            # Ada approval setting, tidak auto-approve
+            frappe.logger("imogi_finance").info(
+                "Expense Request requires approval - "
+                f"Cost Center {self.cost_center} has active Expense Approval Setting"
+            )
+            return
+
+        # Tidak ada approval setting, proceed dengan auto-approve
+        frappe.logger("imogi_finance").info(
+            "Auto-approving Expense Request - "
+            f"No active Expense Approval Setting for Cost Center {self.cost_center}"
+        )
+
+        # Set flag untuk skip approval
+        route = {
+            "level_1": {"user": None},
+            "level_2": {"user": None},
+            "level_3": {"user": None},
+        }
+        self.apply_route(route, setting_meta=None)
+        self._skip_approval_route = True
+
+        # Set workflow state dan status langsung ke Approved
+        self.workflow_state = "Approved"
+        self.status = "Approved"
+        self.current_approval_level = 0
+        self._set_approval_audit()
+
+        # Set flag untuk allow workflow action
+        flags = getattr(self, "flags", None)
+        if flags is None:
+            flags = type("Flags", (), {})()
+            self.flags = flags
+        self.flags.workflow_action_allowed = True
+
+        try:
+            # Submit document
+            self.submit()
+            frappe.msgprint(
+                _("No approval required for Cost Center {0}. Request auto-approved.").format(
+                    self.cost_center
+                ),
+                alert=True,
+                indicator="green",
+            )
+        except Exception as exc:
+            frappe.logger("imogi_finance").error(
+                f"Failed to auto-submit Expense Request: {str(exc)}"
+            )
+            # Rollback status changes jika submit gagal
+            self.workflow_state = None
+            self.status = "Draft"
+            self.current_approval_level = 0
+            raise
 
     def before_cancel(self):
         self.validate_cancel_permission()
@@ -916,46 +923,48 @@ class ExpenseRequest(Document):
             # Avoid blocking workflow if snapshot persistence fails.
             pass
 
-
     def _resolve_approval_route(self) -> tuple[dict, dict | None, bool]:
-	    """Resolve approval route. Returns empty route for auto-approve if not configured."""
-	    try:
-	        setting_meta = get_active_setting_meta(self.cost_center)
-	        
-	        # Jika tidak ada setting_meta (approval setting tidak exist), return empty route
-	        if setting_meta is None:
-	            frappe.logger("imogi_finance").info(
-	                f"No Expense Approval Setting found for Cost Center {self.cost_center} - will auto-approve"
-	            )
-	            return {
-	                "level_1": {"user": None},
-	                "level_2": {"user": None},
-	                "level_3": {"user": None},
-	            }, None, False
-	        
-	        route_result = get_approval_route(
-	            self.cost_center, self._get_expense_accounts(), self.amount, setting_meta=setting_meta
-	        )
-	        
-	        if isinstance(route_result, tuple):
-	            route = route_result[0] if route_result else {}
-	            if len(route_result) > 1 and setting_meta is None:
-	                setting_meta = route_result[1]
-	        else:
-	            route = route_result
-	            
-	    except (frappe.DoesNotExistError, frappe.ValidationError) as exc:
-	        frappe.logger("imogi_finance").info(
-	            f"Approval setting not found for Cost Center {self.cost_center}: {str(exc)}"
-	        )
-	        # Return empty route untuk auto-approve
-	        return {
-	            "level_1": {"user": None},
-	            "level_2": {"user": None},
-	            "level_3": {"user": None},
-	        }, None, False
-	
-	    return route, setting_meta, False
+        """Resolve approval route. Returns empty route for auto-approve if not configured."""
+        try:
+            setting_meta = get_active_setting_meta(self.cost_center)
+
+            # Jika tidak ada setting_meta (approval setting tidak exist), return empty route
+            if setting_meta is None:
+                frappe.logger("imogi_finance").info(
+                    f"No Expense Approval Setting found for Cost Center {self.cost_center} - will auto-approve"
+                )
+                return {
+                    "level_1": {"user": None},
+                    "level_2": {"user": None},
+                    "level_3": {"user": None},
+                }, None, False
+
+            route_result = get_approval_route(
+                self.cost_center,
+                self._get_expense_accounts(),
+                self.amount,
+                setting_meta=setting_meta,
+            )
+
+            if isinstance(route_result, tuple):
+                route = route_result[0] if route_result else {}
+                if len(route_result) > 1 and setting_meta is None:
+                    setting_meta = route_result[1]
+            else:
+                route = route_result
+
+        except (frappe.DoesNotExistError, frappe.ValidationError) as exc:
+            frappe.logger("imogi_finance").info(
+                f"Approval setting not found for Cost Center {self.cost_center}: {str(exc)}"
+            )
+            # Return empty route untuk auto-approve
+            return {
+                "level_1": {"user": None},
+                "level_2": {"user": None},
+                "level_3": {"user": None},
+            }, None, False
+
+        return route, setting_meta, False
 
     def _resolve_and_apply_route(self) -> dict:
         route, setting_meta, failed = self._resolve_approval_route()
