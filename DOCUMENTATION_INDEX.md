@@ -266,7 +266,7 @@ IMOGI-FINANCE/
 ### Features
 - ✅ Internal Charge now has proper workflow like Expense Request
 - ✅ Cost-centre-aware approval enforcement
-- ✅ Workflow "Create PI" now actually creates PI
+- ✅ Button-based PI creation from Expense Request (workflow action "Create PI" fully deprecated)
 - ✅ Better audit trail with workflow state history
 
 ### Reliability

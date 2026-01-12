@@ -84,6 +84,8 @@ pytest imogi_finance/tests/test_approval_service.py -v
   - [ ] Purchase Invoice created
   - [ ] linked_purchase_invoice field populated
   - [ ] Status reflects PI creation appropriately (e.g. "PI Created" if used)
+  - [ ] If Tax Invoice OCR is enabled and require-verification is ON and ER is PPN, creation is blocked until the Tax Invoice is Verified
+  - [ ] For non-PPN ERs, creation remains allowed even if OCR has not been Verified
   - [ ] PI is linked correctly to ER
   - [ ] No errors
 

@@ -115,6 +115,8 @@ If all pass → ApprovalService is correct
    - Purchase Invoice is created
    - `linked_purchase_invoice` is populated
    - Status moves to a PI-related state (e.g. "PI Created" if used)
+   - If Tax Invoice OCR is enabled **and** require-verification is ON **and** the ER is PPN, creation is only allowed when the Tax Invoice is Verified
+   - For non-PPN Expense Requests, the button remains available even if OCR has not been Verified
 
 #### 3e. Test Budget Lock (if enabled)
 1. If budget control is enabled in settings:
@@ -347,9 +349,9 @@ Refactoring is successful if:
 - ✅ All unit tests pass (24/24)
 - ✅ Can create + submit ER (shows "Submitted")
 - ✅ Status field visible (shows "Pending Review")
-- ✅ Workflow actions work (Approve, Reject, Create PI)
+- ✅ Workflow actions work (Submit, Approve, Reject)
 - ✅ Budget locks on Approve (if enabled)
-- ✅ PI created on "Create PI" action
+- ✅ PI can be created from an Approved ER via the "Create Purchase Invoice" button (with OCR/PPN rules applied as above)
 - ✅ No new errors in logs
 - ✅ Existing ERs still work
 - ✅ Can reopen + reject + cancel

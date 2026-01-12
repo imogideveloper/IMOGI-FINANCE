@@ -80,9 +80,11 @@ Ditambahkan test file `test_expense_request_workflow.py` dengan test cases:
 
 ### "Tax Invoice must be verified before creating a Purchase Invoice"
 
-**Penyebab**: Setting `require_verification_before_create_pi_from_expense_request` aktif, tapi tax invoice belum diverifikasi.
+**Penyebab**: Setting `require_verification_before_create_pi_from_expense_request` aktif, ER bertanda PPN (`is_ppn_applicable = 1`), tapi tax invoice belum diverifikasi.
 
-**Solusi**: Verify tax invoice dulu sebelum klik "Create PI".
+**Catatan**: Untuk ER non-PPN, error ini **tidak** muncul; tombol "Create Purchase Invoice" tetap bisa digunakan walaupun OCR belum Verified.
+
+**Solusi**: Untuk ER PPN, verify tax invoice dulu sebelum klik tombol **"Create Purchase Invoice"** (atau perbaiki flag PPN jika ER seharusnya non-PPN).
 
 ### "Expense Request must be budget locked before creating a Purchase Invoice"
 

@@ -348,13 +348,13 @@ def check_expense_request_route(
             "user_validation": user_validation,
         }
 
-    # Check if route has any approvers
+    # Check if route has any approvers; require configuration for Expense Request
     if not has_approver_in_route(route):
         return {
-            "ok": True,
+            "ok": False,
             "route": route,
-            "message": _("No approval required. Request will be auto-approved."),
-            "auto_approve": True,
+            "message": approval_setting_required_message(cost_center),
+            "auto_approve": False,
         }
 
     return {"ok": True, "route": route, "auto_approve": False}

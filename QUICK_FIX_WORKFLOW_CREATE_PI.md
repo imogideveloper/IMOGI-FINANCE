@@ -42,7 +42,8 @@ Workflow hanya mengubah status, tidak memanggil fungsi untuk membuat PI.
 1. Pastikan ER status **"Approved"**
 2. Pastikan **semua requirement terpenuhi**:
    - Budget sudah locked (jika enforce aktif)
-   - Tax invoice sudah Verified (jika setting require_verification aktif)
+   - Untuk ER PPN: Tax invoice sudah Verified (jika setting require_verification aktif)
+   - Untuk ER non-PPN: requirement verifikasi OCR **tidak wajib** untuk bisa membuat PI
    - IC Request sudah dibuat (jika allocation mode "Internal Charge")
 3. Di form, klik tombol **"Create Purchase Invoice"** (bukan workflow action)
 4. Jika berhasil → PI terbentuk + status berubah
