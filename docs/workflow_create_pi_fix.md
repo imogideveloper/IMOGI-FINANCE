@@ -1,8 +1,8 @@
-# Workflow Fix: Create PI Action & Auto Paid Status
+# Workflow Fix (Legacy): Create PI Action & Auto Paid Status
 
 ## Masalah yang Diperbaiki
 
-### 1. Create PI Action
+### 1. Create PI Action (historical)
 Sebelumnya, ketika user mengklik action **"Create PI"** di workflow Expense Request, sistem hanya mengubah status menjadi "PI Created" **tanpa benar-benar membuat dokumen Purchase Invoice**. Ini menyebabkan:
 
 - Status Expense Request berubah ke "PI Created"
@@ -13,46 +13,19 @@ Sebelumnya, ketika user mengklik action **"Create PI"** di workflow Expense Requ
 ### 2. Mark Paid Action (Removed)
 Sebelumnya ada workflow action "Mark Paid" yang manual. Ini **tidak sesuai dengan desain sistem** karena status "Paid" seharusnya **sinkron otomatis** dari Payment Entry, bukan manual action.
 
-## Solusi yang Diimplementasikan
+## Solusi yang Diimplementasikan (status saat ini)
 
-### 1. Handler di `before_workflow_action`
+### 1. Tombol "Create Purchase Invoice" di Form (disarankan)
 
-Ditambahkan logika di method `before_workflow_action` pada class `ExpenseRequest` yang:
+Implementasi terbaru menggunakan tombol custom **"Create Purchase Invoice"** di form Expense Request (bukan workflow action) yang:
 
-- Mendeteksi ketika action "Create PI" dipilih
 - Memanggil `accounting.create_purchase_invoice_from_request()` untuk membuat dokumen PI yang sebenarnya
-- Mengupdate field `linked_purchase_invoice` dan `pending_purchase_invoice` di dokumen ER
+- Mengupdate field `linked_purchase_invoice` dan field terkait di dokumen ER
 - Menangkap error jika PI creation gagal (misalnya budget belum locked, tax invoice belum verified) dan menampilkan pesan error yang jelas
 
-```python
-if action == "Create PI":
-    next_state = kwargs.get("next_state")
-    if next_state == "PI Created":
-        try:
-            pi_name = accounting.create_purchase_invoice_from_request(self.name)
-            if not pi_name:
-                frappe.throw(...)
-            self.linked_purchase_invoice = pi_name
-            self.pending_purchase_invoice = None
-        except Exception as e:
-            frappe.throw(...)
-```
+### 2. (Legacy) Handler di `before_workflow_action` dan `on_workflow_action`
 
-### 2. Validasi di `on_workflow_action`
-
-Ditambahkan validasi di method `on_workflow_action` yang:
-
-- Memastikan status "PI Created" hanya bisa diset jika field `linked_purchase_invoice` sudah ada
-- Mencegah perubahan status manual yang bypass pembuatan PI
-- Memberikan error message yang jelas jika validasi gagal
-
-```python
-if action == "Create PI" and next_state == "PI Created":
-    if not getattr(self, "linked_purchase_invoice", None):
-        frappe.throw(
-            _("Cannot set status to 'PI Created' without a linked Purchase Invoice...")
-        )
-```
+Versi sebelumnya menambahkan handler khusus untuk action workflow **"Create PI"** di `before_workflow_action` dan validasi di `on_workflow_action`. Handler tersebut sekarang sudah dihapus karena jalur resmi adalah lewat tombol form.
 
 ### 3. Update Dokumentasi Workflow
 Removed "Mark Paid" Workflow Action
@@ -80,30 +53,28 @@ Ditambahkan test file `test_expense_request_workflow.py` dengan test cases:
 
 ## Cara Menggunakan (Untuk User)
 
-### Workflow Action yang Benar
-Status "Paid" Otomatis
+### Cara Menggunakan (Untuk User)
 
-**Tidak ada workflow action "Mark Paid"** - status berubah otomatis:
+#### Jalur utama: tombol "Create Purchase Invoice"
 
-1. Setelah ER status "PI Created", buat Payment Entry
-2. Link Payment Entry ke Expense Request
-3. **Submit Payment Entry**
-4. Hook di `payment_entry.py` otomatis set status ER ke "Paid"
-
-### 
 1. Buka Expense Request yang sudah **Approved**
-2. Klik action **"Create PI"** (bukan mengubah status manual)
+2. Klik tombol **"Create Purchase Invoice"** di form (bukan workflow action)
 3. Sistem akan:
-   - Validasi semua requirement (budget lock, tax invoice verification, dll)
-   - Membuat Purchase Invoice baru
-   - Link PI ke ER
-   - Ubah status ke "PI Created"
+    - Validasi semua requirement (budget lock, tax invoice verification, dll)
+    - Membuat Purchase Invoice baru
+    - Link PI ke ER
+    - Ubah status ke state PI yang sesuai (misalnya "PI Created" jika digunakan)
 4. Jika berhasil, akan muncul alert hijau dengan nama PI yang dibuat
 5. Jika gagal, akan muncul error message yang jelas
 
-### Tombol "Create Purchase Invoice" di Form
+#### Status "Paid" Otomatis
 
-Alternatif, bisa tetap menggunakan tombol **"Create Purchase Invoice"** yang muncul di dashboard/form ER (bukan workflow action). Keduanya sekarang menghasilkan output yang sama.
+**Tidak ada workflow action "Mark Paid"** - status berubah otomatis:
+
+1. Setelah ER terkait PI, buat Payment Entry untuk PI tersebut
+2. Link Payment Entry ke Purchase Invoice / Expense Request sesuai desain
+3. **Submit Payment Entry**
+4. Hook di `payment_entry.py` otomatis set status ER ke "Paid"
 
 ## Error Messages yang Mungkin Muncul
 

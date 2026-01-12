@@ -107,17 +107,21 @@ If all pass → ApprovalService is correct
    - If L2 exists: Stays "Pending Review", level → 2
    - If no L2: Changes to "Approved", level → 0
 2. Check status updated correctly
-3. Click "Create PI" action (if Approved)
-   - PI should be created
-   - linked_purchase_invoice should be filled
-   - status → "PI Created"
 
-#### 3d. Test Budget Lock (if enabled)
+#### 3d. Test Create Purchase Invoice (Button)
+1. From an **Approved** Expense Request, open the form
+2. On the Actions menu / dashboard, click **"Create Purchase Invoice"**
+3. Verify:
+   - Purchase Invoice is created
+   - `linked_purchase_invoice` is populated
+   - Status moves to a PI-related state (e.g. "PI Created" if used)
+
+#### 3e. Test Budget Lock (if enabled)
 1. If budget control is enabled in settings:
    - After Approve: Check Budget Control entries exist
    - Budget should show "Locked"
 
-#### 3e. Test Reject
+#### 3f. Test Reject
 1. Go back to another test ER in "Pending Review"
 2. Click "Reject" action
    - Status → "Rejected"
@@ -168,7 +172,7 @@ bench restart
 3. Submit → Should show "Submitted"
 4. Check status field → Should show state
 5. Approve → Check transitions work
-6. Create PI → Check PI created
+6. Use **Create Purchase Invoice** button → Check PI created and linked
 
 #### 4f. Monitoring (30 minutes)
 ```bash

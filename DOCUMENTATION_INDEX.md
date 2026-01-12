@@ -40,12 +40,12 @@
    - Before/after comparison
    - Complete workflow details
 
-#### For Workflow Create PI Fix:
+#### For Purchase Invoice Creation from Expense Request:
 1. **[QUICK_FIX_WORKFLOW_CREATE_PI.md](QUICK_FIX_WORKFLOW_CREATE_PI.md)** (5 min)
-   - Quick summary of changes
+   - Quick summary of historical workflow fix and current button-based behavior
 
 2. **[docs/workflow_create_pi_fix.md](docs/workflow_create_pi_fix.md)** (15 min)
-   - Detailed technical implementation
+   - Detailed technical notes (now marked as legacy for workflow action; PI creation is via custom button)
 
 ---
 
@@ -125,21 +125,21 @@
 
 ---
 
-### 3. Workflow "Create PI" Action Fix
+### 3. Purchase Invoice Creation from Expense Request (Button-Based)
 
-**Problem:** Workflow action "Create PI" only changed status, didn't actually create Purchase Invoice
+**Problem (historical):** Workflow action "Create PI" hanya mengubah status tanpa benar-benar membuat Purchase Invoice.
 
-**Solution:** Add handler in `before_workflow_action` to call `accounting.create_purchase_invoice_from_request()`
+**Current Solution:** Workflow action "Create PI" sudah dinonaktifkan. Pembuatan Purchase Invoice sekarang dilakukan melalui tombol custom **"Create Purchase Invoice"** di form Expense Request, dengan validasi penuh (approval, budget, dan OCR).
 
 **Key Documents:**
-- **[QUICK_FIX_WORKFLOW_CREATE_PI.md](QUICK_FIX_WORKFLOW_CREATE_PI.md)** - Quick user guide
-- **[docs/workflow_create_pi_fix.md](docs/workflow_create_pi_fix.md)** - Detailed technical implementation
+- **[QUICK_FIX_WORKFLOW_CREATE_PI.md](QUICK_FIX_WORKFLOW_CREATE_PI.md)** - Ringkasan perubahan dan catatan bahwa workflow action sudah deprecated
+- **[docs/workflow_create_pi_fix.md](docs/workflow_create_pi_fix.md)** - Detail teknis historis + catatan bahwa implementasi terbaru menggunakan tombol custom
 
-**Code Files:**
+**Code Files (current behavior):**
 - `imogi_finance/imogi_finance/doctype/expense_request/expense_request.py` (UPDATED)
-- `imogi_finance/imogi_finance/workflow/expense_request_workflow/expense_request_workflow.json` (UPDATED)
+- `imogi_finance/imogi_finance/doctype/expense_request/expense_request.js` (custom button Create Purchase Invoice)
 
-**Status:** ✅ Code complete, ready for testing
+**Status:** ✅ Button-based PI creation active; workflow action "Create PI" deprecated
 
 ---
 

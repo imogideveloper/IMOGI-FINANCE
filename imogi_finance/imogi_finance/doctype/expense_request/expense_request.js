@@ -489,10 +489,6 @@ frappe.ui.form.on('Expense Request', {
       await maybeRenderPurchaseInvoiceButton(frm);
     }
 
-    if (isSubmitted && frm.doc.status === 'PI Created' && frm.doc.linked_purchase_invoice) {
-      await maybeRenderMarkPaidButton(frm);
-    }
-
     // Tax Invoice OCR actions are intentionally managed from the OCR Upload doctype.
   },
   items_add(frm) {
@@ -578,7 +574,8 @@ async function maybeRenderPurchaseInvoiceButton(frm) {
     ),
   ]);
 
-  const gateByVerification = Boolean(ocrEnabled && requireVerified);
+  const isPpnApplicable = Boolean(frm.doc.is_ppn_applicable);
+  const gateByVerification = Boolean(ocrEnabled && requireVerified && isPpnApplicable);
   const isVerified = frm.doc.ti_verification_status === 'Verified';
   const allowButton = !gateByVerification || isVerified;
 
@@ -624,69 +621,6 @@ async function maybeRenderPurchaseInvoiceButton(frm) {
       }
     );
   }, __('Actions'));
-}
-
-async function maybeRenderMarkPaidButton(frm) {
-  if (!frm.doc.linked_purchase_invoice) {
-    return;
-  }
-
-  const piStatus = await frappe.db.get_value(
-    'Purchase Invoice',
-    frm.doc.linked_purchase_invoice,
-    'docstatus'
-  );
-
-  if (piStatus?.message?.docstatus !== 1) {
-    frm.dashboard.add_indicator(
-      __('Submit Purchase Invoice {0} before marking as Paid', [frm.doc.linked_purchase_invoice]),
-      'orange'
-    );
-    return;
-  }
-
-  const hasPayment = await frappe.db.get_value(
-    'Payment Entry Reference',
-    {
-      reference_doctype: 'Purchase Invoice',
-      reference_name: frm.doc.linked_purchase_invoice,
-      docstatus: 1,
-    },
-    'parent'
-  );
-
-  if (hasPayment?.message?.parent) {
-    frm.add_custom_button(__('Mark as Paid'), async () => {
-      try {
-        await frappe.call({
-          method: 'imogi_finance.imogi_finance.doctype.expense_request.expense_request.mark_as_paid',
-          args: {
-            expense_request: frm.doc.name,
-            payment_entry: hasPayment.message.parent,
-          },
-          freeze: true,
-          freeze_message: __('Updating status...'),
-        });
-
-        frappe.show_alert({
-          message: __('Expense Request marked as Paid'),
-          indicator: 'green',
-        }, 5);
-        frm.reload_doc();
-      } catch (error) {
-        frappe.msgprint({
-          title: __('Error'),
-          message: error?.message || __('Failed to mark as Paid'),
-          indicator: 'red',
-        });
-      }
-    }, __('Actions'));
-  } else {
-    frm.dashboard.add_indicator(
-      __('Create Payment Entry for PI {0} to mark as Paid', [frm.doc.linked_purchase_invoice]),
-      'blue'
-    );
-  }
 }
 
 frappe.ui.form.on('Expense Request Item', {

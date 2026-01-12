@@ -4,7 +4,7 @@ Welcome! Dokumentasi telah dibersihkan dan dikonsolidasikan.
 
 **Refactoring Expense Request** ke modular, scalable, native-first architecture sudah **SELESAI** ✅  
 **Internal Charge Request** workflow sudah di-upgrade dengan proper approval states ✅  
-**Workflow "Create PI"** fix sudah siap deploy ✅
+**Create Purchase Invoice dari Expense Request** sekarang memakai tombol custom (bukan workflow action) ✅
 
 ---
 

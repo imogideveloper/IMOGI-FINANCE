@@ -11,10 +11,6 @@
     {
       "action": "Reject",
       "allowed": "All"
-    },
-    {
-      "action": "Create PI",
-      "allowed": "All"
     }
   ],
   "creation": "",
@@ -118,13 +114,7 @@
       "next_state": "Rejected",
       "doc_status": 1
     },
-    {
-      "action": "Create PI",
-      "allowed": "All",
-      "state": "Approved",
-      "next_state": "PI Created",
-      "doc_status": 1
-    }
+    
   ],
   "workflow_state_field": "workflow_state"
 }

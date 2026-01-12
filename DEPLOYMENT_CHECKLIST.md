@@ -35,12 +35,12 @@ bench restart
 ## Post-Deployment Validation
 ```bash
 # Test in production
-1. Buka ER yang Approved
-2. Klik workflow "Create PI"
-3. Verify PI terbentuk
-4. Buat Payment Entry untuk ER tersebut
+1. Buka Expense Request yang sudah "Approved"
+2. Dari form, klik tombol **"Create Purchase Invoice"**
+3. Verify Purchase Invoice terbentuk dan field linked_purchase_invoice terisi
+4. Buat Payment Entry untuk PI tersebut
 5. Submit Payment Entry
-6. Verify status ER otomatis jadi "Paid"
+6. Verify status Expense Request otomatis jadi "Paid" melalui hook Payment Entry
 ```
 
 ## Monitor

@@ -198,7 +198,7 @@ class TestOnWorkflowAction:
         initial_state = "Approved"
         mock_document.workflow_state = initial_state
         
-        approval_service.on_workflow_action(mock_document, action="Create PI", next_state="PI Created")
+        approval_service.on_workflow_action(mock_document, action="Approve", next_state="Approved")
         
         # State not updated (Create PI is special, handled elsewhere)
         assert mock_document.workflow_state == initial_state

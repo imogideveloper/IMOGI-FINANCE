@@ -77,13 +77,13 @@ pytest imogi_finance/tests/test_approval_service.py -v
   - [ ] approved_on timestamp set
   - [ ] No errors
 
-#### Test Case 3: Create PI
+#### Test Case 3: Create Purchase Invoice (Button)
 - [ ] Approved ER ready
-- [ ] Click "Create PI" action
+- [ ] From form/dashboard, click **"Create Purchase Invoice"**
 - [ ] **Verify**:
   - [ ] Purchase Invoice created
   - [ ] linked_purchase_invoice field populated
-  - [ ] Status changes to "PI Created"
+  - [ ] Status reflects PI creation appropriately (e.g. "PI Created" if used)
   - [ ] PI is linked correctly to ER
   - [ ] No errors
 

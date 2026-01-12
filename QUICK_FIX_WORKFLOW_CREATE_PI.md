@@ -1,4 +1,4 @@
-# Quick Fix: Workflow Actions "Create PI" & "Mark Paid" Tidak Bekerja
+# Quick Fix (Legacy): Workflow Actions "Create PI" & "Mark Paid" Tidak Bekerja
 
 ## Masalah
 - Klik workflow action **"Create PI"** → Status berubah → **Purchase Invoice tidak terbentuk**
@@ -6,15 +6,21 @@
 ## Penyebab
 Workflow hanya mengubah status, tidak memanggil fungsi untuk membuat PI.
 
-## Solusi yang Sudah Diimplementasikan
+## Solusi yang Sudah Diimplementasikan (versi terbaru)
+
+> Catatan: Workflow action **"Create PI"** sekarang sudah dinonaktifkan. Pembuatan Purchase Invoice dilakukan melalui tombol custom **"Create Purchase Invoice"** di form Expense Request. Penjelasan di bawah ini menjelaskan konteks historis sekaligus perilaku terbaru.
 
 ### Perubahan Kode
-1. **Handler otomatis untuk "Create PI"**
-   - Memanggil fungsi create PI yang sebenarnya
-   - Update field linked_purchase_invoice
+1. **Tombol "Create Purchase Invoice" di Form (disarankan)**
+   - Memanggil fungsi create PI yang sebenarnya (`create_purchase_invoice_from_request`)
+   - Update field `linked_purchase_invoice`
    - Handle error dengan jelas
 
-2. **Status "Paid" otomatis dari Payment Entry**
+2. **(Legacy) Handler otomatis untuk "Create PI" di workflow**
+   - SEBELUMNYA: Memperbaiki workflow action agar benar-benar membuat PI
+   - SEKARANG: Workflow action sudah tidak digunakan lagi (deprecated)
+
+3. **Status "Paid" otomatis dari Payment Entry**
    - Hook di payment_entry.py on_submit
    - Status berubah ke "Paid" ketika Payment Entry di-submit
    - Tidak ada workflow action manual
@@ -30,7 +36,7 @@ Workflow hanya mengubah status, tidak memanggil fungsi untuk membuat PI.
 - ✅ `test_expense_request_workflow.py` (unit tests)
 - ✅ Dokumentasi lengkap di `docs/workflow_create_pi_fix.md`
 
-## Cara Pakai (Untuk User)
+## Cara Pakai (Untuk User) - versi terbaru
 
 ### Langkah Benar
 1. Pastikan ER status **"Approved"**
@@ -38,7 +44,7 @@ Workflow hanya mengubah status, tidak memanggil fungsi untuk membuat PI.
    - Budget sudah locked (jika enforce aktif)
    - Tax invoice sudah Verified (jika setting require_verification aktif)
    - IC Request sudah dibuat (jika allocation mode "Internal Charge")
-3. Klik workflow action **"Create PI"**
+3. Di form, klik tombol **"Create Purchase Invoice"** (bukan workflow action)
 4. Jika berhasil → PI terbentuk + status berubah
 5. Jika gagal → Error message jelas + status tidak berubah
 
@@ -51,9 +57,8 @@ Workflow hanya mengubah status, tidak memanggil fungsi untuk membuat PI.
 | "IC Request required..." | Belum ada IC Request | Buat IC Request dulu |
 | "Already has draft Purchase Invoice..." | Ada PI draft | Submit/cancel PI draft yang ada |
 
-### Alternative: Tombol di Form
-Selain workflow action, bisa juga pakai tombol **"Create Purchase Invoice"** di dashboard ER.
-Hasilnya sama.
+### (Legacy) Workflow Action
+Historically, user bisa memakai workflow action **"Create PI"". Sekarang jalur resmi adalah tombol **"Create Purchase Invoice"** di form, sehingga workflow action tidak lagi dipakai.
 
 ### Status "Paid" Otomatis
 Status berubah ke **"Paid"** secara otomatis ketika:
@@ -68,7 +73,7 @@ Status berubah ke **"Paid"** secara otomatis ketika:
    - Gunakan action "Reopen" (jika allowed) atau
    - Minta System Manager untuk ubah status
 2. Pastikan semua requirement terpenuhi
-3. Klik **"Create PI"** lagi
+3. Klik **"Create Purchase Invoice"** lagi
 4. Verifikasi PI terbentuk
 
 ## Testing Checklist
