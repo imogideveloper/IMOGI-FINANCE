@@ -44,6 +44,36 @@ class TaxInvoiceOCRUpload(Document):
         self.tax_invoice_type = tax_invoice_type
         self.tax_invoice_type_description = type_description
 
+    def on_trash(self):
+        """Clean up all links pointing to this OCR Upload before deletion.
+
+        Clears link fields in Expense Request, Branch Expense Request,
+        Purchase Invoice, and Sales Invoice that reference this document.
+        Also deletes any Tax Invoice OCR Monitoring records.
+        """
+        from imogi_finance.tax_invoice_fields import UPLOAD_LINK_FIELDS
+
+        # Clear links from all doctypes that may reference this OCR Upload
+        for doctype, link_field in UPLOAD_LINK_FIELDS.items():
+            if frappe.db.table_exists(doctype.replace(" ", "")):
+                linked_docs = frappe.get_all(
+                    doctype,
+                    filters={link_field: self.name},
+                    pluck="name",
+                )
+                for doc_name in linked_docs:
+                    frappe.db.set_value(doctype, doc_name, link_field, None)
+
+        # Delete any OCR Monitoring records for this upload
+        if frappe.db.table_exists("Tax Invoice OCR Monitoring"):
+            monitoring_records = frappe.get_all(
+                "Tax Invoice OCR Monitoring",
+                filters={"upload_name": self.name},
+                pluck="name",
+            )
+            for record in monitoring_records:
+                frappe.delete_doc("Tax Invoice OCR Monitoring", record, ignore_permissions=True, force=True)
+
     @frappe.whitelist()
     def refresh_status(self):
         from imogi_finance.api.tax_invoice import monitor_tax_invoice_ocr

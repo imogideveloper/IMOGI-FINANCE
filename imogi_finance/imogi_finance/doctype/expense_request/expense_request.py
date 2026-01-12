@@ -138,34 +138,28 @@ class ExpenseRequest(Document):
             pass
 
     def on_trash(self):
-        """Allow safe deletion by checking OCR links/monitoring.
+        """Clean up OCR links and monitoring records before deletion.
 
-        Expense Request cannot be deleted while it is still linked to a
-        Tax Invoice OCR Upload or has monitoring records pointing to it.
+        Automatically clears references to Tax Invoice OCR Upload and
+        deletes any Tax Invoice OCR Monitoring records to avoid circular
+        dependency issues when deleting Expense Request.
         """
 
+        # Clear Tax Invoice OCR Upload link to break circular dependency
         upload_field = get_upload_link_field("Expense Request")
-        linked_upload = getattr(self, upload_field, None) if upload_field else None
+        if upload_field and getattr(self, upload_field, None):
+            # Clear the link field - use db_set since document is being deleted
+            frappe.db.set_value("Expense Request", self.name, upload_field, None)
 
-        has_monitoring = frappe.db.exists(
-            "Tax Invoice OCR Monitoring",
-            {"target_doctype": "Expense Request", "target_name": self.name},
-        )
-
-        if linked_upload or has_monitoring:
-            reasons = []
-            if linked_upload:
-                reasons.append(_("a linked Tax Invoice OCR Upload"))
-            if has_monitoring:
-                reasons.append(_("Tax Invoice OCR Monitoring records"))
-
-            frappe.throw(
-                _(
-                    "Cannot delete Expense Request because it is still linked to {0}. "
-                    "Please clear OCR links and monitoring records first."
-                ).format(" and ".join(reasons)),
-                title=_("Linked OCR Records Exist"),
+        # Delete any OCR Monitoring records pointing to this Expense Request
+        if frappe.db.table_exists("Tax Invoice OCR Monitoring"):
+            monitoring_records = frappe.get_all(
+                "Tax Invoice OCR Monitoring",
+                filters={"target_doctype": "Expense Request", "target_name": self.name},
+                pluck="name",
             )
+            for record in monitoring_records:
+                frappe.delete_doc("Tax Invoice OCR Monitoring", record, ignore_permissions=True, force=True)
 
     # ===================== Business Logic =====================
 

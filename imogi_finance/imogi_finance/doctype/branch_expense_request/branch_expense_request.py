@@ -145,6 +145,30 @@ class BranchExpenseRequest(Document):
     def on_cancel(self):
         self.status = self.STATUS_CANCELLED
 
+    def on_trash(self):
+        """Clean up OCR links and monitoring records before deletion.
+
+        Automatically clears references to Tax Invoice OCR Upload and
+        deletes any Tax Invoice OCR Monitoring records to avoid circular
+        dependency issues when deleting Branch Expense Request.
+        """
+        from imogi_finance.tax_invoice_fields import get_upload_link_field
+
+        # Clear Tax Invoice OCR Upload link to break circular dependency
+        upload_field = get_upload_link_field("Branch Expense Request")
+        if upload_field and getattr(self, upload_field, None):
+            frappe.db.set_value("Branch Expense Request", self.name, upload_field, None)
+
+        # Delete any OCR Monitoring records pointing to this Branch Expense Request
+        if frappe.db.table_exists("Tax Invoice OCR Monitoring"):
+            monitoring_records = frappe.get_all(
+                "Tax Invoice OCR Monitoring",
+                filters={"target_doctype": "Branch Expense Request", "target_name": self.name},
+                pluck="name",
+            )
+            for record in monitoring_records:
+                frappe.delete_doc("Tax Invoice OCR Monitoring", record, ignore_permissions=True, force=True)
+
     def before_workflow_action(self, action, **kwargs):
         """Gate workflow transitions by the resolved approver route."""
         self._ensure_status()
