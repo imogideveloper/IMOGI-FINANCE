@@ -8,6 +8,39 @@ from imogi_finance.events.utils import (
 )
 
 
+def on_change_expense_request(doc, method=None):
+    """Auto-populate amount and description from selected Expense Request."""
+    request_name = doc.get("imogi_expense_request")
+    if not request_name:
+        return
+
+    try:
+        request = frappe.get_doc("Expense Request", request_name)
+        
+        # Fetch amount from ER
+        if request.total_amount:
+            doc.paid_amount = request.total_amount
+            doc.received_amount = request.total_amount
+        
+        # Fetch description from ER (if remarks field exists, populate with ER details)
+        if request.get("name"):
+            existing_remarks = doc.get("remarks") or ""
+            if "Expense Request" not in existing_remarks:
+                doc.remarks = _("Payment for Expense Request {0} - {1}").format(
+                    request.name,
+                    request.get("description", request.get("request_type", ""))
+                )
+    except frappe.DoesNotExistError:
+        frappe.msgprint(
+            _("Expense Request {0} not found").format(request_name),
+            alert=True,
+            indicator="orange"
+        )
+    except Exception as e:
+        # Don't block document save for data fetch errors
+        pass
+
+
 def on_submit(doc, method=None):
     request = doc.get("imogi_expense_request")
     if not request:

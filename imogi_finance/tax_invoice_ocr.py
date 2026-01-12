@@ -1275,13 +1275,18 @@ def verify_tax_invoice(doc: Any, *, doctype: str, force: bool = False) -> dict[s
 
     tolerance = flt(settings.get("tolerance_idr", 10))
     if expected_ppn is not None:
-        diff = abs(flt(_get_value(doc, doctype, "ppn", 0)) - expected_ppn)
+        actual_ppn = flt(_get_value(doc, doctype, "ppn", 0))
+        diff = abs(actual_ppn - expected_ppn)
         if diff > tolerance:
-            notes.append(
-                _("PPN amount differs from expected by more than {0}. Difference: {1}").format(
-                    format_value(tolerance, "Currency"), format_value(diff, "Currency")
-                )
+            # Best practice: blokir verifikasi bila PPN tidak sesuai di luar toleransi.
+            message = _(
+                "PPN amount differs from expected by more than {0}. Difference: {1}"
+            ).format(
+                format_value(tolerance, "Currency"), format_value(diff, "Currency")
             )
+            if not force:
+                _raise_validation_error(message)
+            notes.append(message)
 
     dpp_value = flt(_get_value(doc, doctype, "dpp", 0))
     ppn_value = flt(_get_value(doc, doctype, "ppn", 0))

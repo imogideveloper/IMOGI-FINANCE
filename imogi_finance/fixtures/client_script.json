@@ -1,0 +1,16 @@
+[
+  {
+    "doctype": "Client Script",
+    "dt": "Purchase Invoice",
+    "view": "Form",
+    "enabled": 1,
+    "script": "frappe.ui.form.on('Purchase Invoice', {\n  refresh(frm) {\n    if (frm.fields_dict.imogi_expense_request) {\n      frm.set_query('imogi_expense_request', () => ({\n        filters: {\n          docstatus: 1,\n          status: ['in', ['Approved', 'PI Created']],\n        },\n      }));\n    }\n  },\n});\n"
+  },
+  {
+    "doctype": "Client Script",
+    "dt": "Payment Entry",
+    "view": "Form",
+    "enabled": 1,
+    "script": "frappe.ui.form.on('Payment Entry', {\n  refresh(frm) {\n    if (frm.fields_dict.imogi_expense_request) {\n      frm.set_query('imogi_expense_request', () => ({\n        filters: {\n          docstatus: 1,\n          status: ['in', ['PI Created']],\n        },\n      }));\n    }\n  },\n  imogi_expense_request(frm) {\n    if (!frm.doc.imogi_expense_request) {\n      return;\n    }\n    frappe.call({\n      method: 'frappe.client.get',\n      args: {\n        doctype: 'Expense Request',\n        name: frm.doc.imogi_expense_request,\n      },\n      callback(r) {\n        if (r.message) {\n          const er = r.message;\n          if (er.total_amount) {\n            frm.set_value('paid_amount', er.total_amount);\n            frm.set_value('received_amount', er.total_amount);\n          }\n          if (!frm.doc.remarks || !frm.doc.remarks.includes('Expense Request')) {\n            const remarks = 'Payment for Expense Request ' + er.name + ' - ' + (er.request_type || '');\n            frm.set_value('remarks', remarks);\n          }\n        }\n      },\n    });\n  },\n});\n"
+  }
+]

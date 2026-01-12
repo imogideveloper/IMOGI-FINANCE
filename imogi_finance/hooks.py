@@ -106,6 +106,17 @@ after_install = "imogi_finance.utils.ensure_coretax_export_doctypes"
 # Migration safeguards
 before_migrate = "imogi_finance.fixtures.sanitize_fixture_files"
 
+fixtures = [
+    {"doctype": "Custom Field", "filters": {"module": "Imogi Finance"}},
+    {"doctype": "Role", "filters": {"name": ["in", ["Expense Approver", "Branch Approver"]]}},
+    {"doctype": "Workflow State", "filters": {"name": ["like", "Imogi%"]}},
+    {"doctype": "Letter Template", "filters": {"module": "Imogi Finance"}},
+    {"doctype": "Letter Template Settings", "filters": {"name": ["=", "Letter Template Settings"]}},
+    {"doctype": "Tax Invoice Type", "filters": {"module": "Imogi Finance"}},
+    {"doctype": "Workspace", "filters": {"module": "Imogi Finance"}},
+    {"doctype": "Client Script", "filters": {"dt": ["in", ["Purchase Invoice", "Payment Entry"]]}},
+]
+
 # Uninstallation
 # ------------
 
@@ -335,133 +346,3 @@ after_migrate = "imogi_finance.utils.ensure_coretax_export_doctypes"
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
-
-
-fixtures = [
-    {
-        "dt": "Custom Field",
-        "filters": [["name", "in", [
-            "Purchase Invoice-imogi_expense_request",
-            "Purchase Invoice-imogi_request_type",
-            "Purchase Invoice-imogi_pph_type",
-            "Purchase Invoice-ti_tax_invoice_section",
-            "Purchase Invoice-ti_tax_invoice_upload",
-            "Purchase Invoice-ti_tax_invoice_data_section",
-            "Purchase Invoice-ti_fp_no",
-            "Purchase Invoice-ti_fp_date",
-            "Purchase Invoice-ti_fp_npwp",
-            "Purchase Invoice-ti_fp_dpp",
-            "Purchase Invoice-ti_fp_ppn",
-            "Purchase Invoice-ti_fp_ppn_type",
-            "Purchase Invoice-ti_verification_status",
-            "Purchase Invoice-ti_verification_notes",
-            "Purchase Invoice-ti_duplicate_flag",
-            "Purchase Invoice-ti_npwp_match",
-            "Payment Entry-transfer_application",
-            "Payment Entry-imogi_expense_request",
-            "Payment Entry-customer_receipt",
-            "Bank Transaction-transfer_application",
-            "Bank Transaction-match_confidence",
-            "Bank Transaction-match_notes",
-            "Asset-imogi_expense_request",
-            "Expense Request-ti_tax_invoice_section",
-            "Expense Request-ti_tax_invoice_upload",
-            "Expense Request-ti_tax_invoice_data_section",
-            "Expense Request-ti_fp_no",
-            "Expense Request-ti_fp_date",
-            "Expense Request-ti_fp_npwp",
-            "Expense Request-ti_fp_dpp",
-            "Expense Request-ti_fp_ppn",
-            "Expense Request-ti_fp_ppn_type",
-            "Expense Request-ti_verification_status",
-            "Expense Request-ti_verification_notes",
-            "Expense Request-ti_duplicate_flag",
-            "Expense Request-ti_npwp_match",
-            "Expense Request-budget_lock_status",
-            "Expense Request-internal_charge_request",
-            "Expense Request-allocation_mode",
-            "Expense Request-prevent_pi_if_not_ready",
-            "Purchase Invoice-internal_charge_request",
-            "Sales Invoice-out_fp_section",
-            "Sales Invoice-out_fp_tax_invoice_upload",
-            "Sales Invoice-out_fp_data_section",
-            "Sales Invoice-out_fp_no",
-            "Sales Invoice-out_fp_date",
-            "Sales Invoice-out_buyer_tax_id",
-            "Sales Invoice-out_fp_dpp",
-            "Sales Invoice-out_fp_ppn",
-            "Sales Invoice-out_fp_ppn_type",
-            "Sales Invoice-out_fp_status",
-            "Sales Invoice-out_fp_verification_notes",
-            "Sales Invoice-out_fp_duplicate_flag",
-            "Sales Invoice-out_fp_npwp_match",
-            "Sales Invoice-synch_status",
-            "Sales Invoice-out_fp_npwp",
-            "Sales Invoice-out_fp_tax_invoice_pdf",
-            "Branch Expense Request-ti_tax_invoice_section",
-            "Branch Expense Request-ti_tax_invoice_upload",
-            "Branch Expense Request-ti_tax_invoice_data_section",
-            "Branch Expense Request-ti_fp_no",
-            "Branch Expense Request-ti_fp_date",
-            "Branch Expense Request-ti_fp_npwp",
-            "Branch Expense Request-ti_fp_dpp",
-            "Branch Expense Request-ti_fp_ppn",
-            "Branch Expense Request-ti_fp_ppn_type",
-            "Branch Expense Request-ti_verification_status",
-            "Branch Expense Request-ti_verification_notes",
-            "Branch Expense Request-ti_duplicate_flag",
-            "Branch Expense Request-ti_npwp_match",
-        ]]],
-    },
-    {"dt": "Workspace", "filters": [["name", "=", "FINANCE IMOGI"]]},
-    {
-        "dt": "Letter Template",
-        "filters": [["name", "in", ["Payment Letter Default"]]],
-    },
-    {"dt": "Letter Template Settings"},
-    {
-        "dt": "Workflow State",
-        "filters": [
-            [
-                "name",
-                "in",
-                [
-                    "Draft",
-                    "Reopened",
-                    "Pending Review",
-                    "Approved",
-                    "Rejected",
-                    "PI Created",
-                    "Pending Approval",
-                    "Posted",
-                    "Cancelled",
-                    "Finance Review",
-                    "Approved for Transfer",
-                    "Awaiting Bank Confirmation",
-                    "Paid",
-                    "Pending L1 Approval",
-                    "Pending L2 Approval",
-                    "Pending L3 Approval",
-                    "Partially Approved",
-                ],
-            ]
-        ],
-    },
-    {
-        "dt": "Role",
-        "filters": [
-            [
-                "name",
-                "in",
-                [
-                    "Receipt Maker",
-                    "Receipt Approver",
-                    "Receipt Auditor",
-                    "Budget Controller",
-                    "Tax Reviewer",
-                ],
-            ]
-        ],
-    },
-    "Tax Invoice Type",
-]

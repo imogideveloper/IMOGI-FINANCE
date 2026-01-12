@@ -43,10 +43,10 @@ class ExpenseRequest(Document):
         self._reset_status_if_copied()
 
     def after_insert(self):
-        # Auto-submit if no approval route configured
-        route, _, _ = self._resolve_approval_route()
-        if not self._has_approver(route):
-            self.submit()
+        # Best practice: always let user explicitly submit.
+        # Auto-approval (tanpa approver) akan dijalankan lewat workflow/ApprovalService,
+        # bukan dengan submit otomatis saat insert.
+        pass
 
     def validate(self):
         """All business rule validation."""
@@ -162,6 +162,23 @@ class ExpenseRequest(Document):
         except Exception:
             pass
 
+    def on_trash(self):
+        """Allow safe deletion by checking if OCR uploads can be deleted.
+        OCR uploads linked to this ER should be deleted/unlinked first."""
+        # Check for linked OCR uploads
+        linked_ocr_count = frappe.db.count(
+            "Tax Invoice OCR Upload",
+            filters={"parent_expense_request": self.name}
+        )
+        if linked_ocr_count > 0:
+            frappe.throw(
+                _(
+                    "Cannot delete Expense Request with linked Tax Invoice OCR uploads. "
+                    "Please remove OCR uploads first or delete them separately."
+                ),
+                title=_("Linked Records Exist")
+            )
+
     # ===================== Business Logic =====================
 
     def validate_amounts(self):
@@ -249,8 +266,29 @@ class ExpenseRequest(Document):
         })
 
     def validate_tax_fields(self):
-        """Validate tax configuration."""
+        """Validate tax configuration and basic PPN sanity with OCR values."""
         FinanceValidator.validate_tax_fields(self)
+
+        # Extra guardrail: jika ada nilai PPN dari OCR dan manual sekaligus,
+        # pastikan keduanya tidak berbeda terlalu jauh (di luar tolerance_idr).
+        try:
+            from imogi_finance.tax_invoice_ocr import get_settings
+
+            settings = get_settings()
+            tolerance = flt(settings.get("tolerance_idr", 10))
+            ti_ppn = flt(getattr(self, "ti_fp_ppn", 0) or 0)
+            manual_ppn = flt(getattr(self, "ppn", 0) or 0)
+            if ti_ppn and manual_ppn:
+                diff = abs(ti_ppn - manual_ppn)
+                if diff > tolerance:
+                    frappe.throw(
+                        _(
+                            "PPN on Expense Request ({0}) differs from OCR Faktur Pajak ({1}) by more than {2}."
+                        ).format(manual_ppn, ti_ppn, tolerance)
+                    )
+        except Exception:
+            # Jangan blokir jika settings tidak bisa di-load; pengecekan utama tetap di modul OCR.
+            pass
 
     def validate_deferred_expense(self):
         """Validate deferred expense configuration."""
@@ -326,9 +364,17 @@ class ExpenseRequest(Document):
             self.level_3_user = None
 
     def validate_submit_permission(self):
-        """Only creator can submit."""
-        if frappe.session.user != self.owner:
-            frappe.throw(_("Only the creator can submit."))
+        """Best practice: only creator or Expense Approver/System Manager can submit."""
+        allowed_roles = {roles.SYSTEM_MANAGER, roles.EXPENSE_APPROVER}
+        current_roles = set(frappe.get_roles())
+
+        if frappe.session.user == self.owner:
+            return
+
+        if current_roles & allowed_roles:
+            return
+
+        frappe.throw(_("Only the creator or an Expense Approver/System Manager can submit."))
 
     def _resolve_approval_route(self) -> tuple[dict, dict | None, bool]:
         """Get approval route for this request."""
