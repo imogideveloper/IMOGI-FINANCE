@@ -83,7 +83,8 @@ class InternalChargeRequest(Document):
                 continue
 
             snapshot = _parse_route_snapshot(getattr(line, "route_snapshot", None))
-            current_level = getattr(line, "current_approval_level", 0) or 0
+            # Default to level 1 if not set - prevents "level_0" key which doesn't exist
+            current_level = getattr(line, "current_approval_level", 0) or 1
             level_key = f"level_{current_level}"
             level_meta = snapshot.get(level_key, {}) if snapshot else {}
             expected_role = level_meta.get("role") or getattr(line, f"{level_key}_role", None)

@@ -155,9 +155,8 @@ class BranchExpenseRequest(Document):
         if not self.is_pending_review():
             return
 
+        # Get current level - defaults to 1 for first approval
         current_level = self.get_current_level_key()
-        if not current_level:
-            return
 
         role_field = f"level_{current_level}_role"
         user_field = f"level_{current_level}_user"
@@ -577,12 +576,13 @@ class BranchExpenseRequest(Document):
             return
         self.current_approval_level = current + 1
 
-    def get_current_level_key(self) -> int | None:
-        """Get current approval level key."""
+    def get_current_level_key(self) -> int:
+        """Get current approval level key. Defaults to 1 if not set."""
         level = getattr(self, "current_approval_level", None)
         if level and 1 <= level <= 3:
             return level
-        return None
+        # Default to level 1 for pending review documents without explicit level
+        return 1
 
     def validate_not_skipping_levels(self, action: str, next_state: str | None):
         """Validate that approval is not skipping levels."""

@@ -162,9 +162,8 @@ class ApprovalService:
         if not self._is_pending_review(doc):
             return
 
-        current_level = self._get_current_level(doc)
-        if not current_level:
-            return
+        # Get current level - default to 1 if not set (first approval after submit)
+        current_level = self._get_current_level(doc) or 1
 
         user_field = self.level_field_prefix.format(level=current_level)
         expected_user = doc.get(user_field)
