@@ -26,50 +26,32 @@
     {
       "state": "Draft",
       "doc_status": 0,
-      "allow_edit": "All",
-      "backflow_allowed": false
+      "allow_edit": "All"
     },
     {
       "state": "Pending Review",
       "doc_status": 1,
-      "allow_edit": "",
-      "backflow_allowed": true,
-      "acl": {
-        "roles": [],
-        "users": []
-      }
+      "allow_edit": ""
     },
     {
       "state": "Approved",
       "doc_status": 1,
-      "allow_edit": "",
-      "backflow_allowed": false,
-      "acl": {
-        "roles": ["System Manager"],
-        "users": []
-      }
+      "allow_edit": ""
     },
     {
       "state": "Rejected",
       "doc_status": 1,
-      "allow_edit": "",
-      "backflow_allowed": false,
-      "acl": {
-        "roles": ["System Manager"],
-        "users": []
-      }
+      "allow_edit": ""
     },
     {
       "state": "PI Created",
       "doc_status": 1,
-      "allow_edit": "",
-      "backflow_allowed": false
+      "allow_edit": ""
     },
     {
       "state": "Paid",
       "doc_status": 1,
-      "allow_edit": "",
-      "backflow_allowed": false
+      "allow_edit": ""
     }
   ],
   "transitions": [
