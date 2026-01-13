@@ -4,6 +4,7 @@
     "name": "FINANCE IMOGI",
     "title": "FINANCE IMOGI",
     "label": "FINANCE IMOGI",
+    "type": "Workspace",
     "icon": "bank",
     "module": "Imogi Finance",
     "public": 1,
