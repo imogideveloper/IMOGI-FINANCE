@@ -24,7 +24,6 @@
 		],
 		"transitions": [
 			{"action": "Submit", "allow_self_approval": 0, "allowed": "All", "state": "Draft", "next_state": "Pending Review"},
-			{"action": "Approve", "allowed": "All", "state": "Pending Review", "next_state": "Pending Review", "condition": "((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_user') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and doc.get('level_3_user'))"},
 			{"action": "Approve", "allowed": "All", "state": "Pending Review", "next_state": "Approved", "condition": "not (((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_user') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and doc.get('level_3_user')))"},
 			{"action": "Reject", "allowed": "All", "state": "Pending Review", "next_state": "Rejected"}
 		],
