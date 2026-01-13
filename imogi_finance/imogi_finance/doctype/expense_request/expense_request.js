@@ -220,11 +220,7 @@ function canSubmitExpenseRequest(frm) {
     return false;
   }
 
-  if (frm.doc.owner === frappe.session.user) {
-    return true;
-  }
-
-  return frappe.user.has_role('Expense Approver') || frappe.user.has_role('System Manager');
+  return frappe.user.has_role('Expense Request Submitter');
 }
 
 function maybeRenderPrimarySubmitButton(frm) {
