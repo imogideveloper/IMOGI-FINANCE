@@ -334,28 +334,11 @@ function maybeRenderCancelDeleteActions(frm) {
     return;
   }
 
-  const isSubmitted = frm.doc.docstatus === 1;
   const isCancelled = frm.doc.docstatus === 2;
   const canDelete = frm.doc.docstatus === 0 || isCancelled;
 
-  if (isSubmitted) {
-    frm.add_custom_button(__('Cancel'), () => {
-      frappe.confirm(
-        __('Are you sure you want to cancel this Expense Request?'),
-        async () => {
-          try {
-            await frm.cancel();
-          } catch (error) {
-            frappe.msgprint({
-              title: __('Error'),
-              message: error?.message || __('Failed to cancel Expense Request.'),
-              indicator: 'red',
-            });
-          }
-        }
-      );
-    }, __('Actions'));
-  }
+  // Note: Native Cancel action is available in Actions dropdown for submitted docs
+  // No need to add custom Cancel button to avoid duplication
 
   if (canDelete) {
     frm.add_custom_button(__('Delete'), () => {
