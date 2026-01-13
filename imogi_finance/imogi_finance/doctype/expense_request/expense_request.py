@@ -260,6 +260,12 @@ class ExpenseRequest(Document):
         total_pph = (pph_base_total * pph_rate / 100) if pph_rate else pph_base_total
         total_amount = total_expense + total_asset + total_ppn + total_ppnbm + total_pph
 
+        # Keep header PPh base amount in sync with the effective base used for calculations.
+        if getattr(self, "is_pph_applicable", 0) or item_pph_total:
+            self.pph_base_amount = pph_base_total
+        else:
+            self.pph_base_amount = 0
+
         self.total_expense = total_expense
         self.total_asset = total_asset
         self.total_ppn = total_ppn

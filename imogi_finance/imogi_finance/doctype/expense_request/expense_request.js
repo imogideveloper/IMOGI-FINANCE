@@ -153,6 +153,7 @@ function computeTotals(frm) {
     totalAsset,
     totalPpn,
     totalPpnbm,
+    pphBaseTotal,
     totalPph,
     totalAmount,
   };
@@ -190,6 +191,7 @@ function updateTotalsSummary(frm) {
     total_asset: totals.totalAsset,
     total_ppn: totals.totalPpn,
     total_ppnbm: totals.totalPpnbm,
+    pph_base_amount: totals.pphBaseTotal,
     total_pph: totals.totalPph,
     total_amount: totals.totalAmount,
   };
@@ -211,6 +213,27 @@ function updateTotalsSummary(frm) {
       field.$wrapper.html(html);
     }
   });
+
+  updatePphBaseFieldState(frm, totals);
+}
+
+function updatePphBaseFieldState(frm, totals) {
+  const items = frm.doc.items || [];
+  const anyItemPph = items.some((row) => Boolean(row.is_pph_applicable));
+  const headerPphFlag = Boolean(frm.doc.is_pph_applicable);
+
+  const useItemMode = anyItemPph;
+  const headerShouldBeReadOnly = useItemMode;
+
+  if (frm.fields_dict?.pph_base_amount) {
+    frm.set_df_property('pph_base_amount', 'read_only', headerShouldBeReadOnly);
+  }
+
+  const grid = frm.fields_dict.items && frm.fields_dict.items.grid;
+  if (grid && typeof grid.update_docfield_property === 'function') {
+    const lockItemBase = headerPphFlag && !useItemMode;
+    grid.update_docfield_property('pph_base_amount', 'read_only', lockItemBase);
+  }
 }
 
 function canSubmitExpenseRequest(frm) {
