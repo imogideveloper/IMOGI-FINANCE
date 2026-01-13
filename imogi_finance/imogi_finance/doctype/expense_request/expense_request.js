@@ -159,25 +159,22 @@ function computeTotals(frm) {
 
 function renderTotalsHtml(frm, totals) {
   const rows = [
-    ['Total Expense', totals.totalExpense, false],
-    ['Total Asset', totals.totalAsset, false],
-    ['Total PPN', totals.totalPpn, false],
-    ['Total PPnBM', totals.totalPpnbm, false],
-    ['Total PPh', totals.totalPph, true], // true = tampilkan dengan minus
-    ['Total', totals.totalAmount, false],
+    ['Total Expense', totals.totalExpense],
+    ['Total Asset', totals.totalAsset],
+    ['Total PPN', totals.totalPpn],
+    ['Total PPnBM', totals.totalPpnbm],
+    ['Total PPh', totals.totalPph, { prefix: '-' }],
+    ['Total', totals.totalAmount],
   ];
   const cells = rows
     .map(
-      ([label, value, isNegative]) => {
+      ([label, value, options]) => {
         const formattedValue = formatCurrency(frm, value);
-        const displayValue = isNegative ? `-&nbsp;${formattedValue}` : formattedValue;
+        const prefix = options?.prefix || '';
+        // Penting: gabungkan prefix dan value tanpa spasi pemisah dalam variabel
+        const displayValue = prefix ? `${prefix}&nbsp;${formattedValue}` : formattedValue;
         
-        return `
-        <tr>
-          <td>${frappe.utils.escape_html(label)}</td>
-          <td class="text-right">${displayValue}</td>
-        </tr>
-      `;
+        return `<tr><td>${frappe.utils.escape_html(label)}</td><td class="text-right">${displayValue}</td></tr>`;
       },
     )
     .join('');
