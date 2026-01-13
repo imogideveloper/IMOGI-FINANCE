@@ -206,15 +206,19 @@ function updateTotalsSummary(frm) {
     total_amount: totals.totalAmount,
   };
 
-  Object.entries(fields).forEach(([field, value]) => {
-    if (!frm.fields_dict[field]) {
-      return;
-    }
-    if (frm.doc[field] !== value) {
-      frm.doc[field] = value;
-      frm.refresh_field(field);
-    }
-  });
+  // Only update fields in draft mode to prevent "Not Saved" badge on submitted docs
+  // Server-side validate() already calculates and saves these values correctly
+  if (frm.doc.docstatus === 0) {
+    Object.entries(fields).forEach(([field, value]) => {
+      if (!frm.fields_dict[field]) {
+        return;
+      }
+      if (frm.doc[field] !== value) {
+        frm.doc[field] = value;
+        frm.refresh_field(field);
+      }
+    });
+  }
 
   const html = renderTotalsHtml(frm, totals);
   ['items_totals_html', 'asset_totals_html'].forEach((fieldname) => {
