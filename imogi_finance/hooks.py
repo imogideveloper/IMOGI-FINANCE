@@ -215,7 +215,26 @@ doc_events = {
         ],
         "on_update": [
             "imogi_finance.events.expense_request.sync_status_with_workflow",
-        ]
+        ],
+        "on_update_after_submit": [
+            "imogi_finance.events.expense_request.sync_status_with_workflow",
+        ],
+    },
+    "Internal Charge Request": {
+        "on_update": [
+            "imogi_finance.events.internal_charge_request.sync_status_with_workflow",
+        ],
+        "on_update_after_submit": [
+            "imogi_finance.events.internal_charge_request.sync_status_with_workflow",
+        ],
+    },
+    "Branch Expense Request": {
+        "on_update": [
+            "imogi_finance.events.branch_expense_request.sync_status_with_workflow",
+        ],
+        "on_update_after_submit": [
+            "imogi_finance.events.branch_expense_request.sync_status_with_workflow",
+        ],
     },
     "Payment Entry": {
         "validate": [
