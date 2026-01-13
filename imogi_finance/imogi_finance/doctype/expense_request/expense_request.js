@@ -164,21 +164,21 @@ function renderTotalsHtml(frm, totals) {
     ['Total Asset', totals.totalAsset],
     ['Total PPN', totals.totalPpn],
     ['Total PPnBM', totals.totalPpnbm],
-    ['Total PPh', totals.totalPph, { prefix: '-' }],
+    ['Total PPh', totals.totalPph],
     ['Total', totals.totalAmount],
   ];
+
   const cells = rows
     .map(
-      ([label, value, options]) => {
-        const formattedValue = formatCurrency(frm, value);
-        const prefix = options?.prefix || '';
-        // Penting: gabungkan prefix dan value tanpa spasi pemisah dalam variabel
-        const displayValue = prefix ? `${prefix}&nbsp;${formattedValue}` : formattedValue;
-        
-        return `<tr><td>${frappe.utils.escape_html(label)}</td><td class="text-right">${displayValue}</td></tr>`;
-      },
+      ([label, value]) => `
+        <tr>
+          <td>${frappe.utils.escape_html(label)}</td>
+          <td class="text-right">${formatCurrency(frm, value)}</td>
+        </tr>
+      `,
     )
     .join('');
+
   return `<table class="table table-bordered table-sm"><tbody>${cells}</tbody></table>`;
 }
 
