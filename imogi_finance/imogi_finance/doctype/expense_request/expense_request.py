@@ -40,7 +40,28 @@ def _resolve_pph_rate(pph_type: str | None) -> float:
             return flt(value)
 
     withholding_rows = getattr(category, "withholding_tax", None) or []
+    today = now_datetime().date()
+    fallback_rate = 0.0
+
     for row in withholding_rows:
+        row_rate = None
+        for field in ("tax_withholding_rate", "rate", "withholding_rate"):
+            value = getattr(row, field, None)
+            if value:
+                row_rate = flt(value)
+                break
+
+        if row_rate:
+            from_date = getattr(row, "from_date", None)
+            to_date = getattr(row, "to_date", None)
+            if (from_date or to_date) and (
+                (not from_date or from_date <= today) and (not to_date or to_date >= today)
+            ):
+                return row_rate
+            if not fallback_rate:
+                fallback_rate = row_rate
+                continue
+
         withholding_name = getattr(row, "withholding_tax", None)
         if withholding_name:
             rate = getattr(frappe.db, "get_value", lambda *_args, **_kwargs: None)(
@@ -50,6 +71,9 @@ def _resolve_pph_rate(pph_type: str | None) -> float:
             )
             if rate:
                 return flt(rate)
+
+    if fallback_rate:
+        return fallback_rate
 
     return 0
 
