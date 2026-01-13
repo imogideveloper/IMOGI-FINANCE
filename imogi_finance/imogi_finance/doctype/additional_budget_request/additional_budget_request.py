@@ -44,5 +44,6 @@ class AdditionalBudgetRequest(Document):
             ref_name=getattr(self, "name", None),
         )
 
-        if not getattr(self, "status", None):
+        current_status = getattr(self, "status", None)
+        if not current_status or current_status in {"Draft", "Pending Approval"}:
             self.status = "Approved"
