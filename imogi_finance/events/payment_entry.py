@@ -10,6 +10,47 @@ from imogi_finance.events.utils import (
 )
 
 
+def _resolve_expense_request(doc) -> str | None:
+    request_name = doc.get("imogi_expense_request") or doc.get("expense_request")
+    if request_name:
+        return request_name
+
+    references = doc.get("references") or []
+    for ref in references:
+        if ref.get("reference_doctype") != "Purchase Invoice":
+            continue
+        reference_name = ref.get("reference_name")
+        if not reference_name:
+            continue
+        try:
+            values = frappe.db.get_value(
+                "Purchase Invoice",
+                reference_name,
+                ["imogi_expense_request", "expense_request"],
+                as_dict=True,
+            )
+        except Exception:
+            values = None
+        if values:
+            return values.get("imogi_expense_request") or values.get("expense_request")
+
+    return None
+
+
+def _ensure_expense_request_reference(doc, request_name: str | None) -> None:
+    if not request_name:
+        return
+    if doc.get("imogi_expense_request"):
+        return
+    if hasattr(doc, "db_set"):
+        try:
+            doc.db_set("imogi_expense_request", request_name, update_modified=False)
+            return
+        except Exception:
+            pass
+    setattr(doc, "imogi_expense_request", request_name)
+
+
 def on_change_expense_request(doc, method=None):
     """Auto-populate amount and description from selected Expense Request."""
     request_name = doc.get("imogi_expense_request")
@@ -45,13 +86,14 @@ def on_change_expense_request(doc, method=None):
 
 def after_insert(doc, method=None):
     """Link Payment Entry to Expense Request immediately on draft creation."""
-    request_name = doc.get("imogi_expense_request")
+    request_name = _resolve_expense_request(doc)
     if not request_name:
         return
+    _ensure_expense_request_reference(doc, request_name)
 
     # Validate ER is in correct status
     request = get_approved_expense_request(
-        request_name, _("Payment Entry"), allowed_statuses=frozenset({"PI Created"})
+        request_name, _("Payment Entry")
     )
 
     # Check no other PE is already linked
@@ -84,9 +126,10 @@ def after_insert(doc, method=None):
 
 
 def on_submit(doc, method=None):
-    request = doc.get("imogi_expense_request")
+    request = _resolve_expense_request(doc)
     if not request:
         return
+    _ensure_expense_request_reference(doc, request)
 
     request = get_approved_expense_request(
         request, _("Payment Entry"), allowed_statuses=frozenset({"PI Created"})
@@ -147,7 +190,7 @@ def on_submit(doc, method=None):
 
 
 def on_cancel(doc, method=None):
-    request = doc.get("imogi_expense_request")
+    request = _resolve_expense_request(doc)
     if not request:
         return
 
@@ -158,7 +201,7 @@ def on_cancel(doc, method=None):
 
 def on_trash(doc, method=None):
     """Clear linked_payment_entry when Payment Entry is deleted."""
-    request = doc.get("imogi_expense_request")
+    request = _resolve_expense_request(doc)
     if not request:
         return
 
