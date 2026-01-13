@@ -60,8 +60,8 @@ async function syncErUpload(frm) {
     return;
   }
   
-  // Skip sync for submitted documents - OCR fields are read-only and already saved
-  if (frm.doc.docstatus === 1) {
+  // Skip sync for non-draft documents - OCR fields are read-only and already saved
+  if (frm.doc.docstatus !== 0) {
     return;
   }
   
