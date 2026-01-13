@@ -144,7 +144,7 @@ function computeTotals(frm) {
   const pphBaseTotal = itemPphTotal
     || (frm.doc.is_pph_applicable ? flt(frm.doc.pph_base_amount || 0) : 0);
   const pphRate = flt(frm._pph_rate || 0);
-  const totalPph = pphRate ? (pphBaseTotal * pphRate) / 100 : pphBaseTotal;
+  const totalPph = Math.abs(pphRate ? (pphBaseTotal * pphRate) / 100 : pphBaseTotal);
   const totalAmount = totalExpense + totalAsset + totalPpn + totalPpnbm - totalPph;
 
   return {

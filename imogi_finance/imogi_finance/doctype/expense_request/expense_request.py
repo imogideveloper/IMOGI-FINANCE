@@ -258,6 +258,9 @@ class ExpenseRequest(Document):
         )
         pph_rate = _resolve_pph_rate(getattr(self, "pph_type", None))
         total_pph = (pph_base_total * pph_rate / 100) if pph_rate else pph_base_total
+        # Ensure total_pph is always stored as positive (absolute value)
+        # for consistency, since we subtract it in the formula.
+        total_pph = abs(total_pph)
         # PPh is withholding tax, so it reduces the total payable amount.
         total_amount = total_expense + total_asset + total_ppn + total_ppnbm - total_pph
 
