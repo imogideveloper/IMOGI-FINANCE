@@ -39,13 +39,20 @@ def _resolve_pph_rate(pph_type: str | None) -> float:
         if value:
             return flt(value)
 
-    withholding_rows = getattr(category, "withholding_tax", None) or []
+    withholding_rows = None
+    for field in ("withholding_tax", "tax_withholding_rates", "rates", "tax_withholding_rate"):
+        rows = getattr(category, field, None)
+        if rows:
+            withholding_rows = rows
+            break
+    if withholding_rows is None:
+        withholding_rows = []
     today = now_datetime().date()
     fallback_rate = 0.0
 
     for row in withholding_rows:
         row_rate = None
-        for field in ("tax_withholding_rate", "rate", "withholding_rate"):
+        for field in ("tax_withholding_rate", "rate", "withholding_rate", "tax_rate"):
             value = getattr(row, field, None)
             if value:
                 row_rate = flt(value)
