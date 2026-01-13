@@ -110,7 +110,32 @@ def resolve_fiscal_year(fiscal_year: str | None) -> str | None:
     defaults = getattr(frappe, "defaults", None)
     if defaults and hasattr(defaults, "get_user_default"):
         try:
-            return defaults.get_user_default("fiscal_year")
+            value = defaults.get_user_default("fiscal_year")
+            if value:
+                return value
+        except Exception:
+            pass
+
+    if defaults and hasattr(defaults, "get_global_default"):
+        try:
+            value = defaults.get_global_default("fiscal_year")
+            if value:
+                return value
+        except Exception:
+            pass
+
+    if getattr(frappe, "db", None):
+        try:
+            value = frappe.db.get_single_value("System Settings", "fiscal_year")
+            if value:
+                return value
+        except Exception:
+            pass
+
+        try:
+            value = frappe.db.get_single_value("System Settings", "current_fiscal_year")
+            if value:
+                return value
         except Exception:
             pass
 
