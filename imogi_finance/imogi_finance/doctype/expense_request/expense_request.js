@@ -168,11 +168,11 @@ function renderTotalsHtml(frm, totals) {
     ['Total PPN', format(totals.totalPpn)],
     ['Total PPnBM', format(totals.totalPpnbm)],
 
-    // 🔴 PPh ditampilkan sebagai minus (VISUAL ONLY)
+    // 🔴 PPh ditampilkan MERAH tanpa minus
     [
       'Total PPh',
       totals.totalPph
-        ? `<span style="color:#c0392b">- ${format(totals.totalPph)}</span>`
+        ? `<span style="color:#c0392b;font-weight:500">${format(totals.totalPph)}</span>`
         : format(0),
     ],
 
