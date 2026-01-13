@@ -240,8 +240,11 @@ class ApprovalService:
 
     def _set_audit_timestamp(self, doc: Document, field: str) -> None:
         """Set audit timestamp (approved_on, rejected_on, etc.)."""
+        timestamp = now_datetime()
         try:
-            setattr(doc, field, now_datetime())
+            setattr(doc, field, timestamp)
+            if getattr(doc, "docstatus", 0) == 1 and hasattr(doc, "db_set"):
+                doc.db_set(field, timestamp, update_modified=False)
         except Exception:
             pass
 
