@@ -163,18 +163,21 @@ function renderTotalsHtml(frm, totals) {
     ['Total Asset', totals.totalAsset],
     ['Total PPN', totals.totalPpn],
     ['Total PPnBM', totals.totalPpnbm],
-    ['Total PPh', totals.totalPph],
+    ['Total PPh', totals.totalPph, { displayPrefix: '-' }],
     ['Total', totals.totalAmount],
   ];
 
   const cells = rows
     .map(
-      ([label, value]) => `
+      ([label, value, options]) => {
+        const displayPrefix = options?.displayPrefix ? `${options.displayPrefix} ` : '';
+        return `
         <tr>
           <td>${frappe.utils.escape_html(label)}</td>
-          <td class="text-right">${formatCurrency(frm, value)}</td>
+          <td class="text-right">${displayPrefix}${formatCurrency(frm, value)}</td>
         </tr>
-      `,
+      `;
+      },
     )
     .join('');
 
