@@ -191,6 +191,33 @@ function updateTotalsSummary(frm) {
   });
 }
 
+function canSubmitExpenseRequest(frm) {
+  if (frm.is_new()) {
+    return false;
+  }
+
+  if (frm.doc.docstatus !== 0) {
+    return false;
+  }
+
+  if (frm.doc.owner === frappe.session.user) {
+    return true;
+  }
+
+  return frappe.user.has_role('Expense Approver') || frappe.user.has_role('System Manager');
+}
+
+function maybeRenderPrimarySubmitButton(frm) {
+  frm.remove_custom_button(__('Submit'));
+
+  if (!canSubmitExpenseRequest(frm)) {
+    return;
+  }
+
+  const submitBtn = frm.add_custom_button(__('Submit'), () => frm.save('Submit'));
+  submitBtn.addClass('btn-primary');
+}
+
 async function setErUploadQuery(frm) {
   let usedUploads = [];
   let verifiedUploads = [];
@@ -333,6 +360,7 @@ frappe.ui.form.on('Expense Request', {
     await syncErUpload(frm);
     maybeAddDeferredExpenseActions(frm);
     maybeRenderCancelDeleteActions(frm);
+    maybeRenderPrimarySubmitButton(frm);
     updateTotalsSummary(frm);
 
     const addCheckRouteButton = () => {
