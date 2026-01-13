@@ -111,6 +111,23 @@ function formatCurrency(frm, value) {
   return frappe.format(value, { fieldtype: 'Currency', options: frm.doc.currency });
 }
 
+async function setPphRate(frm) {
+  if (!frm.doc.pph_type) {
+    frm._pph_rate = 0;
+    return;
+  }
+
+  try {
+    const { message } = await frappe.call({
+      method: 'imogi_finance.imogi_finance.doctype.expense_request.expense_request.get_pph_rate',
+      args: { pph_type: frm.doc.pph_type },
+    });
+    frm._pph_rate = message?.rate || 0;
+  } catch (error) {
+    frm._pph_rate = 0;
+  }
+}
+
 function computeTotals(frm) {
   const flt = (frappe.utils && frappe.utils.flt) || window.flt || ((value) => parseFloat(value) || 0);
   const totalExpense = flt(frm.doc.amount || 0);
@@ -124,7 +141,10 @@ function computeTotals(frm) {
   );
   const totalPpn = flt(frm.doc.ti_fp_ppn || frm.doc.ppn || 0);
   const totalPpnbm = flt(frm.doc.ti_fp_ppnbm || frm.doc.ppnbm || 0);
-  const totalPph = itemPphTotal || flt(frm.doc.pph_base_amount || 0);
+  const pphBaseTotal = itemPphTotal
+    || (frm.doc.is_pph_applicable ? flt(frm.doc.pph_base_amount || 0) : 0);
+  const pphRate = flt(frm._pph_rate || 0);
+  const totalPph = pphRate ? (pphBaseTotal * pphRate) / 100 : pphBaseTotal;
   const totalAmount = totalExpense + totalAsset + totalPpn + totalPpnbm + totalPph;
 
   return {
@@ -358,6 +378,7 @@ frappe.ui.form.on('Expense Request', {
     frm.dashboard.clear_headline();
     await setErUploadQuery(frm);
     await syncErUpload(frm);
+    await setPphRate(frm);
     maybeAddDeferredExpenseActions(frm);
     maybeRenderCancelDeleteActions(frm);
     maybeRenderPrimarySubmitButton(frm);
@@ -530,6 +551,10 @@ frappe.ui.form.on('Expense Request', {
     updateTotalsSummary(frm);
   },
   ti_fp_ppnbm(frm) {
+    updateTotalsSummary(frm);
+  },
+  async pph_type(frm) {
+    await setPphRate(frm);
     updateTotalsSummary(frm);
   },
   pph_base_amount(frm) {

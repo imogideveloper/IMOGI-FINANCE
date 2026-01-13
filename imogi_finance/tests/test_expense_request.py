@@ -254,6 +254,60 @@ def test_validate_does_not_require_base_for_non_pph_items():
     request.validate()
 
 
+def test_total_pph_ignores_header_base_when_not_applicable():
+    request = _make_request(
+        is_pph_applicable=0,
+        pph_base_amount=100,
+        items=[_item(amount=100, is_pph_applicable=0, pph_base_amount=0)],
+        request_type="Expense",
+        cost_center="CC",
+    )
+
+    request._set_totals()
+
+    assert request.total_pph == 0
+
+
+def test_total_pph_uses_header_base_when_applicable():
+    request = _make_request(
+        is_pph_applicable=1,
+        pph_base_amount=150,
+        items=[_item(amount=100, is_pph_applicable=0, pph_base_amount=0)],
+        request_type="Expense",
+        cost_center="CC",
+    )
+
+    request._set_totals()
+
+    assert request.total_pph == 150
+
+
+def test_total_pph_applies_rate_from_category(monkeypatch):
+    class Category:
+        withholding_tax = [types.SimpleNamespace(withholding_tax="WT-TEST")]
+
+    monkeypatch.setattr(frappe, "get_doc", lambda *_args, **_kwargs: Category(), raising=False)
+    monkeypatch.setattr(
+        frappe,
+        "db",
+        types.SimpleNamespace(get_value=lambda *_args, **_kwargs: 10),
+        raising=False,
+    )
+
+    request = _make_request(
+        is_pph_applicable=1,
+        pph_type="PPh 23",
+        pph_base_amount=200,
+        items=[_item(amount=100, is_pph_applicable=0, pph_base_amount=0)],
+        request_type="Expense",
+        cost_center="CC",
+    )
+
+    request._set_totals()
+
+    assert request.total_pph == 20
+
+
 def test_before_workflow_action_requires_both_user_and_role(monkeypatch):
     monkeypatch.setattr(frappe, "session", types.SimpleNamespace(user="owner@example.com"))
     monkeypatch.setattr(frappe, "get_roles", lambda: ["Expense Approver"])

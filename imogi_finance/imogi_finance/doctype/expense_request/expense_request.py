@@ -21,6 +21,44 @@ from imogi_finance.tax_invoice_fields import get_upload_link_field
 from imogi_finance.validators.finance_validator import FinanceValidator
 
 
+def _resolve_pph_rate(pph_type: str | None) -> float:
+    if not pph_type:
+        return 0
+
+    get_doc = getattr(frappe, "get_doc", None)
+    if not callable(get_doc):
+        return 0
+
+    try:
+        category = get_doc("Tax Withholding Category", pph_type)
+    except Exception:
+        return 0
+
+    for field in ("tax_withholding_rate", "rate", "withholding_rate"):
+        value = getattr(category, field, None)
+        if value:
+            return flt(value)
+
+    withholding_rows = getattr(category, "withholding_tax", None) or []
+    for row in withholding_rows:
+        withholding_name = getattr(row, "withholding_tax", None)
+        if withholding_name:
+            rate = getattr(frappe.db, "get_value", lambda *_args, **_kwargs: None)(
+                "Withholding Tax",
+                withholding_name,
+                "rate",
+            )
+            if rate:
+                return flt(rate)
+
+    return 0
+
+
+@frappe.whitelist()
+def get_pph_rate(pph_type: str | None = None) -> dict:
+    return {"rate": _resolve_pph_rate(pph_type)}
+
+
 def get_approval_route(cost_center: str, accounts, amount: float, *, setting_meta=None):
     """Wrapper for ApprovalRouteService.get_route."""
     return ApprovalRouteService.get_route(cost_center, accounts, amount, setting_meta=setting_meta)
@@ -184,7 +222,11 @@ class ExpenseRequest(Document):
             for item in items
             if getattr(item, "is_pph_applicable", 0)
         )
-        total_pph = item_pph_total or flt(getattr(self, "pph_base_amount", 0) or 0)
+        pph_base_total = item_pph_total or (
+            flt(getattr(self, "pph_base_amount", 0) or 0) if getattr(self, "is_pph_applicable", 0) else 0
+        )
+        pph_rate = _resolve_pph_rate(getattr(self, "pph_type", None))
+        total_pph = (pph_base_total * pph_rate / 100) if pph_rate else pph_base_total
         total_amount = total_expense + total_asset + total_ppn + total_ppnbm + total_pph
 
         self.total_expense = total_expense
