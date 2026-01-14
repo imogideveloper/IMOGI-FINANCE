@@ -108,7 +108,13 @@ def _auto_create_assets_from_expense_request(request):
                 
                 asset.asset_name = asset_name
                 asset.asset_category = item.asset_category
-                asset.is_existing_asset = 1  # Bypass item_code validation
+                
+                # Set item_code if provided, otherwise mark as existing asset
+                if item.get("item_code"):
+                    asset.item_code = item.item_code
+                else:
+                    asset.is_existing_asset = 1  # Bypass item_code validation
+                
                 asset.company = company
                 asset.location = item.asset_location
                 
