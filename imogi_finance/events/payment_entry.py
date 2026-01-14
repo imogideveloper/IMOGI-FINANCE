@@ -76,13 +76,15 @@ def _validate_expense_request_link(doc, request, request_name: str) -> None:
         )
 
 
-def _sync_expense_request_link(doc, request_name: str | None) -> None:
+def _sync_expense_request_link(
+    doc, request_name: str | None, *, allowed_statuses: frozenset[str] | set[str] | None = None
+):
     if not request_name:
-        return
+        return None
     _ensure_expense_request_reference(doc, request_name)
 
     request = get_approved_expense_request(
-        request_name, _("Payment Entry")
+        request_name, _("Payment Entry"), allowed_statuses=allowed_statuses
     )
 
     _validate_expense_request_link(doc, request, request_name)
@@ -92,6 +94,17 @@ def _sync_expense_request_link(doc, request_name: str | None) -> None:
         request.name,
         {"linked_payment_entry": doc.name},
     )
+    return request
+
+
+def sync_expense_request_reference(doc, method=None):
+    """Persist Expense Request reference from Payment Entry references."""
+    request_name = _resolve_expense_request(doc)
+    if not request_name:
+        return
+    if doc.get("imogi_expense_request"):
+        return
+    doc.imogi_expense_request = request_name
 
 
 def on_change_expense_request(doc, method=None):
@@ -147,11 +160,11 @@ def on_submit(doc, method=None):
     request = _resolve_expense_request(doc)
     if not request:
         return
-    _ensure_expense_request_reference(doc, request)
-
-    request = get_approved_expense_request(
-        request, _("Payment Entry"), allowed_statuses=frozenset({"PI Created"})
+    request = _sync_expense_request_link(
+        doc, request, allowed_statuses=frozenset({"PI Created"})
     )
+    if not request:
+        return
 
     # Validate this PE is the one linked to ER (set in after_insert)
     linked_payment_entry = getattr(request, "linked_payment_entry", None)

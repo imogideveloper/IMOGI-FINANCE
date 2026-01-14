@@ -241,6 +241,7 @@ doc_events = {
             "imogi_finance.receipt_control.payment_entry_hooks.validate_customer_receipt_link",
             "imogi_finance.transfer_application.payment_entry_hooks.validate_transfer_application_link",
             "imogi_finance.advance_payment.workflow.on_payment_entry_validate",
+            "imogi_finance.events.payment_entry.sync_expense_request_reference",
         ],
         "after_insert": [
             "imogi_finance.events.payment_entry.after_insert",
