@@ -53,26 +53,28 @@ def _empty_route() -> dict:
     }
 
 
-def _get_route_for_account(setting_name: str, account: str, amount: float) -> dict | None:
+def _get_route_for_account(setting_name: str, account: str | None, amount: float) -> dict | None:
     """Get approval route for a specific account.
     
     Matches by expense_account first, falls back to is_default.
     Then filters levels by amount range.
     """
     # Try to find specific account line
-    approval_line = frappe.get_all(
-        "Expense Approval Line",
-        filters={
-            "parent": setting_name,
-            "expense_account": account,
-        },
-        fields=[
-            "level_1_user", "level_1_min_amount", "level_1_max_amount",
-            "level_2_user", "level_2_min_amount", "level_2_max_amount",
-            "level_3_user", "level_3_min_amount", "level_3_max_amount",
-        ],
-        limit=1,
-    )
+    approval_line = []
+    if account:
+        approval_line = frappe.get_all(
+            "Expense Approval Line",
+            filters={
+                "parent": setting_name,
+                "expense_account": account,
+            },
+            fields=[
+                "level_1_user", "level_1_min_amount", "level_1_max_amount",
+                "level_2_user", "level_2_min_amount", "level_2_max_amount",
+                "level_3_user", "level_3_min_amount", "level_3_max_amount",
+            ],
+            limit=1,
+        )
 
     # Fall back to default line
     if not approval_line:
@@ -146,7 +148,22 @@ def get_approval_route(
         normalized_accounts = ()
     
     if not normalized_accounts:
-        return _empty_route()
+        try:
+            route_setting = setting_meta if setting_meta is not None else get_active_setting_meta(cost_center)
+        except Exception:
+            route_setting = None
+
+        if not route_setting:
+            return _empty_route()
+
+        setting_name = route_setting.get("name") if isinstance(route_setting, dict) else None
+        if not setting_name:
+            return _empty_route()
+
+        resolved_route = _get_route_for_account(setting_name, None, amount)
+        if not resolved_route:
+            return _empty_route()
+        return resolved_route
     
     # Get setting
     try:
@@ -363,4 +380,3 @@ def check_expense_request_route(
         }
 
     return {"ok": True, "route": route}
-
