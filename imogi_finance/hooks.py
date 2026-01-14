@@ -330,9 +330,9 @@ after_migrate = "imogi_finance.utils.ensure_coretax_export_doctypes"
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "imogi_finance.event.get_events"
-# }
+override_whitelisted_methods = {
+    "erpnext.accounts.doctype.payment_entry.payment_entry.get_payment_entry": "imogi_finance.overrides.payment_entry.get_payment_entry"
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
