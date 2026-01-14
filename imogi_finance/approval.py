@@ -74,6 +74,7 @@ def _get_route_for_account(setting_name: str, account: str | None, amount: float
                 "level_3_user", "level_3_min_amount", "level_3_max_amount",
             ],
             limit=1,
+            ignore_permissions=True,
         )
 
     # Fall back to default line
@@ -90,6 +91,7 @@ def _get_route_for_account(setting_name: str, account: str | None, amount: float
                 "level_3_user", "level_3_min_amount", "level_3_max_amount",
             ],
             limit=1,
+            ignore_permissions=True,
         )
 
     if not approval_line:
