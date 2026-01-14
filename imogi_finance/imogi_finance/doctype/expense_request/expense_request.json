@@ -297,8 +297,8 @@
       "fieldname": "items",
       "fieldtype": "Table",
       "label": "Item",
-      "options": "Expense Request Item",
-      "reqd": 1
+      "mandatory_depends_on": "eval:doc.request_type!=\"Asset\"",
+      "options": "Expense Request Item"
     },
     {
       "fieldname": "section_break_totals",

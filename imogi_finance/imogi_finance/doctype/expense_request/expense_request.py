@@ -445,10 +445,13 @@ class ExpenseRequest(Document):
         """Get approval route for this request."""
         try:
             setting = get_active_setting_meta(self.cost_center)
+            approval_amount = self.amount
+            if getattr(self, "request_type", None) == "Asset":
+                approval_amount = self.total_amount
             route = get_approval_route(
                 self.cost_center,
                 self._get_expense_accounts(),
-                self.amount,
+                approval_amount,
                 setting_meta=setting,
             )
             return route or {}, setting, False
