@@ -224,11 +224,18 @@ def _sync_expense_request_link(
 def sync_expense_request_reference(doc, method=None):
     """Persist Expense Request reference from Payment Entry references."""
     request_name = _resolve_expense_request(doc)
+    
+    # Debug logging
+    frappe.logger().info(f"[Payment Entry validate] PE: {doc.name}, Resolved ER: {request_name}")
+    frappe.logger().info(f"[Payment Entry validate] Current field value: {doc.get('imogi_expense_request')}")
+    frappe.logger().info(f"[Payment Entry validate] References count: {len(doc.get('references') or [])}")
+    
     if not request_name:
         return
     if doc.get("imogi_expense_request"):
         return
     doc.imogi_expense_request = request_name
+    frappe.logger().info(f"[Payment Entry validate] Set imogi_expense_request to {request_name}")
 
 
 def on_change_expense_request(doc, method=None):
@@ -266,36 +273,40 @@ def on_change_expense_request(doc, method=None):
 
 def after_insert(doc, method=None):
     """Link Payment Entry to Expense Request immediately on draft creation."""
-    request_name = _resolve_expense_request(doc)
-    
-    # Debug logging
-    frappe.logger().info(f"[Payment Entry after_insert] PE: {doc.name}, Resolved ER: {request_name}")
-    frappe.logger().info(f"[Payment Entry after_insert] References: {doc.get('references')}")
-    
-    _sync_expense_request_link(doc, request_name)
+    # Skip - references table tidak terisi di after_insert
+    # Logic di-handle di on_update dan on_submit
+    pass
 
 
 def on_update(doc, method=None):
     """Ensure Expense Request link syncs when set after insert."""
     if doc.get("docstatus") == 2:
         return
+    
+    # Skip if already linked
+    if doc.get("imogi_expense_request"):
+        return
+    
     request_name = _resolve_expense_request(doc)
     
     # Debug logging
     frappe.logger().info(f"[Payment Entry on_update] PE: {doc.name}, Resolved ER: {request_name}")
-    frappe.logger().info(f"[Payment Entry on_update] Current ER field: {doc.get('imogi_expense_request')}")
     
     if not request_name:
         return
+    
+    # Sync link to ER (draft only)
     _sync_expense_request_link(doc, request_name)
 
 
 def on_submit(doc, method=None):
-    request = _resolve_expense_request(doc)
-    if not request:
+    request_name = _resolve_expense_request(doc)
+    if not request_name:
         return
+    
+    # Sync link with validation for submit
     request = _sync_expense_request_link(
-        doc, request, allowed_statuses=frozenset({"PI Created"})
+        doc, request_name, allowed_statuses=frozenset({"PI Created"})
     )
     if not request:
         return
