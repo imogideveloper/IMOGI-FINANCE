@@ -235,6 +235,20 @@ def validate_tax_invoice_upload_link(doc: Any, doctype: str):
 
     existing_doctype, existing_name = _find_existing_upload_link(upload, doctype, getattr(doc, "name", None))
     if existing_doctype and existing_name:
+        if existing_doctype == "Expense Request" and doctype == "Purchase Invoice":
+            request_name = doc.get("imogi_expense_request") or doc.get("expense_request")
+            expense_request = frappe.db.get_value(
+                "Expense Request",
+                existing_name,
+                ["name", "linked_purchase_invoice", "pending_purchase_invoice"],
+                as_dict=True,
+            )
+            if expense_request:
+                linked_pi = expense_request.get("linked_purchase_invoice")
+                pending_pi = expense_request.get("pending_purchase_invoice")
+                if existing_name == request_name or doc.name in {linked_pi, pending_pi}:
+                    return
+
         raise ValidationError(
             _("Tax Invoice OCR Upload {0} is already used in {1} {2}. Please select another Faktur Pajak.")
             .format(upload, existing_doctype, existing_name)
