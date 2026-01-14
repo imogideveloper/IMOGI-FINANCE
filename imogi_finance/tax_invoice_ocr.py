@@ -174,8 +174,7 @@ def get_linked_tax_invoice_uploads(
             continue
 
         filters: dict[str, Any] = {fieldname: ("!=", None)}
-        if target != "Expense Request":
-            filters["docstatus"] = ("<", 2)
+        filters["docstatus"] = ("<", 2)
         if exclude_name and target == exclude_doctype:
             filters["name"] = ("!=", exclude_name)
 
@@ -199,9 +198,7 @@ def _find_existing_upload_link(
         if not fieldname:
             continue
 
-        filters: dict[str, Any] = {fieldname: upload_name}
-        if target != "Expense Request":
-            filters["docstatus"] = ("<", 2)
+        filters: dict[str, Any] = {fieldname: upload_name, "docstatus": ("<", 2)}
         if current_name and target == current_doctype:
             filters["name"] = ("!=", current_name)
 
