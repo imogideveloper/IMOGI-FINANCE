@@ -241,9 +241,13 @@ doc_events = {
             "imogi_finance.receipt_control.payment_entry_hooks.validate_customer_receipt_link",
             "imogi_finance.transfer_application.payment_entry_hooks.validate_transfer_application_link",
             "imogi_finance.advance_payment.workflow.on_payment_entry_validate",
+            "imogi_finance.events.payment_entry.sync_expense_request_reference",
         ],
         "after_insert": [
             "imogi_finance.events.payment_entry.after_insert",
+        ],
+        "on_update": [
+            "imogi_finance.events.payment_entry.on_update",
         ],
         "before_submit": [
             "imogi_finance.receipt_control.payment_entry_hooks.validate_customer_receipt_link",
@@ -392,4 +396,3 @@ after_migrate = "imogi_finance.utils.ensure_coretax_export_doctypes"
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
-

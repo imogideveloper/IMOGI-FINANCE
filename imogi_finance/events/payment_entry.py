@@ -51,6 +51,62 @@ def _ensure_expense_request_reference(doc, request_name: str | None) -> None:
     setattr(doc, "imogi_expense_request", request_name)
 
 
+def _validate_expense_request_link(doc, request, request_name: str) -> None:
+    linked_payment_entry = getattr(request, "linked_payment_entry", None)
+    if linked_payment_entry and linked_payment_entry != doc.name:
+        frappe.throw(
+            _("Expense Request already linked to Payment Entry {0}").format(
+                linked_payment_entry
+            )
+        )
+
+    existing_payment_entry = frappe.db.exists(
+        "Payment Entry",
+        {
+            "imogi_expense_request": request.name,
+            "docstatus": ["!=", 2],
+            "name": ["!=", doc.name],
+        },
+    )
+    if existing_payment_entry:
+        frappe.throw(
+            _("An active Payment Entry {0} already exists for Expense Request {1}").format(
+                existing_payment_entry, request.name
+            )
+        )
+
+
+def _sync_expense_request_link(
+    doc, request_name: str | None, *, allowed_statuses: frozenset[str] | set[str] | None = None
+):
+    if not request_name:
+        return None
+    _ensure_expense_request_reference(doc, request_name)
+
+    request = get_approved_expense_request(
+        request_name, _("Payment Entry"), allowed_statuses=allowed_statuses
+    )
+
+    _validate_expense_request_link(doc, request, request_name)
+
+    frappe.db.set_value(
+        "Expense Request",
+        request.name,
+        {"linked_payment_entry": doc.name},
+    )
+    return request
+
+
+def sync_expense_request_reference(doc, method=None):
+    """Persist Expense Request reference from Payment Entry references."""
+    request_name = _resolve_expense_request(doc)
+    if not request_name:
+        return
+    if doc.get("imogi_expense_request"):
+        return
+    doc.imogi_expense_request = request_name
+
+
 def on_change_expense_request(doc, method=None):
     """Auto-populate amount and description from selected Expense Request."""
     request_name = doc.get("imogi_expense_request")
@@ -87,53 +143,28 @@ def on_change_expense_request(doc, method=None):
 def after_insert(doc, method=None):
     """Link Payment Entry to Expense Request immediately on draft creation."""
     request_name = _resolve_expense_request(doc)
+    _sync_expense_request_link(doc, request_name)
+
+
+def on_update(doc, method=None):
+    """Ensure Expense Request link syncs when set after insert."""
+    if doc.get("docstatus") == 2:
+        return
+    request_name = _resolve_expense_request(doc)
     if not request_name:
         return
-    _ensure_expense_request_reference(doc, request_name)
-
-    # Validate ER is in correct status
-    request = get_approved_expense_request(
-        request_name, _("Payment Entry")
-    )
-
-    # Check no other PE is already linked
-    linked_payment_entry = getattr(request, "linked_payment_entry", None)
-    if linked_payment_entry and linked_payment_entry != doc.name:
-        frappe.throw(
-            _("Expense Request already linked to Payment Entry {0}").format(
-                linked_payment_entry
-            )
-        )
-
-    # Check no other active PE exists for this ER
-    existing_payment_entry = frappe.db.exists(
-        "Payment Entry",
-        {"imogi_expense_request": request.name, "docstatus": ["!=", 2], "name": ["!=", doc.name]},
-    )
-    if existing_payment_entry:
-        frappe.throw(
-            _("An active Payment Entry {0} already exists for Expense Request {1}").format(
-                existing_payment_entry, request.name
-            )
-        )
-
-    # Set linked_payment_entry immediately, status remains PI Created
-    frappe.db.set_value(
-        "Expense Request",
-        request.name,
-        {"linked_payment_entry": doc.name},
-    )
+    _sync_expense_request_link(doc, request_name)
 
 
 def on_submit(doc, method=None):
     request = _resolve_expense_request(doc)
     if not request:
         return
-    _ensure_expense_request_reference(doc, request)
-
-    request = get_approved_expense_request(
-        request, _("Payment Entry"), allowed_statuses=frozenset({"PI Created"})
+    request = _sync_expense_request_link(
+        doc, request, allowed_statuses=frozenset({"PI Created"})
     )
+    if not request:
+        return
 
     # Validate this PE is the one linked to ER (set in after_insert)
     linked_payment_entry = getattr(request, "linked_payment_entry", None)
