@@ -619,16 +619,16 @@
     {
       "fieldname": "asset_links_section",
       "fieldtype": "Section Break",
-      "label": "Linked Assets",
+      "label": "Assets Created",
+      "collapsible": 0,
       "depends_on": "eval:doc.request_type==='Asset'"
     },
     {
       "fieldname": "asset_links",
       "fieldtype": "Table",
-      "label": "Asset Links",
+      "label": "Assets",
       "options": "Expense Request Asset Link",
-      "read_only": 1,
-      "depends_on": "eval:doc.request_type==='Asset'"
+      "read_only": 1
     },
 
     {
