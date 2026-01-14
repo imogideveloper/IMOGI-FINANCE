@@ -116,10 +116,11 @@ def _auto_create_assets_from_expense_request(request):
                 asset.gross_purchase_amount = unit_amount
                 asset.purchase_date = request.request_date
                 
-                # Link to Purchase Invoice
-                asset.purchase_invoice = request.linked_purchase_invoice
+                # Don't set purchase_invoice - ERPNext validation blocks multiple assets per PI for existing assets
+                # Instead, track via custom field only
+                # asset.purchase_invoice = request.linked_purchase_invoice
                 
-                # Link to Expense Request (custom field)
+                # Link to Expense Request (custom field) - this is the primary tracking
                 asset.imogi_expense_request = request.name
                 
                 # Save and submit (submit will trigger asset.on_submit which links back to ER)
