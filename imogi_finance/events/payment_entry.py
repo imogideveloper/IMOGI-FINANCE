@@ -108,7 +108,7 @@ def _auto_create_assets_from_expense_request(request):
                 
                 asset.asset_name = asset_name
                 asset.asset_category = item.asset_category
-                asset.is_existing_asset = 1  # Bypass item_code validation
+                asset.item_code = "ASSET-ENTRY"  # Dummy item for manual asset entry
                 asset.company = company
                 asset.location = item.asset_location
                 

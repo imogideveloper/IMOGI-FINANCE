@@ -128,6 +128,7 @@ fixtures = [
     {"doctype": "Tax Invoice Type", "filters": {"module": "Imogi Finance"}},
     {"doctype": "Workspace", "filters": {"module": "Imogi Finance"}},
     {"doctype": "Client Script", "filters": {"dt": ["in", ["Purchase Invoice", "Payment Entry"]]}},
+    "fixtures/item.json",
 ]
 
 # Uninstallation
