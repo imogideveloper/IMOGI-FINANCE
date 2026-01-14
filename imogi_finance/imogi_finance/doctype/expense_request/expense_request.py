@@ -545,9 +545,17 @@ class ExpenseRequest(Document):
         return None
 
     def _get_expense_accounts(self) -> tuple[str, ...]:
+        """Get expense accounts from items or asset_items depending on request type."""
         accounts = getattr(self, "expense_accounts", None)
         if accounts:
             return accounts
+        
+        # For Asset requests, approval routing is based on is_default line (no specific account needed)
+        # Return empty tuple to trigger default line matching
+        if getattr(self, "request_type", None) == "Asset":
+            return ()
+        
+        # For Expense requests, get accounts from items
         _, accounts = accounting.summarize_request_items(self.get("items"))
         return accounts
 
