@@ -9,7 +9,7 @@ from frappe.utils import cint, flt
 from imogi_finance.branching import apply_branch, resolve_branch
 from imogi_finance.tax_invoice_ocr import get_settings, sync_tax_invoice_upload
 
-PURCHASE_INVOICE_REQUEST_TYPES = {"Expense", "Asset"}
+PURCHASE_INVOICE_REQUEST_TYPES = {"Expense"}
 PURCHASE_INVOICE_ALLOWED_STATUSES = frozenset({"Approved"})
 
 
@@ -175,12 +175,7 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
         company=company, cost_center=request.cost_center, explicit_branch=getattr(request, "branch", None)
     )
 
-    # Get items based on request type - Asset requests use asset_items, Expense requests use items
-    request_type = getattr(request, "request_type", "Expense")
-    if request_type == "Asset":
-        request_items = getattr(request, "asset_items", []) or []
-    else:
-        request_items = getattr(request, "items", []) or []
+    request_items = getattr(request, "items", []) or []
     
     if not request_items:
         frappe.throw(_("Expense Request must have at least one item to create a Purchase Invoice."))
@@ -261,35 +256,7 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     item_wise_pph_detail = {}
 
     for idx, item in enumerate(request_items, start=1):
-        # Determine expense account based on request type
-        if request_type == "Asset":
-            # For Asset requests, get fixed asset account from Asset Category Account
-            asset_category = getattr(item, "asset_category", None)
-            expense_account = None
-            if asset_category:
-                # Query the Asset Category Account child table for fixed_asset_account
-                accounts = frappe.get_all(
-                    "Asset Category Account",
-                    filters={
-                        "parent": asset_category,
-                        "company_name": company
-                    },
-                    fields=["fixed_asset_account"],
-                    limit=1
-                )
-                if accounts and accounts[0].get("fixed_asset_account"):
-                    expense_account = accounts[0]["fixed_asset_account"]
-            
-            # Fallback to default if not found
-            if not expense_account:
-                expense_account = frappe.get_cached_value(
-                    "Company",
-                    company,
-                    "default_fixed_asset_account"
-                )
-        else:
-            # For Expense requests, use the expense_account from item
-            expense_account = getattr(item, "expense_account", None)
+        expense_account = getattr(item, "expense_account", None)
         
         qty = getattr(item, "qty", 1) or 1
         item_amount = flt(getattr(item, "amount", 0))
@@ -307,16 +274,6 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
             "rate": item_amount / qty if qty > 0 else item_amount,
             "amount": item_amount,
         }
-        
-        # For Asset items, add asset-specific fields but do NOT set is_fixed_asset
-        # This prevents Frappe from auto-creating Assets. Assets will be created manually
-        # and linked via the asset_links child table in Expense Request
-        if request_type == "Asset":
-            pi_item["asset_category"] = getattr(item, "asset_category", None)
-            pi_item["imogi_asset_location"] = getattr(item, "asset_location", None)
-            # Store original asset item details for reference
-            pi_item["imogi_asset_name"] = getattr(item, "asset_name", None)
-            pi_item["imogi_asset_qty"] = qty
         
         pi.append("items", pi_item)
 

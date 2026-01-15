@@ -105,34 +105,13 @@ def on_cancel(doc, method=None):
     """Handle Purchase Invoice cancellation.
     
     When PI is cancelled:
-    1. Check if there are submitted Assets linked to this PI
-    2. If yes, prevent cancellation (Assets must be cancelled first)
-    3. Clear linked_purchase_invoice from Expense Request
-    4. Update status appropriately
+    1. Clear linked_purchase_invoice from Expense Request
+    2. Update status appropriately
     """
     request = doc.get("imogi_expense_request")
     if not request:
         reverse_consumption_for_purchase_invoice(doc)
         return
-    
-    # Check for linked submitted assets
-    request_doc = frappe.get_doc("Expense Request", request)
-    if request_doc.request_type == "Asset":
-        # Check asset_links table
-        if request_doc.get("asset_links"):
-            submitted_assets = []
-            for asset_link in request_doc.asset_links:
-                asset_status = frappe.db.get_value("Asset", asset_link.asset, "docstatus")
-                if asset_status == 1:
-                    submitted_assets.append(asset_link.asset)
-            
-            if submitted_assets:
-                frappe.throw(
-                    _("Cannot cancel Purchase Invoice. {0} submitted asset(s) are linked: {1}. Cancel them first.").format(
-                        len(submitted_assets),
-                        ", ".join(submitted_assets[:3]) + (" ..." if len(submitted_assets) > 3 else "")
-                    )
-                )
 
     updates = get_cancel_updates(request, "linked_purchase_invoice")
     updates["pending_purchase_invoice"] = None

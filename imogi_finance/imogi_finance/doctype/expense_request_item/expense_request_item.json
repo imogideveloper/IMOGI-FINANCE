@@ -11,12 +11,7 @@
     "amount",
     "is_pph_applicable",
     "pph_base_amount",
-    "description",
-    "section_break_1",
-    "asset_category",
-    "asset_name",
-    "asset_description",
-    "asset_location"
+    "description"
   ],
   "fields": [
     {
@@ -24,15 +19,15 @@
       "fieldtype": "Link",
       "in_list_view": 1,
       "label": "Expense Account",
-      "mandatory_depends_on": "eval:parent.request_type!=\"Asset\"",
-      "options": "Account"
+      "options": "Account",
+      "reqd": 1
     },
     {
       "fieldname": "amount",
       "fieldtype": "Currency",
       "in_list_view": 1,
       "label": "Amount",
-      "mandatory_depends_on": "eval:parent.request_type!=\"Asset\""
+      "reqd": 1
     },
     {
       "default": "0",
@@ -51,46 +46,6 @@
       "fieldtype": "Small Text",
       "in_list_view": 1,
       "label": "Description"
-    },
-    {
-      "fieldname": "section_break_1",
-      "fieldtype": "Section Break",
-      "depends_on": "eval:parent.request_type==\"Asset\"",
-      "hidden": 1
-    },
-    {
-      "fieldname": "asset_category",
-      "fieldtype": "Link",
-      "label": "Asset Category",
-      "options": "Asset Category",
-      "depends_on": "eval:parent.request_type==\"Asset\"",
-      "description": "Deprecated: gunakan Asset List pada Expense Request.",
-      "hidden": 1
-    },
-    {
-      "fieldname": "asset_name",
-      "fieldtype": "Data",
-      "label": "Asset Name",
-      "depends_on": "eval:parent.request_type==\"Asset\"",
-      "description": "Deprecated: gunakan Asset List pada Expense Request.",
-      "hidden": 1
-    },
-    {
-      "fieldname": "asset_description",
-      "fieldtype": "Small Text",
-      "label": "Asset Description",
-      "depends_on": "eval:parent.request_type==\"Asset\"",
-      "description": "Deprecated: gunakan Asset List pada Expense Request.",
-      "hidden": 1
-    },
-    {
-      "fieldname": "asset_location",
-      "fieldtype": "Link",
-      "label": "Asset Location",
-      "options": "Location",
-      "depends_on": "eval:parent.request_type==\"Asset\"",
-      "description": "Deprecated: gunakan Asset List pada Expense Request.",
-      "hidden": 1
     }
   ],
   "index_web_pages_for_search": 1,

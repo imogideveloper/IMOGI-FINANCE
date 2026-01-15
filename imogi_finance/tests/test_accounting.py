@@ -70,7 +70,6 @@ def _make_expense_request(**overrides):
         "supplier_invoice_date": "2024-01-01",
         "request_date": "2024-01-02",
         "currency": "IDR",
-        "asset_name": None,
         "description": "Team lunch",
         "docstatus": 1,
         "status": "Approved",
@@ -268,62 +267,6 @@ def test_pph_item_wise_detail_includes_only_flagged_rows(monkeypatch):
     assert created_pi.tax_withholding_category == "PPh 23"
     assert created_pi.withholding_tax_base_amount == 80
     assert created_pi.item_wise_tax_detail == {"1": 80.0}
-
-
-def test_asset_request_creates_purchase_invoice(monkeypatch):
-    request = _make_expense_request(
-        request_type="Asset", name="ER-002", asset_name="New Laptop", description="Laptop"
-    )
-    request.items[0].asset_name = "New Laptop"
-    request.items[0].asset_description = "Laptop"
-
-    created_pi = _doc_with_defaults(frappe._dict(), linked_purchase_invoice=None, docstatus=0)
-
-    def fake_new_doc(doctype):
-        assert doctype == "Purchase Invoice"
-        return created_pi
-
-    def fake_get_doc(doctype, name):
-        assert doctype == "Expense Request"
-        return request
-
-    def fake_get_value(doctype, name, fieldname, *args, **kwargs):
-        if doctype == "Cost Center":
-            return "Test Company"
-        return None
-
-    def fake_db_set(values):
-        created_pi.db_set_called_with = values
-
-    request.db_set = fake_db_set
-    request.linked_purchase_invoice = None
-
-    monkeypatch.setattr(frappe, "get_doc", fake_get_doc)
-    monkeypatch.setattr(frappe, "new_doc", fake_new_doc)
-    monkeypatch.setattr(frappe.db, "get_value", fake_get_value)
-
-    def fake_insert(ignore_permissions=False):
-        created_pi.name = "PI-002"
-
-    def fake_append(table, row):
-        if not hasattr(created_pi, table):
-            setattr(created_pi, table, [])
-        getattr(created_pi, table).append(row)
-
-    created_pi.insert = fake_insert
-    created_pi.append = fake_append
-
-    pi_name = accounting.create_purchase_invoice_from_request("ER-002")
-
-    assert pi_name == "PI-002"
-    assert created_pi.withholding_tax_base_amount == 700
-    assert created_pi.items[0]["item_name"] == "New Laptop"
-    assert created_pi.db_set_called_with == {
-        "linked_purchase_invoice": None,
-        "pending_purchase_invoice": "PI-002",
-    }
-    assert request.pending_purchase_invoice == "PI-002"
-    assert request.linked_purchase_invoice is None
 
 
 def test_purchase_invoice_creation_does_not_update_request(monkeypatch):

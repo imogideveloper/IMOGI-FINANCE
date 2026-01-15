@@ -25,13 +25,12 @@ def _purchase_invoice_doc(request_name="ER-PI-001", name="PI-001"):
     return doc
 
 
-def test_purchase_invoice_cancel_sets_status_linked_when_asset_remains(monkeypatch):
+def test_purchase_invoice_cancel_sets_status_paid_when_payment_entry_remains(monkeypatch):
     captured_set_value = {}
 
     def fake_get_value(doctype, name, fields, as_dict=True):
         return {
-            "linked_payment_entry": None,
-            "linked_asset": "AST-123",
+            "linked_payment_entry": "PE-123",
             "linked_purchase_invoice": "PI-123",
         }
 
@@ -51,7 +50,7 @@ def test_purchase_invoice_cancel_sets_status_linked_when_asset_remains(monkeypat
     assert captured_set_value["values"] == {
         "linked_purchase_invoice": None,
         "pending_purchase_invoice": None,
-        "status": "PI Created",
+        "status": "Paid",
     }
 
 
@@ -61,7 +60,6 @@ def test_purchase_invoice_cancel_resets_status_when_no_other_links(monkeypatch):
     def fake_get_value(doctype, name, fields, as_dict=True):
         return {
             "linked_payment_entry": None,
-            "linked_asset": None,
             "linked_purchase_invoice": "PI-003",
         }
 
@@ -143,7 +141,6 @@ def test_purchase_invoice_trash_clears_pending_links(monkeypatch):
     def fake_get_value(doctype, name, fields, as_dict=True):
         return {
             "linked_payment_entry": None,
-            "linked_asset": None,
             "linked_purchase_invoice": "PI-DRAFT",
             "pending_purchase_invoice": "PI-DRAFT",
         }

@@ -383,10 +383,6 @@
 				<span class="info-value">{{ frappe.utils.fmt_money(doc.total_expense or 0, currency=doc.currency) }}</span>
 			</div>
 			<div class="info-row">
-				<span class="info-label">{{ _("Total Asset") }}</span>
-				<span class="info-value">{{ frappe.utils.fmt_money(doc.total_asset or 0, currency=doc.currency) }}</span>
-			</div>
-			<div class="info-row">
 				<span class="info-label">{{ _("Total PPN") }}</span>
 				<span class="info-value">{{ frappe.utils.fmt_money(doc.total_ppn or 0, currency=doc.currency) }}</span>
 			</div>
@@ -551,4 +547,3 @@
 		</div>
 	</div>
 </div>
-

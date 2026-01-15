@@ -7,7 +7,6 @@ from frappe import _
 EXPENSE_REQUEST_LINK_FIELDS = (
     "linked_payment_entry",
     "linked_purchase_invoice",
-    "linked_asset",
 )
 EXPENSE_REQUEST_PENDING_FIELDS = ("pending_purchase_invoice",)
 
@@ -46,14 +45,13 @@ def get_expense_request_status(request_links: dict, *, check_pi_docstatus: bool 
     """Determine Expense Request status based on linked documents.
     
     Args:
-        request_links: Dict with linked_payment_entry, linked_purchase_invoice, linked_asset
+        request_links: Dict with linked_payment_entry, linked_purchase_invoice
         check_pi_docstatus: If True, verify PI is submitted before returning PI Created
     """
     if request_links.get("linked_payment_entry"):
         return "Paid"
     
     linked_pi = request_links.get("linked_purchase_invoice")
-    linked_asset = request_links.get("linked_asset")
     
     if linked_pi and check_pi_docstatus:
         # Only return PI Created if PI is actually submitted
@@ -64,7 +62,7 @@ def get_expense_request_status(request_links: dict, *, check_pi_docstatus: bool 
         # PI is draft or cancelled - status should be Approved
         return "Approved"
     
-    if linked_pi or linked_asset:
+    if linked_pi:
         return "PI Created"
     
     return "Approved"

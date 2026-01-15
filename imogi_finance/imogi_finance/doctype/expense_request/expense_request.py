@@ -124,7 +124,6 @@ class ExpenseRequest(Document):
         self._initialize_status()
         self.validate_amounts()
         self.apply_branch_defaults()
-        self.validate_asset_details()
         self._sync_tax_invoice_upload()
         self.validate_tax_fields()
         self.validate_deferred_expense()
@@ -199,19 +198,6 @@ class ExpenseRequest(Document):
         if pi and frappe.db.get_value("Purchase Invoice", pi, "docstatus") != 2:
             active_links.append(f"Purchase Invoice {pi}")
         
-        # Check Assets (from asset_links table)
-        if self.get("asset_links"):
-            for asset_link in self.asset_links:
-                asset_status = frappe.db.get_value("Asset", asset_link.asset, "docstatus")
-                if asset_status == 1:
-                    active_links.append(f"Asset {asset_link.asset}")
-        
-        # Fallback: Check legacy linked_asset field
-        elif getattr(self, "linked_asset", None):
-            asset_status = frappe.db.get_value("Asset", self.linked_asset, "docstatus")
-            if asset_status == 1:
-                active_links.append(f"Asset {self.linked_asset}")
-
         if active_links:
             frappe.throw(
                 _("Cannot cancel while linked to: {0}. Cancel them first.").format(", ".join(active_links)),
@@ -262,9 +248,7 @@ class ExpenseRequest(Document):
     def _set_totals(self):
         """Calculate and set all total fields."""
         items = self.get("items") or []
-        asset_items = self.get("asset_items") or []
         total_expense = flt(getattr(self, "amount", 0) or 0)
-        total_asset = sum(flt(getattr(item, "amount", 0) or 0) for item in asset_items)
         total_ppn = flt(getattr(self, "ti_fp_ppn", None) or getattr(self, "ppn", None) or 0)
         total_ppnbm = flt(getattr(self, "ti_fp_ppnbm", None) or getattr(self, "ppnbm", None) or 0)
         item_pph_total = sum(
@@ -281,7 +265,7 @@ class ExpenseRequest(Document):
         # for consistency, since we subtract it in the formula.
         total_pph = abs(total_pph)
         # PPh is withholding tax, so it reduces the total payable amount.
-        total_amount = total_expense + total_asset + total_ppn + total_ppnbm - total_pph
+        total_amount = total_expense + total_ppn + total_ppnbm - total_pph
 
         # Keep header PPh base amount in sync with the effective base used for calculations.
         if getattr(self, "is_pph_applicable", 0) or item_pph_total:
@@ -290,7 +274,6 @@ class ExpenseRequest(Document):
             self.pph_base_amount = 0
 
         self.total_expense = total_expense
-        self.total_asset = total_asset
         self.total_ppn = total_ppn
         self.total_ppnbm = total_ppnbm
         self.total_pph = total_pph
@@ -308,46 +291,6 @@ class ExpenseRequest(Document):
                 apply_branch(self, branch)
         except Exception:
             pass
-
-    def validate_asset_details(self):
-        """Ensure asset requests have required fields."""
-        if self.request_type != "Asset":
-            return
-
-        if getattr(self, "build_cumulative_asset_from_items", 0):
-            self._sync_cumulative_asset_items()
-            return
-
-        asset_items = self.get("asset_items") or []
-        if not asset_items:
-            frappe.throw(_("Asset List is required for Asset requests."))
-
-        for idx, item in enumerate(asset_items, start=1):
-            required = ["asset_category", "asset_name", "asset_description", "qty"]
-            missing = [f for f in required if not getattr(item, f, None)]
-            if missing:
-                frappe.throw(_("Row {0} missing: {1}").format(idx, ", ".join(missing)))
-
-    def _sync_cumulative_asset_items(self):
-        """Build single asset from total amount."""
-        items = self.get("items") or []
-        if not items:
-            frappe.throw(_("Expense Items required for cumulative asset."))
-
-        required = ["asset_category", "asset_name", "asset_description"]
-        missing = [f for f in required if not getattr(self, f, None)]
-        if missing:
-            frappe.throw(_("Header requires: {0}").format(", ".join(missing)))
-
-        self.set("asset_items", [])
-        self.append("asset_items", {
-            "asset_category": self.asset_category,
-            "asset_name": self.asset_name,
-            "asset_description": self.asset_description,
-            "asset_location": getattr(self, "asset_location", None),
-            "qty": 1,
-            "amount": flt(self.amount),
-        })
 
     def validate_tax_fields(self):
         """Validate tax configuration and basic PPN sanity with OCR values."""
@@ -464,13 +407,10 @@ class ExpenseRequest(Document):
         """Get approval route for this request."""
         try:
             setting = get_active_setting_meta(self.cost_center)
-            approval_amount = self.amount
-            if getattr(self, "request_type", None) == "Asset":
-                approval_amount = getattr(self, "total_amount", None) or self.amount
             route = get_approval_route(
                 self.cost_center,
                 self._get_expense_accounts(),
-                approval_amount,
+                self.amount,
                 setting_meta=setting,
             )
             return route or {}, setting, False
@@ -564,17 +504,11 @@ class ExpenseRequest(Document):
         return None
 
     def _get_expense_accounts(self) -> tuple[str, ...]:
-        """Get expense accounts from items or asset_items depending on request type."""
+        """Get expense accounts from items."""
         accounts = getattr(self, "expense_accounts", None)
         if accounts:
             return accounts
-        
-        # For Asset requests, approval routing is based on is_default line (no specific account needed)
-        # Return empty tuple to trigger default line matching
-        if getattr(self, "request_type", None) == "Asset":
-            return ()
-        
-        # For Expense requests, get accounts from items
+
         _, accounts = accounting.summarize_request_items(self.get("items"))
         return accounts
 

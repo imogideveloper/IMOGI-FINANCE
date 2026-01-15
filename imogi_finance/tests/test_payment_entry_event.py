@@ -158,10 +158,10 @@ def test_payment_entry_rejects_existing_payment_entry(monkeypatch):
     assert "An active Payment Entry PE-EXISTING already exists for Expense Request ER-011" in str(excinfo.value)
 
 
-def test_payment_entry_requires_purchase_invoice_or_asset(monkeypatch):
+def test_payment_entry_requires_purchase_invoice(monkeypatch):
     request = types.SimpleNamespace(
         name="ER-004", docstatus=1, status="PI Created", linked_payment_entry=None, linked_purchase_invoice=None,
-        linked_asset=None, request_type="Asset"
+        request_type="Expense"
     )
 
     class LinkError(Exception):
@@ -179,14 +179,14 @@ def test_payment_entry_requires_purchase_invoice_or_asset(monkeypatch):
     with pytest.raises(LinkError) as excinfo:
         payment_entry.on_submit(_payment_entry_doc("ER-004"))
 
-    assert "must be linked to a Purchase Invoice or Asset" in str(excinfo.value)
+    assert "must be linked to a Purchase Invoice" in str(excinfo.value)
     assert set_value_calls == []
 
 
 def test_payment_entry_requires_submitted_purchase_invoice(monkeypatch):
     request = types.SimpleNamespace(
         name="ER-005", docstatus=1, status="PI Created", linked_payment_entry=None, linked_purchase_invoice="PI-DRAFT",
-        linked_asset=None, request_type="Expense"
+        request_type="Expense"
     )
 
     class LinkError(Exception):
@@ -203,25 +203,3 @@ def test_payment_entry_requires_submitted_purchase_invoice(monkeypatch):
         payment_entry.on_submit(_payment_entry_doc("ER-005"))
 
     assert "must be submitted before creating Payment Entry" in str(excinfo.value)
-
-
-def test_payment_entry_requires_submitted_asset(monkeypatch):
-    request = types.SimpleNamespace(
-        name="ER-006", docstatus=1, status="PI Created", linked_payment_entry=None, linked_purchase_invoice=None,
-        linked_asset="AST-DRAFT", request_type="Asset"
-    )
-
-    class LinkError(Exception):
-        pass
-
-    def _throw(msg=None, title=None):
-        raise LinkError(msg or title)
-
-    monkeypatch.setattr(frappe, "throw", _throw)
-    monkeypatch.setattr(frappe, "get_doc", lambda *args, **kwargs: request)
-    monkeypatch.setattr(frappe.db, "get_value", lambda doctype, name, field: 0 if doctype == "Asset" else None)
-
-    with pytest.raises(LinkError) as excinfo:
-        payment_entry.on_submit(_payment_entry_doc("ER-006"))
-
-    assert "Linked Asset AST-DRAFT must be submitted before creating Payment Entry." in str(excinfo.value)
