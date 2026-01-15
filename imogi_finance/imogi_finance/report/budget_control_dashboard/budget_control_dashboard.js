@@ -68,6 +68,12 @@ frappe.query_reports["Budget Control Dashboard"] = {
 			"fieldtype": "Date",
 			"default": frappe.datetime.year_end(),
 			"reqd": 0
+		},
+		{
+			"fieldname": "hide_zero",
+			"label": __("Hide Zero Balances"),
+			"fieldtype": "Check",
+			"default": 0
 		}
 	],
 	
@@ -96,33 +102,38 @@ frappe.query_reports["Budget Control Dashboard"] = {
 		// Color code available
 		if (column.fieldname == "available") {
 			if (data.available < 0) {
-				value = `<span style="color: #d9534f; font-weight: bold;">${format_currency(data.available)}</span>`;
+				value = `<span style="color: #d9534f; font-weight: bold;">${frappe.format(data.available, {fieldtype: 'Currency'})}</span>`;
 			} else if (data.available == 0) {
-				value = `<span style="color: #f0ad4e; font-weight: bold;">${format_currency(data.available)}</span>`;
+				value = `<span style="color: #f0ad4e; font-weight: bold;">${frappe.format(data.available, {fieldtype: 'Currency'})}</span>`;
 			} else {
-				value = `<span style="color: #5cb85c;">${format_currency(data.available)}</span>`;
+				value = `<span style="color: #5cb85c;">${frappe.format(data.available, {fieldtype: 'Currency'})}</span>`;
 			}
 		}
 		
 		// Color code percentages
-		if (column.fieldname == "committed_pct") {
-			if (data.committed_pct >= 100) {
-				value = `<span style="color: #d9534f; font-weight: bold;">${data.committed_pct.toFixed(1)}%</span>`;
-			} else if (data.committed_pct > 90) {
-				value = `<span style="color: #f0ad4e; font-weight: bold;">${data.committed_pct.toFixed(1)}%</span>`;
-			} else if (data.committed_pct > 75) {
-				value = `<span style="color: #ffc107;">${data.committed_pct.toFixed(1)}%</span>`;
+		if (column.fieldname == "actual_pct" || column.fieldname == "reserved_pct" || column.fieldname == "committed_pct" || column.fieldname == "available_pct") {
+			let pct_value = data[column.fieldname];
+			if (column.fieldname == "committed_pct") {
+				if (pct_value >= 100) {
+					value = `<span style="color: #d9534f; font-weight: bold;">${pct_value.toFixed(1)}%</span>`;
+				} else if (pct_value > 90) {
+					value = `<span style="color: #f0ad4e; font-weight: bold;">${pct_value.toFixed(1)}%</span>`;
+				} else if (pct_value > 75) {
+					value = `<span style="color: #ffc107;">${pct_value.toFixed(1)}%</span>`;
+				} else {
+					value = `<span style="color: #5cb85c;">${pct_value.toFixed(1)}%</span>`;
+				}
 			} else {
-				value = `<span style="color: #5cb85c;">${data.committed_pct.toFixed(1)}%</span>`;
+				value = `<span>${pct_value.toFixed(1)}%</span>`;
 			}
 		}
 		
 		// Color code variance
 		if (column.fieldname == "variance") {
 			if (data.variance < 0) {
-				value = `<span style="color: #d9534f;">${format_currency(data.variance)}</span>`;
+				value = `<span style="color: #d9534f;">${frappe.format(data.variance, {fieldtype: 'Currency'})}</span>`;
 			} else if (data.variance > 0) {
-				value = `<span style="color: #5cb85c;">${format_currency(data.variance)}</span>`;
+				value = `<span style="color: #5cb85c;">${frappe.format(data.variance, {fieldtype: 'Currency'})}</span>`;
 			}
 		}
 		

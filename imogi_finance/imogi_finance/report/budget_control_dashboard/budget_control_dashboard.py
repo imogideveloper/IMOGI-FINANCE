@@ -200,27 +200,31 @@ def get_data(filters):
             available_pct = (available / allocated * 100) if allocated > 0 else 0
             variance = allocated - actual
             
+            # Skip if no activity (optional filter)
+            if filters.get("hide_zero") and allocated == 0 and actual == 0 and reserved == 0:
+                continue
+            
             # Determine status
             status = get_status(allocated, actual, reserved, available)
             
             data.append({
                 "cost_center": budget.cost_center,
                 "account": ba.account,
-                "allocated": allocated,
-                "actual": actual,
-                "actual_pct": actual_pct,
-                "reserved": reserved,
-                "reserved_pct": reserved_pct,
-                "committed": committed,
-                "committed_pct": committed_pct,
-                "available": available,
-                "available_pct": available_pct,
-                "variance": variance,
+                "allocated": allocated or 0,
+                "actual": actual or 0,
+                "actual_pct": actual_pct or 0,
+                "reserved": reserved or 0,
+                "reserved_pct": reserved_pct or 0,
+                "committed": committed or 0,
+                "committed_pct": committed_pct or 0,
+                "available": available or 0,
+                "available_pct": available_pct or 0,
+                "variance": variance or 0,
                 "status": status
             })
     
-    # Sort by committed descending
-    data.sort(key=lambda x: x["committed_pct"], reverse=True)
+    # Sort by allocated descending, then by committed percentage
+    data.sort(key=lambda x: (x["allocated"], x["committed_pct"]), reverse=True)
     
     return data
 
@@ -254,7 +258,10 @@ def get_chart_data(data, filters):
         return None
     
     # Take top 10 by committed amount
-    top_data = sorted(data, key=lambda x: x["committed"], reverse=True)[:10]
+    top_data = sorted(data, key=lambda x: x.get("committed", 0) or 0, reverse=True)[:10]
+    
+    if not top_data:
+        return None
     
     labels = []
     actual_values = []
@@ -262,40 +269,46 @@ def get_chart_data(data, filters):
     available_values = []
     
     for row in top_data:
-        label = f"{row['cost_center'][:15]}\n{row['account'][:20]}"
+        # Shorten labels for better display
+        cc = row.get('cost_center', '') or ''
+        acc = row.get('account', '') or ''
+        cc_short = cc.split(' - ')[-1][:12] if cc else "N/A"
+        acc_short = acc.split(' - ')[-1][:15] if acc else "N/A"
+        label = f"{cc_short} - {acc_short}"
+        
         labels.append(label)
-        actual_values.append(row["actual"])
-        reserved_values.append(row["reserved"])
-        available_values.append(max(0, row["available"]))  # Don't show negative in chart
+        actual_values.append(float(row.get("actual", 0) or 0))
+        reserved_values.append(float(row.get("reserved", 0) or 0))
+        available_values.append(max(0, float(row.get("available", 0) or 0)))  # Don't show negative in chart
     
-    return {
+    chart_data = {
         "data": {
             "labels": labels,
             "datasets": [
                 {
                     "name": _("Actual Spent"),
-                    "values": actual_values,
-                    "chartType": "bar"
+                    "values": actual_values
                 },
                 {
                     "name": _("Reserved"),
-                    "values": reserved_values,
-                    "chartType": "bar"
+                    "values": reserved_values
                 },
                 {
                     "name": _("Available"),
-                    "values": available_values,
-                    "chartType": "bar"
+                    "values": available_values
                 }
             ]
         },
         "type": "bar",
         "barOptions": {
-            "stacked": 1
+            "stacked": 1,
+            "spaceRatio": 0.5
         },
-        "height": 300,
-        "colors": ["#ffa00a", "#f06292", "#5cb85c"]
+        "height": 350,
+        "colors": ["#FF6B6B", "#FFA726", "#66BB6A"]
     }
+    
+    return chart_data
 
 
 def get_summary(data):
@@ -303,13 +316,13 @@ def get_summary(data):
     if not data:
         return []
     
-    total_allocated = sum(row["allocated"] for row in data)
-    total_actual = sum(row["actual"] for row in data)
-    total_reserved = sum(row["reserved"] for row in data)
-    total_available = sum(row["available"] for row in data)
+    total_allocated = sum(row.get("allocated", 0) or 0 for row in data)
+    total_actual = sum(row.get("actual", 0) or 0 for row in data)
+    total_reserved = sum(row.get("reserved", 0) or 0 for row in data)
+    total_available = sum(row.get("available", 0) or 0 for row in data)
     
-    over_budget_count = len([r for r in data if r["available"] < 0])
-    critical_count = len([r for r in data if r["status"] in ("Critical", "Warning")])
+    over_budget_count = len([r for r in data if (r.get("available", 0) or 0) < 0])
+    critical_count = len([r for r in data if r.get("status") in ("Critical", "Warning")])
     
     return [
         {

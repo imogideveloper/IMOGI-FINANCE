@@ -42,37 +42,44 @@
       "fieldname": "naming_series",
       "fieldtype": "Data",
       "label": "Series",
+      "no_copy": 1,
       "reqd": 1
     },
     {
       "fieldname": "company",
       "fieldtype": "Link",
+      "in_standard_filter": 1,
       "label": "Company",
       "options": "Company",
+      "read_only_depends_on": "eval:doc.workflow_state && !['Draft', 'Rejected'].includes(doc.workflow_state)",
       "reqd": 1
     },
     {
       "default": "Today",
-    "fieldname": "posting_date",
-    "fieldtype": "Date",
-    "label": "Posting Date",
-    "reqd": 1
-  },
-  {
-    "default": "Draft",
-    "fieldname": "workflow_state",
-    "fieldtype": "Select",
-    "hidden": 1,
-    "label": "Workflow State",
-    "options": "Draft\nPending Approval\nApproved\nPosted\nRejected\nCancelled",
-    "read_only": 1
-  },
-  {
-    "default": "Draft",
-    "fieldname": "status",
-    "fieldtype": "Select",
-    "in_list_view": 1,
+      "fieldname": "posting_date",
+      "fieldtype": "Date",
+      "label": "Posting Date",
+      "read_only_depends_on": "eval:doc.workflow_state && !['Draft', 'Rejected'].includes(doc.workflow_state)",
+      "reqd": 1
+    },
+    {
+      "default": "Draft",
+      "fieldname": "workflow_state",
+      "fieldtype": "Select",
+      "hidden": 1,
+      "label": "Workflow State",
+      "no_copy": 1,
+      "options": "Draft\nPending Approval\nApproved\nPosted\nRejected\nCancelled",
+      "read_only": 1
+    },
+    {
+      "default": "Draft",
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
       "label": "Status",
+      "no_copy": 1,
       "options": "Draft\nPending Approval\nApproved\nPosted\nRejected\nCancelled",
       "read_only": 1
     },
@@ -80,8 +87,10 @@
       "fieldname": "direction",
       "fieldtype": "Select",
       "in_list_view": 1,
+      "in_standard_filter": 1,
       "label": "Direction",
       "options": "Receive\nPay",
+      "read_only_depends_on": "eval:doc.workflow_state && !['Draft', 'Rejected'].includes(doc.workflow_state)",
       "reqd": 1
     },
     {
@@ -89,6 +98,7 @@
       "fieldtype": "Currency",
       "in_list_view": 1,
       "label": "Amount",
+      "read_only_depends_on": "eval:doc.workflow_state && !['Draft', 'Rejected'].includes(doc.workflow_state)",
       "reqd": 1
     },
     {
@@ -96,6 +106,7 @@
       "fieldtype": "Link",
       "label": "Bank/Cash Account",
       "options": "Account",
+      "read_only_depends_on": "eval:doc.workflow_state && !['Draft', 'Rejected'].includes(doc.workflow_state)",
       "reqd": 1
     },
     {
@@ -103,13 +114,15 @@
       "fieldtype": "Link",
       "label": "Target GL Account",
       "options": "Account",
+      "read_only_depends_on": "eval:doc.workflow_state && !['Draft', 'Rejected'].includes(doc.workflow_state)",
       "reqd": 1
     },
     {
       "fieldname": "mode_of_payment",
       "fieldtype": "Link",
       "label": "Mode of Payment",
-      "options": "Mode of Payment"
+      "options": "Mode of Payment",
+      "read_only_depends_on": "eval:doc.workflow_state && !['Draft', 'Rejected'].includes(doc.workflow_state)"
     },
     {
       "fieldname": "column_break_party",
@@ -119,13 +132,16 @@
       "fieldname": "party_type",
       "fieldtype": "Select",
       "label": "Party Type",
-      "options": "Customer\nSupplier\nEmployee\nOther"
+      "options": "Customer\nSupplier\nEmployee\nOther",
+      "read_only_depends_on": "eval:doc.workflow_state && !['Draft', 'Rejected'].includes(doc.workflow_state)"
     },
     {
+      "depends_on": "eval:doc.party_type",
       "fieldname": "party",
       "fieldtype": "Dynamic Link",
       "label": "Party",
-      "options": "party_type"
+      "options": "party_type",
+      "read_only_depends_on": "eval:doc.workflow_state && !['Draft', 'Rejected'].includes(doc.workflow_state)"
     },
     {
       "fieldname": "section_dimensions",
@@ -135,14 +151,18 @@
     {
       "fieldname": "branch",
       "fieldtype": "Link",
+      "in_standard_filter": 1,
       "label": "Branch",
-      "options": "Branch"
+      "options": "Branch",
+      "read_only_depends_on": "eval:doc.workflow_state && !['Draft', 'Rejected'].includes(doc.workflow_state)"
     },
     {
       "fieldname": "cost_center",
       "fieldtype": "Link",
+      "in_standard_filter": 1,
       "label": "Cost Center",
-      "options": "Cost Center"
+      "options": "Cost Center",
+      "read_only_depends_on": "eval:doc.workflow_state && !['Draft', 'Rejected'].includes(doc.workflow_state)"
     },
     {
       "fieldname": "section_reference",
@@ -153,62 +173,81 @@
       "fieldname": "reference_doctype",
       "fieldtype": "Link",
       "label": "Reference Doctype",
-      "options": "DocType"
+      "options": "DocType",
+      "read_only_depends_on": "eval:doc.workflow_state && !['Draft', 'Rejected'].includes(doc.workflow_state)"
     },
     {
+      "depends_on": "eval:doc.reference_doctype",
       "fieldname": "reference_name",
       "fieldtype": "Dynamic Link",
       "label": "Reference Name",
-      "options": "reference_doctype"
+      "options": "reference_doctype",
+      "read_only_depends_on": "eval:doc.workflow_state && !['Draft', 'Rejected'].includes(doc.workflow_state)"
     },
     {
       "fieldname": "reason_code",
       "fieldtype": "Data",
-      "label": "Reason Code"
+      "label": "Reason Code",
+      "read_only_depends_on": "eval:doc.workflow_state && !['Draft', 'Rejected'].includes(doc.workflow_state)"
     },
     {
       "default": "0",
       "fieldname": "require_attachment",
       "fieldtype": "Check",
-      "label": "Require Attachment"
+      "hidden": 1,
+      "label": "Require Attachment",
+      "no_copy": 1,
+      "print_hide": 1,
+      "read_only": 1
     },
     {
       "fieldname": "justification",
       "fieldtype": "Small Text",
       "label": "Justification",
+      "read_only_depends_on": "eval:doc.workflow_state && !['Draft', 'Rejected'].includes(doc.workflow_state)",
       "reqd": 1
     },
     {
       "fieldname": "payment_entry",
       "fieldtype": "Link",
       "label": "Payment Entry",
+      "no_copy": 1,
       "options": "Payment Entry",
+      "print_hide": 1,
       "read_only": 1
     },
     {
       "fieldname": "approved_by",
       "fieldtype": "Link",
       "label": "Approved By",
+      "no_copy": 1,
       "options": "User",
+      "print_hide": 1,
       "read_only": 1
     },
     {
       "fieldname": "approved_on",
       "fieldtype": "Datetime",
       "label": "Approved On",
+      "no_copy": 1,
+      "print_hide": 1,
       "read_only": 1
     },
     {
       "fieldname": "posted_by",
       "fieldtype": "Link",
       "label": "Posted By",
+      "no_copy": 1,
       "options": "User",
+      "print_hide": 1,
       "read_only": 1
     },
     {
       "fieldname": "posted_on",
       "fieldtype": "Datetime",
       "label": "Posted On",
+      "no_copy": 1,
+      "print_hide": 1,
       "read_only": 1
     }
   ],

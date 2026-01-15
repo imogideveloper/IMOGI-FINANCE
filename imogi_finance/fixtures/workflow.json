@@ -84,5 +84,39 @@
 			{"action": "Reject", "allowed": "All", "state": "Pending Approval", "next_state": "Rejected"}
 		],
 		"workflow_state_field": "workflow_state"
+	},
+	{
+		"actions": [
+			{"action": "Submit for Approval", "allowed": "All"},
+			{"action": "Approve", "allowed": "Accounts Manager"},
+			{"action": "Reject", "allowed": "Accounts Manager"},
+			{"action": "Post", "allowed": "Accounts Manager"},
+			{"action": "Cancel", "allowed": "Accounts Manager"}
+		],
+		"docstatus": 0,
+		"doctype": "Workflow",
+		"document_type": "Administrative Payment Voucher",
+		"is_active": 1,
+		"module": "Imogi Finance",
+		"name": "Administrative Payment Voucher Workflow",
+		"workflow_name": "Administrative Payment Voucher Workflow",
+		"notes": "Administrative Payment Voucher workflow: Draft → Pending Approval → Approved → Posted. Only creator can submit for approval. Only Accounts Manager can approve, post, or cancel. Posting creates Payment Entry automatically. Cancel attempts to cancel/delete linked Payment Entry. Validation and attachment policies are enforced in Python before_workflow_action hooks.",
+		"override_status": 1,
+		"states": [
+			{"state": "Draft", "doc_status": "0", "allow_edit": "All"},
+			{"state": "Pending Approval", "doc_status": "0", "allow_edit": "Accounts Manager"},
+			{"state": "Approved", "doc_status": "0", "allow_edit": "Accounts Manager"},
+			{"state": "Posted", "doc_status": "1", "allow_edit": "Accounts Manager"},
+			{"state": "Rejected", "doc_status": "0", "allow_edit": "All"},
+			{"state": "Cancelled", "doc_status": "2", "allow_edit": "Accounts Manager"}
+		],
+		"transitions": [
+			{"action": "Submit for Approval", "allow_self_approval": 0, "allowed": "All", "state": "Draft", "next_state": "Pending Approval"},
+			{"action": "Approve", "allowed": "Accounts Manager", "state": "Pending Approval", "next_state": "Approved"},
+			{"action": "Reject", "allowed": "Accounts Manager", "state": "Pending Approval", "next_state": "Rejected"},
+			{"action": "Post", "allowed": "Accounts Manager", "state": "Approved", "next_state": "Posted"},
+			{"action": "Cancel", "allowed": "Accounts Manager", "state": "Posted", "next_state": "Cancelled"}
+		],
+		"workflow_state_field": "workflow_state"
 	}
 ]
