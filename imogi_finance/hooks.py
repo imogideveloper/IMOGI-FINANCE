@@ -273,10 +273,6 @@ doc_events = {
             "imogi_finance.advance_payment.workflow.on_payment_entry_update_after_submit",
         ],
     },
-    "Asset": {
-        "on_submit": "imogi_finance.events.asset.on_submit",
-        "on_cancel": "imogi_finance.events.asset.on_cancel",
-    },
     "Bank Transaction": {
         "before_cancel": "imogi_finance.events.bank_transaction.before_cancel",
         "on_submit": "imogi_finance.transfer_application.matching.handle_bank_transaction",

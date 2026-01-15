@@ -670,7 +670,6 @@ def test_reopen_clears_downstream_links(monkeypatch):
         items=[_item(amount=100)],
         linked_payment_entry="PE-1",
         linked_purchase_invoice="PI-1",
-        linked_asset="AST-1",
         request_type="Expense",
     )
 
@@ -679,7 +678,6 @@ def test_reopen_clears_downstream_links(monkeypatch):
 
     assert request.linked_payment_entry is None
     assert request.linked_purchase_invoice is None
-    assert request.linked_asset is None
     assert request.pending_purchase_invoice is None
     assert request.status == "Pending Review"
     assert request.current_approval_level == 1
@@ -757,7 +755,6 @@ def test_cancel_requires_downstream_links_cleared(monkeypatch):
         linked_purchase_invoice="PI-100",
         pending_purchase_invoice="PI-101",
         linked_payment_entry="PE-200",
-        linked_asset="AST-300",
     )
 
     def _fake_get_value(doctype, name, field):
@@ -769,7 +766,7 @@ def test_cancel_requires_downstream_links_cleared(monkeypatch):
     with pytest.raises(NotAllowed) as excinfo:
         request.before_cancel()
 
-    assert "Cannot cancel while the request is still linked" in str(excinfo.value)
+    assert "Cannot cancel while linked to" in str(excinfo.value)
 
 
 def test_cancel_requires_authorized_role(monkeypatch):

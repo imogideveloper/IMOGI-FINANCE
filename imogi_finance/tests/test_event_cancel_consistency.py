@@ -15,14 +15,13 @@ if not hasattr(frappe.db, "get_value"):
     frappe.db.get_value = lambda *args, **kwargs: None
 
 
-from imogi_finance.events import asset, payment_entry, purchase_invoice  # noqa: E402
+from imogi_finance.events import payment_entry, purchase_invoice  # noqa: E402
 
 
 @pytest.mark.parametrize(
     "event_module, cleared_field, remaining_field",
     [
-        (asset, "linked_asset", "linked_purchase_invoice"),
-        (purchase_invoice, "linked_purchase_invoice", "linked_asset"),
+        (purchase_invoice, "linked_purchase_invoice", "linked_payment_entry"),
         (payment_entry, "linked_payment_entry", "linked_purchase_invoice"),
     ],
 )
@@ -39,7 +38,6 @@ def test_cancel_keeps_linked_status_when_other_links_exist(
             "linked_payment_entry": (
                 "PE-ACTIVE" if remaining_field == "linked_payment_entry" else None
             ),
-            "linked_asset": "AST-ACTIVE" if remaining_field == "linked_asset" else None,
         }
 
     def fake_set_value(doctype, name, values):
@@ -57,5 +55,6 @@ def test_cancel_keeps_linked_status_when_other_links_exist(
 
     assert captured_set_value["doctype"] == "Expense Request"
     assert captured_set_value["name"] == "ER-CROSS"
-    assert captured_set_value["values"]["status"] == "PI Created"
+    expected_status = "Paid" if remaining_field == "linked_payment_entry" else "PI Created"
+    assert captured_set_value["values"]["status"] == expected_status
     assert captured_set_value["values"][cleared_field] is None

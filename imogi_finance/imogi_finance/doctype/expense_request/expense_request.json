@@ -31,7 +31,6 @@
     "description",
     "basic_totals_section",
     "total_expense",
-    "total_asset",
     "column_break_basic_totals",
     "total_ppn",
     "total_ppnbm",
@@ -67,13 +66,6 @@
     "column_break_deferred",
     "deferred_periods",
 
-    "tab_asset",
-    "asset_items_section",
-    "build_cumulative_asset_from_items",
-    "asset_items",
-    "asset_totals_section",
-    "asset_totals_html",
-
     "tab_approval",
     "approval_status_section",
     "current_approval_level",
@@ -96,9 +88,6 @@
     "pending_purchase_invoice",
     "column_break_integration",
     "linked_payment_entry",
-    "linked_asset",
-    "asset_links_section",
-    "asset_links",
 
     "section_break_hidden",
     "approval_route_snapshot",
@@ -115,7 +104,7 @@
       "in_list_view": 1,
       "in_standard_filter": 1,
       "label": "Tipe Pengajuan",
-      "options": "Expense\nAsset",
+      "options": "Expense",
       "reqd": 1
     },
     {
@@ -248,13 +237,6 @@
       "read_only": 1
     },
     {
-      "fieldname": "total_asset",
-      "fieldtype": "Currency",
-      "label": "Total Asset",
-      "options": "currency",
-      "read_only": 1
-    },
-    {
       "fieldname": "column_break_basic_totals",
       "fieldtype": "Column Break"
     },
@@ -302,8 +284,8 @@
       "fieldname": "items",
       "fieldtype": "Table",
       "label": "Item",
-      "mandatory_depends_on": "eval:doc.request_type!=\"Asset\"",
-      "options": "Expense Request Item"
+      "options": "Expense Request Item",
+      "reqd": 1
     },
     {
       "fieldname": "section_break_totals",
@@ -452,45 +434,6 @@
     },
 
     {
-      "depends_on": "eval:doc.request_type=='Asset'",
-      "fieldname": "tab_asset",
-      "fieldtype": "Tab Break",
-      "label": "Asset"
-    },
-    {
-      "fieldname": "asset_items_section",
-      "fieldtype": "Section Break",
-      "label": "Asset List",
-      "depends_on": "eval:doc.request_type==\"Asset\""
-    },
-    {
-      "default": "0",
-      "fieldname": "build_cumulative_asset_from_items",
-      "fieldtype": "Check",
-      "label": "Cumulative Asset dari Expense Items",
-      "description": "Jika dicentang, daftar asset dibuat otomatis dari Expense Items.",
-      "depends_on": "eval:doc.request_type==\"Asset\""
-    },
-    {
-      "fieldname": "asset_items",
-      "fieldtype": "Table",
-      "label": "Asset Items",
-      "options": "Expense Request Asset Item",
-      "depends_on": "eval:doc.request_type==\"Asset\""
-    },
-    {
-      "fieldname": "asset_totals_section",
-      "fieldtype": "Section Break",
-      "label": "Ringkasan Total",
-      "depends_on": "eval:doc.request_type==\"Asset\""
-    },
-    {
-      "fieldname": "asset_totals_html",
-      "fieldtype": "HTML",
-      "depends_on": "eval:doc.request_type==\"Asset\""
-    },
-
-    {
       "fieldname": "tab_approval",
       "fieldtype": "Tab Break",
       "label": "Approval"
@@ -614,29 +557,6 @@
       "options": "Payment Entry",
       "read_only": 1
     },
-    {
-      "fieldname": "linked_asset",
-      "fieldtype": "Link",
-      "label": "Asset (Deprecated)",
-      "options": "Asset",
-      "read_only": 1,
-      "hidden": 1
-    },
-    {
-      "fieldname": "asset_links_section",
-      "fieldtype": "Section Break",
-      "label": "Assets Created",
-      "collapsible": 0,
-      "depends_on": "eval:doc.request_type==='Asset'"
-    },
-    {
-      "fieldname": "asset_links",
-      "fieldtype": "Table",
-      "label": "Assets",
-      "options": "Expense Request Asset Link",
-      "read_only": 1
-    },
-
     {
       "fieldname": "section_break_hidden",
       "fieldtype": "Section Break",

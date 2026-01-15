@@ -121,22 +121,6 @@ function setExpenseAccountQuery(frm) {
   frm.set_query('expense_account', 'items', () => ({ filters }));
 }
 
-function toggleAssetItemsBehavior(frm) {
-  const isAsset = frm.doc.request_type === 'Asset';
-  const useCumulative = Boolean(frm.doc.build_cumulative_asset_from_items);
-  const assetItemsField = frm.get_field('asset_items');
-  const shouldLock = isAsset && useCumulative;
-
-  frm.set_df_property('asset_items_section', 'hidden', !isAsset);
-  frm.set_df_property('asset_items', 'read_only', shouldLock);
-
-  if (assetItemsField?.grid) {
-    assetItemsField.grid.cannot_add_rows = shouldLock;
-    assetItemsField.grid.cannot_delete_rows = shouldLock;
-    assetItemsField.grid.only_sortable = !shouldLock;
-  }
-}
-
 function formatCurrency(frm, value) {
   return frappe.format(value, { fieldtype: 'Currency', options: frm.doc.currency });
 }
@@ -161,10 +145,6 @@ async function setPphRate(frm) {
 function computeTotals(frm) {
   const flt = (frappe.utils && frappe.utils.flt) || window.flt || ((value) => parseFloat(value) || 0);
   const totalExpense = flt(frm.doc.amount || 0);
-  const totalAsset = (frm.doc.asset_items || []).reduce(
-    (sum, row) => sum + flt(row.amount || 0),
-    0,
-  );
   const itemPphTotal = (frm.doc.items || []).reduce(
     (sum, row) => sum + (row.is_pph_applicable ? flt(row.pph_base_amount || 0) : 0),
     0,
@@ -175,11 +155,10 @@ function computeTotals(frm) {
     || (frm.doc.is_pph_applicable ? flt(frm.doc.pph_base_amount || 0) : 0);
   const pphRate = flt(frm._pph_rate || 0);
   const totalPph = Math.abs(pphRate ? (pphBaseTotal * pphRate) / 100 : pphBaseTotal);
-  const totalAmount = totalExpense + totalAsset + totalPpn + totalPpnbm - totalPph;
+  const totalAmount = totalExpense + totalPpn + totalPpnbm - totalPph;
 
   return {
     totalExpense,
-    totalAsset,
     totalPpn,
     totalPpnbm,
     pphBaseTotal,
@@ -194,7 +173,6 @@ function renderTotalsHtml(frm, totals) {
 
   const rows = [
     ['Total Expense', format(totals.totalExpense)],
-    ['Total Asset', format(totals.totalAsset)],
     ['Total PPN', format(totals.totalPpn)],
     ['Total PPnBM', format(totals.totalPpnbm)],
 
@@ -228,7 +206,6 @@ function updateTotalsSummary(frm) {
   const totals = computeTotals(frm);
   const fields = {
     total_expense: totals.totalExpense,
-    total_asset: totals.totalAsset,
     total_ppn: totals.totalPpn,
     total_ppnbm: totals.totalPpnbm,
     pph_base_amount: totals.pphBaseTotal,
@@ -251,7 +228,7 @@ function updateTotalsSummary(frm) {
   }
 
   const html = renderTotalsHtml(frm, totals);
-  ['items_totals_html', 'asset_totals_html'].forEach((fieldname) => {
+  ['items_totals_html'].forEach((fieldname) => {
     const field = frm.fields_dict[fieldname];
     if (field?.$wrapper) {
       field.$wrapper.html(html);
@@ -388,7 +365,6 @@ frappe.ui.form.on('Expense Request', {
     hideErOcrStatus(frm);
     lockErTaxInvoiceFields(frm);
     setExpenseAccountQuery(frm);
-    toggleAssetItemsBehavior(frm);
     formatApprovalTimestamps(frm);
     frm.dashboard.clear_headline();
     await setErUploadQuery(frm);
@@ -558,12 +534,6 @@ frappe.ui.form.on('Expense Request', {
   items_remove(frm) {
     updateTotalsSummary(frm);
   },
-  asset_items_add(frm) {
-    updateTotalsSummary(frm);
-  },
-  asset_items_remove(frm) {
-    updateTotalsSummary(frm);
-  },
   ti_fp_ppn(frm) {
     updateTotalsSummary(frm);
   },
@@ -583,12 +553,6 @@ frappe.ui.form.on('Expense Request', {
 
   async ti_tax_invoice_upload(frm) {
     await syncErUpload(frm);
-  },
-  request_type(frm) {
-    toggleAssetItemsBehavior(frm);
-  },
-  build_cumulative_asset_from_items(frm) {
-    toggleAssetItemsBehavior(frm);
   },
 });
 
@@ -744,15 +708,6 @@ frappe.ui.form.on('Expense Request Item', {
     if (frm.doc.docstatus === 0) {
       frappe.model.set_value(cdt, cdn, 'pph_base_amount', baseAmount);
     }
-    updateTotalsSummary(frm);
-  },
-});
-
-frappe.ui.form.on('Expense Request Asset Item', {
-  amount(frm) {
-    updateTotalsSummary(frm);
-  },
-  qty(frm) {
     updateTotalsSummary(frm);
   },
 });
