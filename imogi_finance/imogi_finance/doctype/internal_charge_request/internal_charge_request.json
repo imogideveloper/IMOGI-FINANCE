@@ -69,7 +69,6 @@
       "fieldtype": "Link",
       "options": "Fiscal Year",
       "reqd": 1,
-      "fetch_from": "expense_request.fiscal_year",
       "read_only": 1
     },
     {
