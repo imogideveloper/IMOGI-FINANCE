@@ -70,28 +70,35 @@ def fetch_bank_transactions(
     if not getattr(frappe, "db", None):
         return []
 
+    has_branch_column = True
+    if hasattr(frappe.db, "has_column"):
+        has_branch_column = frappe.db.has_column("Bank Transaction", "branch")
+
     filters = {}
     if report_date:
         filters["transaction_date"] = ("<=", report_date)
     branch_filter = _coerce_list(branches)
-    if branch_filter:
+    if branch_filter and has_branch_column:
         filters["branch"] = ("in", branch_filter)
     bank_filter = _coerce_list(bank_accounts)
     if bank_filter:
         filters["bank_account"] = ("in", bank_filter)
 
+    fields = [
+        "name",
+        "bank_account",
+        "transaction_date",
+        "deposit",
+        "withdrawal",
+        "reference_number",
+    ]
+    if has_branch_column:
+        fields.insert(1, "branch")
+
     rows = frappe.get_all(
         "Bank Transaction",
         filters=filters,
-        fields=[
-            "name",
-            "branch",
-            "bank_account",
-            "transaction_date",
-            "deposit",
-            "withdrawal",
-            "reference_number",
-        ],
+        fields=fields,
         order_by="transaction_date asc",
     )
 
@@ -108,6 +115,75 @@ def fetch_bank_transactions(
                 "reference": row.get("reference_number") or row.get("name"),
                 "posting_date": row.get("transaction_date"),
                 "bank_account": row.get("bank_account"),
+            }
+        )
+    return transactions
+
+
+def fetch_cash_ledger_entries(
+    report_date: date | None,
+    *,
+    branches: Sequence[str] | None = None,
+    cash_accounts: Sequence[str] | None = None,
+) -> list[dict[str, object]]:
+    """Fetch cash ledger entries up to and including the report date."""
+
+    if not getattr(frappe, "db", None):
+        return []
+
+    account_filter = _coerce_list(cash_accounts)
+    if not account_filter:
+        return []
+
+    has_branch_column = True
+    if hasattr(frappe.db, "has_column"):
+        has_branch_column = frappe.db.has_column("GL Entry", "branch")
+
+    has_is_cancelled = True
+    if hasattr(frappe.db, "has_column"):
+        has_is_cancelled = frappe.db.has_column("GL Entry", "is_cancelled")
+
+    filters = {"account": ("in", account_filter)}
+    if report_date:
+        filters["posting_date"] = ("<=", report_date)
+    if has_is_cancelled:
+        filters["is_cancelled"] = 0
+    branch_filter = _coerce_list(branches)
+    if branch_filter and has_branch_column:
+        filters["branch"] = ("in", branch_filter)
+
+    fields = [
+        "name",
+        "account",
+        "posting_date",
+        "debit",
+        "credit",
+        "voucher_no",
+    ]
+    if has_branch_column:
+        fields.insert(1, "branch")
+
+    rows = frappe.get_all(
+        "GL Entry",
+        filters=filters,
+        fields=fields,
+        order_by="posting_date asc",
+    )
+
+    transactions: list[dict[str, object]] = []
+    for row in rows:
+        debit = _as_amount(row.get("debit"))
+        credit = _as_amount(row.get("credit"))
+        direction = "in" if debit > 0 else "out"
+        amount = debit if debit > 0 else credit
+        transactions.append(
+            {
+                "branch": row.get("branch") or "Unassigned",
+                "amount": amount,
+                "direction": direction,
+                "reference": row.get("voucher_no") or row.get("name"),
+                "posting_date": row.get("posting_date"),
+                "bank_account": row.get("account"),
             }
         )
     return transactions
@@ -139,15 +215,24 @@ def load_daily_inputs(
     report_date: date | None,
     branches: Sequence[str] | None = None,
     bank_accounts: Sequence[str] | None = None,
+    cash_accounts: Sequence[str] | None = None,
 ) -> tuple[list[dict[str, object]], dict[str, float]]:
     """Return (transactions_for_day, opening_balances) for daily reporting."""
 
     resolved_date = report_date or date.today()
-    all_transactions = fetch_bank_transactions(
-        resolved_date,
-        branches=branches,
-        bank_accounts=bank_accounts,
-    )
+    cash_filter = _coerce_list(cash_accounts)
+    if cash_filter:
+        all_transactions = fetch_cash_ledger_entries(
+            resolved_date,
+            branches=branches,
+            cash_accounts=cash_filter,
+        )
+    else:
+        all_transactions = fetch_bank_transactions(
+            resolved_date,
+            branches=branches,
+            bank_accounts=bank_accounts,
+        )
 
     day_transactions: list[dict[str, object]] = []
     for tx in all_transactions:

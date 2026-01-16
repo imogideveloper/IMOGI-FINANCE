@@ -25,6 +25,16 @@ frappe.ui.form.on('Cash Bank Daily Report', {
     // Render read-only preview from snapshot_json
     render_daily_report_preview(frm);
   },
+  bank_account(frm) {
+    if (frm.doc.bank_account && frm.doc.cash_account) {
+      frm.set_value('cash_account', null);
+    }
+  },
+  cash_account(frm) {
+    if (frm.doc.cash_account && frm.doc.bank_account) {
+      frm.set_value('bank_account', null);
+    }
+  },
 });
 
 function render_daily_report_preview(frm) {

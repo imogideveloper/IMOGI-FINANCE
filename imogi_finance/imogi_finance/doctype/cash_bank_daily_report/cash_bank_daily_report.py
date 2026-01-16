@@ -24,6 +24,7 @@ class CashBankDailyReport(Document):
                     "Cash/Bank Daily Report is currently in view-only mode. New reports cannot be created."
                 )
             )
+        self._validate_account_selection()
         # Ensure one report per date + bank account
         self._validate_unique_per_account_and_date()
         # Ensure we don't skip previous dates that already have transactions
@@ -55,14 +56,23 @@ class CashBankDailyReport(Document):
         return bool(getattr(settings, "daily_report_view_only", 0))
 
     def _validate_unique_per_account_and_date(self) -> None:
-        if not self.report_date or not self.bank_account:
+        account_field = None
+        account_value = None
+        if self.bank_account:
+            account_field = "bank_account"
+            account_value = self.bank_account
+        elif self.cash_account:
+            account_field = "cash_account"
+            account_value = self.cash_account
+
+        if not self.report_date or not account_field or not account_value:
             return
 
         existing = frappe.db.exists(
             "Cash Bank Daily Report",
             {
                 "report_date": self.report_date,
-                "bank_account": self.bank_account,
+                account_field: account_value,
                 "name": ("!=", self.name) if self.name else ("!=" , ""),
             },
         )
@@ -71,9 +81,17 @@ class CashBankDailyReport(Document):
                 frappe._(
                     "Daily report for account {0} on {1} already exists (document: {2})."
                 ).format(
-                    self.bank_account,
+                    account_value,
                     frappe.utils.format_date(self.report_date),
                     existing,
+                )
+            )
+
+    def _validate_account_selection(self) -> None:
+        if self.bank_account and self.cash_account:
+            frappe.throw(
+                frappe._(
+                    "Please select either Bank / Cash Account or Cash Account, not both."
                 )
             )
 
@@ -131,6 +149,7 @@ class CashBankDailyReport(Document):
         payload = reporting_api.preview_daily_report(
             branches=branches,
             bank_account=self.bank_account or None,
+            cash_account=self.cash_account or None,
             report_date=report_date_str,
         )
 
