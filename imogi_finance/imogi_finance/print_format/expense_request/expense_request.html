@@ -1,540 +1,291 @@
 <style>
-	@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  :root {
+    --primary: #1a1a1a;
+    --secondary: #525252;
+    --border: #e5e5e5;
+    --bg-light: #fafafa;
+    --text: #404040;
+    --text-light: #737373;
+  }
   
-	* {
-		font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-	}
+  * {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    box-sizing: border-box;
+  }
   
-	body {
-		background: #fafafa;
-		font-size: 9px;
-	}
+  body { font-size: 10px; color: var(--text); }
   
-	.modern-container {
-		max-width: 1000px;
-		margin: 0 auto;
-		padding: 6px 10px;
-		background: #ffffff;
-	}
+  .container { max-width: 800px; margin: 0 auto; padding: 16px; }
   
-	.modern-header {
-		background: #1a1a1a;
-		color: white;
-		padding: 6px 10px;
-		margin-bottom: 6px;
-		border-bottom: 3px solid #333333;
-	}
-
-	.modern-header-inner {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		gap: 8px;
-	}
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--primary);
+    margin-bottom: 16px;
+  }
   
-	.modern-header h1 {
-		font-size: 12px;
-		font-weight: 600;
-		margin: 0 0 2px 0;
-		letter-spacing: 0.5px;
-		text-transform: uppercase;
-		color: #ffffff;
-	}
+  .header h1 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--primary);
+  }
   
-	.modern-header .doc-id {
-		font-size: 9px;
-		font-weight: 400;
-		color: #d1d5db;
-		letter-spacing: 0.3px;
-	}
+  .header .doc-id {
+    font-size: 11px;
+    color: var(--text-light);
+  }
   
-	.status-badge {
-		display: inline-block;
-		padding: 2px 8px;
-		margin-top: 0;
-		font-size: 8px;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 1px;
-		border-radius: 3px;
-	}
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 4px;
+    background: var(--bg-light);
+    color: var(--secondary);
+    border: 1px solid var(--border);
+  }
   
-	.status-draft { background: #f5f5f5; color: #424242; border: 1px solid #d0d0d0; }
-	.status-pending { background: #f5f5f5; color: #616161; border: 1px solid #d0d0d0; }
-	.status-approved { background: #2d2d2d; color: #ffffff; border: 1px solid #1a1a1a; }
-	.status-rejected { background: #f5f5f5; color: #757575; border: 1px solid #d0d0d0; }
-	.status-cancelled { background: #f5f5f5; color: #9e9e9e; border: 1px solid #d0d0d0; }
+  .badge-approved { background: var(--primary); color: white; border-color: var(--primary); }
+  .badge-pending { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+  .badge-rejected { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
   
-	.info-grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 6px;
-		margin-bottom: 6px;
-	}
+  /* Grid */
+  .grid { display: grid; gap: 16px; margin-bottom: 16px; }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
   
-	.info-card {
-		background: #ffffff;
-		padding: 6px 8px;
-		border-left: 2px solid #333333;
-	}
+  /* Card */
+  .card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+  }
   
-	.info-card h3 {
-		font-size: 9px;
-		color: #1a1a1a;
-		font-weight: 700;
-		margin: 0 0 8px 0;
-		text-transform: uppercase;
-		letter-spacing: 1.2px;
-	}
+  .card-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-light);
+    margin: 0 0 10px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
   
-	.info-row {
-		display: flex;
-		justify-content: space-between;
-		padding: 2px 0;
-		border-bottom: 1px solid #e5e5e5;
-		align-items: baseline;
-	}
+  .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 10px;
+  }
   
-	.info-row:last-child {
-		border-bottom: none;
-	}
+  .row-label { color: var(--text-light); }
+  .row-value { font-weight: 500; color: var(--primary); text-align: right; }
   
-	.info-label {
-		color: #737373;
-		font-size: 9px;
-		font-weight: 400;
-	}
+  /* Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+    margin-bottom: 16px;
+  }
   
-	.info-value {
-		color: #1a1a1a;
-		font-size: 9px;
-		font-weight: 600;
-		text-align: right;
-	}
+  thead { background: var(--primary); color: white; }
   
-	.purpose-section {
-		background: #ffffff;
-		padding: 6px 8px;
-		border-left: 3px solid #525252;
-		margin-bottom: 6px;
-	}
+  th {
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
   
-	.purpose-section h3 {
-		font-size: 9px;
-		color: #1a1a1a;
-		font-weight: 700;
-		margin: 0 0 6px 0;
-		text-transform: uppercase;
-		letter-spacing: 1.2px;
-	}
+  th.right { text-align: right; }
   
-	.purpose-section p {
-		margin: 0;
-		color: #404040;
-		line-height: 1.4;
-		font-size: 9px;
-		font-weight: 400;
-	}
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
   
-	.modern-table {
-		width: 100%;
-		border-collapse: collapse;
-		margin-bottom: 10px;
-		border: 1px solid #e5e5e5;
-	}
+  td.right { text-align: right; font-weight: 500; }
   
-	.modern-table thead {
-		background: #1a1a1a;
-		color: white;
-	}
+  tr:nth-child(even) { background: var(--bg-light); }
   
-	.modern-table thead th {
-		padding: 6px 8px;
-		text-align: left;
-		font-size: 9px;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 1px;
-		border-bottom: 2px solid #333333;
-	}
+  tfoot { background: var(--bg-light); border-top: 2px solid var(--primary); }
+  tfoot th { color: var(--primary); }
   
-	.modern-table thead th.text-right {
-		text-align: right;
-	}
+  /* Notes */
+  .notes {
+    background: var(--bg-light);
+    border-left: 3px solid var(--secondary);
+    padding: 10px 14px;
+    margin-bottom: 16px;
+  }
   
-	.modern-table tbody tr {
-		border-bottom: 1px solid #e5e5e5;
-	}
+  .notes-title {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-light);
+    margin-bottom: 4px;
+  }
   
-	.modern-table tbody tr:last-child {
-		border-bottom: none;
-	}
+  .notes-content {
+    font-size: 10px;
+    color: var(--text);
+    line-height: 1.5;
+  }
   
-	.modern-table tbody tr:nth-child(even) {
-		background: #fafafa;
-	}
-  
-	.modern-table tbody td {
-		padding: 4px 8px;
-		font-size: 10px;
-		color: #404040;
-		font-weight: 400;
-	}
-  
-	.modern-table tbody td.text-right {
-		text-align: right;
-		font-weight: 500;
-		color: #1a1a1a;
-	}
-  
-	.modern-table tfoot {
-		background: #f5f5f5;
-		border-top: 2px solid #333333;
-	}
-  
-	.modern-table tfoot th {
-		padding: 6px 8px;
-		font-size: 10px;
-		color: #1a1a1a;
-		font-weight: 700;
-	}
-  
-	.modern-table tfoot th.text-right {
-		text-align: right;
-	}
-  
-	.detail-grid {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: 8px;
-		margin-bottom: 4px;
-	}
-  
-	.detail-card {
-		background: #fafafa;
-		padding: 10px 12px;
-		border-left: 3px solid #525252;
-	}
-  
-	.detail-card h3 {
-		font-size: 10px;
-		color: #1a1a1a;
-		font-weight: 700;
-		margin: 0 0 8px 0;
-		text-transform: uppercase;
-		letter-spacing: 1.2px;
-		padding-bottom: 6px;
-		border-bottom: 1px solid #d4d4d4;
-	}
-  
-	.detail-item {
-		margin-bottom: 4px;
-		font-size: 10px;
-		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-	}
-  
-	.detail-item:last-child {
-		margin-bottom: 0;
-	}
-  
-	.detail-label {
-		color: #737373;
-		font-weight: 400;
-		flex-shrink: 0;
-		margin-right: 8px;
-	}
-  
-	.detail-value {
-		color: #1a1a1a;
-		font-weight: 600;
-		text-align: right;
-	}
-  
-	.badge-yes {
-		background: #2d2d2d;
-		color: #ffffff;
-		padding: 1px 6px;
-		border-radius: 3px;
-		font-size: 9px;
-		font-weight: 700;
-		letter-spacing: 0.5px;
-	}
-  
-	.badge-no {
-		background: #f5f5f5;
-		color: #737373;
-		padding: 1px 6px;
-		border-radius: 3px;
-		font-size: 9px;
-		font-weight: 700;
-		letter-spacing: 0.5px;
-		border: 1px solid #e5e5e5;
-	}
-  
-	.budget-ok { color: #2d2d2d; font-weight: 700; }
-	.budget-warning { color: #525252; font-weight: 700; }
-	.budget-over { color: #1a1a1a; font-weight: 700; }
-  
-	@media print {
-		@page {
-			margin: 10mm 8mm;
-		}
-		body {
-			background: white;
-		}
-		.modern-container {
-			padding: 10px 14px;
-		}
-		.modern-header {
-			background: #1a1a1a !important;
-			-webkit-print-color-adjust: exact;
-			print-color-adjust: exact;
-		}
-		.modern-table thead {
-			background: #1a1a1a !important;
-			-webkit-print-color-adjust: exact;
-			print-color-adjust: exact;
-		}
-		.status-approved {
-			background: #2d2d2d !important;
-			-webkit-print-color-adjust: exact;
-			print-color-adjust: exact;
-		}
-		.badge-yes {
-			background: #2d2d2d !important;
-			-webkit-print-color-adjust: exact;
-			print-color-adjust: exact;
-		}
-	}
+  /* Print */
+  @media print {
+    @page { margin: 12mm; }
+    thead { background: var(--primary) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .badge-approved { background: var(--primary) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
 </style>
 
-<div class="modern-container">
-	<!-- Header -->
-	<div class="modern-header">
-		<div class="modern-header-inner">
-			<div>
-				<h1>{{ _("Expense Request") }}</h1>
-				<div class="doc-id">{{ doc.name }}</div>
-			</div>
-			{% if doc.workflow_state %}
-			<span class="status-badge status-{{ (doc.workflow_state or '').lower().replace(' ', '-') }}">
-				{{ doc.workflow_state }}
-			</span>
-			{% endif %}
-		</div>
-	</div>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>{{ _("Expense Request") }}</h1>
+      <div class="doc-id">{{ doc.name }}</div>
+    </div>
+    {% set status_class = {
+      'Approved': 'approved',
+      'Pending Review': 'pending',
+      'Rejected': 'rejected'
+    }.get(doc.status, '') %}
+    <span class="badge badge-{{ status_class }}">{{ doc.status or doc.workflow_state or 'Draft' }}</span>
+  </div>
 
-	<!-- Main Info Grid -->
-	<div class="info-grid">
-		<div class="info-card">
-			<h3>Request Details</h3>
-			<div class="info-row">
-				<span class="info-label">{{ _("Request Type") }}</span>
-				<span class="info-value">{{ doc.request_type }}</span>
-			</div>
-			<div class="info-row">
-				<span class="info-label">{{ _("Request Date") }}</span>
-				<span class="info-value">{{ frappe.utils.formatdate(doc.request_date) }}</span>
-			</div>
-			<div class="info-row">
-				<span class="info-label">{{ _("Currency") }}</span>
-				<span class="info-value">{{ doc.currency }}</span>
-			</div>
-			<div class="info-row">
-				<span class="info-label">{{ _("Cost Center") }}</span>
-				<span class="info-value">{{ doc.cost_center }}</span>
-			</div>
-			{% if doc.project %}
-			<div class="info-row">
-				<span class="info-label">{{ _("Project") }}</span>
-				<span class="info-value">{{ doc.project }}</span>
-			</div>
-			{% endif %}
-			{% if doc.branch %}
-			<div class="info-row">
-				<span class="info-label">{{ _("Branch") }}</span>
-				<span class="info-value">{{ doc.branch }}</span>
-			</div>
-			{% endif %}
-		</div>
-    
-		<div class="info-card">
-			<h3>Supplier & Summary</h3>
-			<div class="info-row">
-				<span class="info-label">{{ _("Supplier") }}</span>
-				<span class="info-value">{{ doc.supplier }}</span>
-			</div>
-			{% if doc.supplier_invoice_no %}
-			<div class="info-row">
-				<span class="info-label">{{ _("Supplier Invoice No.") }}</span>
-				<span class="info-value">{{ doc.supplier_invoice_no }}</span>
-			</div>
-			{% endif %}
-			{% if doc.supplier_invoice_date %}
-			<div class="info-row">
-				<span class="info-label">{{ _("Invoice Date") }}</span>
-				<span class="info-value">{{ frappe.utils.formatdate(doc.supplier_invoice_date) }}</span>
-			</div>
-			{% endif %}
-			<div class="info-row">
-				<span class="info-label">{{ _("Total Expense") }}</span>
-				<span class="info-value">{{ frappe.utils.fmt_money(doc.total_expense or 0, currency=doc.currency) }}</span>
-			</div>
-			<div class="info-row">
-				<span class="info-label">{{ _("Total PPN") }}</span>
-				<span class="info-value">{{ frappe.utils.fmt_money(doc.total_ppn or 0, currency=doc.currency) }}</span>
-			</div>
-			<div class="info-row">
-				<span class="info-label">{{ _("Total PPh") }}</span>
-				<span class="info-value">{{ frappe.utils.fmt_money(doc.total_pph or 0, currency=doc.currency) }}</span>
-			</div>
-			<div class="info-row">
-				<span class="info-label">{{ _("Total") }}</span>
-				<span class="info-value">{{ frappe.utils.fmt_money(doc.total_amount or 0, currency=doc.currency) }}</span>
-			</div>
-		</div>
-	</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title">{{ _("Request Details") }}</div>
+      <div class="row">
+        <span class="row-label">{{ _("Date") }}</span>
+        <span class="row-value">{{ frappe.utils.formatdate(doc.request_date) }}</span>
+      </div>
+      <div class="row">
+        <span class="row-label">{{ _("Type") }}</span>
+        <span class="row-value">{{ doc.request_type }}</span>
+      </div>
+      <div class="row">
+        <span class="row-label">{{ _("Cost Center") }}</span>
+        <span class="row-value">{{ doc.cost_center }}</span>
+      </div>
+      {% if doc.project %}
+      <div class="row">
+        <span class="row-label">{{ _("Project") }}</span>
+        <span class="row-value">{{ doc.project }}</span>
+      </div>
+      {% endif %}
+    </div>
 
-	<!-- Description / Notes -->
-	<div class="purpose-section">
-		<h3>{{ _("Description / Notes") }}</h3>
-		<p>{{ doc.description or "" }}</p>
-	</div>
+    <div class="card">
+      <div class="card-title">{{ _("Supplier") }}</div>
+      <div class="row">
+        <span class="row-label">{{ _("Name") }}</span>
+        <span class="row-value">{{ doc.supplier }}</span>
+      </div>
+      {% if doc.supplier_invoice_no %}
+      <div class="row">
+        <span class="row-label">{{ _("Invoice No") }}</span>
+        <span class="row-value">{{ doc.supplier_invoice_no }}</span>
+      </div>
+      {% endif %}
+      {% if doc.supplier_invoice_date %}
+      <div class="row">
+        <span class="row-label">{{ _("Invoice Date") }}</span>
+        <span class="row-value">{{ frappe.utils.formatdate(doc.supplier_invoice_date) }}</span>
+      </div>
+      {% endif %}
+      <div class="row">
+        <span class="row-label">{{ _("Currency") }}</span>
+        <span class="row-value">{{ doc.currency }}</span>
+      </div>
+    </div>
+  </div>
 
-	<!-- Items Table -->
-	<table class="modern-table">
-		<thead>
-			<tr>
-				<th width="35%">{{ _("Expense Account") }}</th>
-				<th width="25%">{{ _("Description") }}</th>
-				<th width="15%">{{ _("Deferred") }}</th>
-				<th width="12%" class="text-right">{{ _("Amount") }}</th>
-				<th width="13%" class="text-right">{{ _("PPh Base Amount") }}</th>
-			</tr>
-		</thead>
-		<tbody>
-			{% for row in doc.items %}
-			<tr>
-				<td>{{ row.expense_account }}</td>
-				<td>{{ row.description }}</td>
-				<td>
-					{% if row.is_deferred_expense %}
-						📅 {{ row.prepaid_account }} ({{ row.deferred_periods }}m)
-					{% else %}
-						-
-					{% endif %}
-				</td>
-				<td class="text-right">{{ frappe.utils.fmt_money(row.amount or 0, currency=doc.currency) }}</td>
-				<td class="text-right">{{ frappe.utils.fmt_money(row.pph_base_amount or 0, currency=doc.currency) }}</td>
-			</tr>
-			{% endfor %}
-		</tbody>
-		<tfoot>
-			<tr>
-				<th colspan="3" class="text-right">{{ _("TOTAL AMOUNT") }}</th>
-				<th colspan="2" class="text-right">{{ frappe.utils.fmt_money(doc.amount or 0, currency=doc.currency) }}</th>
-			</tr>
-		</tfoot>
-	</table>
+  {% if doc.description %}
+  <div class="notes">
+    <div class="notes-title">{{ _("Notes") }}</div>
+    <div class="notes-content">{{ doc.description }}</div>
+  </div>
+  {% endif %}
 
-	<!-- Detail Sections -->
-	<div class="detail-grid">
-		<!-- Tax Information -->
-		<div class="detail-card">
-			<h3>{{ _("Tax Information") }}</h3>
-			<div class="detail-item">
-				<span class="detail-label">{{ _("PPN Applicable") }}:</span>
-				<span class="detail-value">
-					{% if doc.is_ppn_applicable %}
-					<span class="badge-yes">{{ _("YES") }}</span>
-					{% else %}
-					<span class="badge-no">{{ _("NO") }}</span>
-					{% endif %}
-				</span>
-			</div>
-			{% if doc.is_ppn_applicable and doc.ppn_template %}
-			<div class="detail-item">
-				<span class="detail-label">{{ _("PPN Template") }}:</span>
-				<span class="detail-value">{{ doc.ppn_template }}</span>
-			</div>
-			{% endif %}
-			{% if doc.is_ppn_applicable %}
-			{% if doc.tax_invoice_number %}
-			<div class="detail-item">
-				<span class="detail-label">{{ _("Tax Invoice Number") }}:</span>
-				<span class="detail-value">{{ doc.tax_invoice_number }}</span>
-			</div>
-			{% endif %}
-			{% if doc.tax_invoice_date %}
-			<div class="detail-item">
-				<span class="detail-label">{{ _("Tax Invoice Date") }}:</span>
-				<span class="detail-value">{{ frappe.utils.formatdate(doc.tax_invoice_date) }}</span>
-			</div>
-			{% endif %}
-			{% endif %}
-			<div class="detail-item">
-				<span class="detail-label">{{ _("PPh Applicable") }}:</span>
-				<span class="detail-value">
-					{% if doc.is_pph_applicable %}
-					<span class="badge-yes">{{ _("YES") }}</span>
-					{% else %}
-					<span class="badge-no">{{ _("NO") }}</span>
-					{% endif %}
-				</span>
-			</div>
-			{% if doc.is_pph_applicable and doc.pph_type %}
-			<div class="detail-item">
-				<span class="detail-label">{{ _("PPh Type") }}:</span>
-				<span class="detail-value">{{ doc.pph_type }}</span>
-			</div>
-			{% endif %}
-			{% if doc.is_pph_applicable and doc.pph_base_amount %}
-			<div class="detail-item">
-				<span class="detail-label">{{ _("PPh Base Amount") }}:</span>
-				<span class="detail-value">{{ frappe.utils.fmt_money(doc.pph_base_amount or 0, currency=doc.currency) }}</span>
-			</div>
-			{% endif %}
-		</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 40%">{{ _("Account") }}</th>
+        <th style="width: 30%">{{ _("Description") }}</th>
+        <th class="right" style="width: 15%">{{ _("Amount") }}</th>
+        <th class="right" style="width: 15%">{{ _("PPh Base") }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in doc.items %}
+      <tr>
+        <td>{{ row.expense_account }}</td>
+        <td>{{ row.description or '-' }}</td>
+        <td class="right">{{ frappe.utils.fmt_money(row.amount, currency=doc.currency) }}</td>
+        <td class="right">{{ frappe.utils.fmt_money(row.pph_base_amount or 0, currency=doc.currency) if row.is_pph_applicable else '-' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <th colspan="2" class="right">{{ _("Subtotal") }}</th>
+        <th colspan="2" class="right">{{ frappe.utils.fmt_money(doc.amount, currency=doc.currency) }}</th>
+      </tr>
+    </tfoot>
+  </table>
 
-		<!-- Approval Information -->
-		<div class="detail-card">
-			<h3>{{ _("Approval Information") }}</h3>
-			{% if doc.workflow_state %}
-			<div class="detail-item">
-				<span class="detail-label">{{ _("Workflow State") }}:</span>
-				<span class="detail-value">{{ doc.workflow_state }}</span>
-			</div>
-			{% endif %}
-			{% if doc.current_approval_level %}
-			<div class="detail-item">
-				<span class="detail-label">{{ _("Current Level") }}:</span>
-				<span class="detail-value">{{ doc.current_approval_level }}</span>
-			</div>
-			{% endif %}
-			{% if doc.level_1_user or doc.level_2_user or doc.level_3_user %}
-			<div class="detail-item">
-				<span class="detail-label">{{ _("Approvers") }}:</span>
-				<span class="detail-value">
-					{% if doc.level_1_user %}{{ doc.level_1_user }}{% endif %}
-					{% if doc.level_2_user %}<br>{{ doc.level_2_user }}{% endif %}
-					{% if doc.level_3_user %}<br>{{ doc.level_3_user }}{% endif %}
-				</span>
-			</div>
-			{% endif %}
-			{% if doc.created_by_user %}
-			<div class="detail-item">
-				<span class="detail-label">{{ _("Created By") }}:</span>
-				<span class="detail-value">{{ doc.created_by_user }}</span>
-			</div>
-			{% endif %}
-			{% if doc.submit_on %}
-			<div class="detail-item">
-				<span class="detail-label">{{ _("Submit On") }}:</span>
-				<span class="detail-value">{{ frappe.utils.format_datetime(doc.submit_on) }}</span>
-			</div>
-			{% endif %}
-		</div>
-	</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title">{{ _("Tax Summary") }}</div>
+      <div class="row">
+        <span class="row-label">{{ _("PPN") }}</span>
+        <span class="row-value">{{ frappe.utils.fmt_money(doc.total_ppn or 0, currency=doc.currency) }}</span>
+      </div>
+      <div class="row">
+        <span class="row-label">{{ _("PPh") }}</span>
+        <span class="row-value" style="color: #dc2626;">-{{ frappe.utils.fmt_money(doc.total_pph or 0, currency=doc.currency) }}</span>
+      </div>
+      <div class="row" style="border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px;">
+        <span class="row-label" style="font-weight: 600;">{{ _("Total") }}</span>
+        <span class="row-value" style="font-size: 12px;">{{ frappe.utils.fmt_money(doc.total_amount or 0, currency=doc.currency) }}</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">{{ _("Approval") }}</div>
+      {% if doc.level_1_user %}
+      <div class="row">
+        <span class="row-label">{{ _("Level 1") }}</span>
+        <span class="row-value">{{ doc.level_1_user }}{% if doc.level_1_approved_on %} ✓{% endif %}</span>
+      </div>
+      {% endif %}
+      {% if doc.level_2_user %}
+      <div class="row">
+        <span class="row-label">{{ _("Level 2") }}</span>
+        <span class="row-value">{{ doc.level_2_user }}{% if doc.level_2_approved_on %} ✓{% endif %}</span>
+      </div>
+      {% endif %}
+      {% if doc.level_3_user %}
+      <div class="row">
+        <span class="row-label">{{ _("Level 3") }}</span>
+        <span class="row-value">{{ doc.level_3_user }}{% if doc.level_3_approved_on %} ✓{% endif %}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
 </div>

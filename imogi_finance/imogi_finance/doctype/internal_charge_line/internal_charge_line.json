@@ -42,53 +42,71 @@
       "fieldtype": "Select",
       "options": "Draft\nPending L1\nPending L2\nPending L3\nApproved\nRejected",
       "default": "Draft",
-      "in_list_view": 1
+      "in_list_view": 1,
+      "read_only": 1,
+      "bold": 1
     },
     {
       "fieldname": "current_approval_level",
       "label": "Current Approval Level",
-      "fieldtype": "Int"
+      "fieldtype": "Int",
+      "read_only": 1,
+      "hidden": 1
     },
     {
       "fieldname": "route_snapshot",
       "label": "Route Snapshot",
-      "fieldtype": "Long Text"
+      "fieldtype": "Long Text",
+      "read_only": 1,
+      "hidden": 1
     },
     {
       "fieldname": "level_1_role",
       "label": "Level 1 Role",
       "fieldtype": "Link",
-      "options": "Role"
+      "options": "Role",
+      "read_only": 1,
+      "hidden": 1
     },
     {
       "fieldname": "level_1_approver",
       "label": "Level 1 Approver",
       "fieldtype": "Link",
-      "options": "User"
+      "options": "User",
+      "read_only": 1,
+      "hidden": 1
     },
     {
       "fieldname": "level_2_role",
       "label": "Level 2 Role",
       "fieldtype": "Link",
-      "options": "Role"
+      "options": "Role",
+      "read_only": 1,
+      "hidden": 1
     },
     {
       "fieldname": "level_2_approver",
       "label": "Level 2 Approver",
       "fieldtype": "Link",
-      "options": "User"
+      "options": "User",
+      "read_only": 1,
+      "hidden": 1
     },
     {
       "fieldname": "level_3_role",
       "label": "Level 3 Role",
       "fieldtype": "Link",
-      "options": "Role"
+      "options": "Role",
+      "read_only": 1,
+      "hidden": 1
     },
     {
       "fieldname": "level_3_approver",
       "label": "Level 3 Approver",
       "fieldtype": "Link",
-      "options": "User"
+      "options": "User",
+      "read_only": 1,
+      "hidden": 1
     },
     {
       "fieldname": "approved_by",

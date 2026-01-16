@@ -8,44 +8,37 @@
   "editable_grid": 0,
   "engine": "InnoDB",
   "field_order": [
+    "header_section",
     "request_type",
-    "workflow_state",
-    "status",
-
-    "tab_basic",
-    "basic_info_section",
     "request_date",
-    "currency",
-    "column_break_basic_1",
-    "cost_center",
-    "allocation_mode",
-    "project",
+    "column_break_header",
+    "status",
+    "workflow_state",
+
+    "tab_details",
     "supplier_section",
     "supplier",
     "supplier_invoice_no",
     "column_break_supplier",
     "supplier_invoice_date",
+    "currency",
+
+    "allocation_section",
+    "cost_center",
+    "project",
+    "column_break_allocation",
     "branch",
-    "attachment_section",
-    "attachment",
-    "column_break_attachment",
-    "description",
-    "basic_totals_section",
-    "total_expense",
-    "column_break_basic_totals",
-    "total_ppn",
-    "total_ppnbm",
-    "total_pph",
-    "total_amount",
+    "allocation_mode",
 
     "tab_items",
-    "items_section",
     "items",
-    "section_break_totals",
+    "totals_section",
     "amount",
-    "column_break_totals",
     "expense_account",
-    "items_totals_section",
+    "column_break_totals",
+    "total_ppn",
+    "total_pph",
+    "total_amount",
     "items_totals_html",
 
     "tab_taxes",
@@ -56,65 +49,76 @@
     "tax_invoice_number",
     "tax_invoice_date",
     "tax_invoice_attachment",
-    "ti_tax_invoice_section",
-    "ti_tax_invoice_upload",
-    "ti_ocr_data_section",
-    "ti_fp_no",
-    "ti_fp_date",
-    "ti_fp_npwp",
-    "ti_column_break_ocr",
-    "ti_fp_dpp",
-    "ti_fp_ppn",
-    "ti_fp_ppnbm",
-    "ti_verification_section",
-    "ti_fp_ppn_type",
-    "ti_verification_status",
-    "ti_column_break_verify",
-    "ti_duplicate_flag",
-    "ti_npwp_match",
-    "ti_verification_notes",
+
     "pph_section",
     "is_pph_applicable",
     "pph_type",
     "column_break_pph",
     "pph_base_amount",
 
+    "ocr_section",
+    "ti_tax_invoice_upload",
+    "ti_verification_status",
+    "column_break_ocr",
+    "ti_fp_no",
+    "ti_fp_date",
+    "ti_fp_dpp",
+    "ti_fp_ppn",
+    "ti_fp_npwp",
+    "ti_fp_ppnbm",
+    "ti_fp_ppn_type",
+    "ti_duplicate_flag",
+    "ti_npwp_match",
+    "ti_verification_notes",
+
     "tab_approval",
-    "approval_status_section",
+    "approval_section",
     "current_approval_level",
+    "column_break_approval",
     "budget_lock_status",
     "budget_workflow_state",
+
     "approvers_section",
     "level_1_user",
     "level_1_approved_on",
-    "level_1_rejected_on",
     "column_break_approver_2",
     "level_2_user",
     "level_2_approved_on",
-    "level_2_rejected_on",
     "column_break_approver_3",
     "level_3_user",
     "level_3_approved_on",
-    "level_3_rejected_on",
 
-    "tab_integration",
-    "integration_section",
+    "tab_docs",
+    "attachments_section",
+    "attachment",
+    "description",
+
+    "links_section",
     "linked_purchase_invoice",
     "pending_purchase_invoice",
-    "column_break_integration",
+    "column_break_links",
     "linked_payment_entry",
     "internal_charge_request",
-    "prevent_pi_if_not_ready",
 
-    "section_break_hidden",
+    "hidden_section",
+    "total_expense",
+    "total_ppnbm",
     "approval_route_snapshot",
     "approval_setting",
     "approval_setting_last_modified",
     "pending_edit_allowed_fields",
+    "prevent_pi_if_not_ready",
     "created_by_user",
-    "submit_on"
+    "submit_on",
+    "level_1_rejected_on",
+    "level_2_rejected_on",
+    "level_3_rejected_on"
   ],
   "fields": [
+    {
+      "fieldname": "header_section",
+      "fieldtype": "Section Break"
+    },
     {
       "bold": 1,
       "default": "Expense",
@@ -122,9 +126,30 @@
       "fieldtype": "Select",
       "in_list_view": 1,
       "in_standard_filter": 1,
-      "label": "Tipe Pengajuan",
+      "label": "Type",
       "options": "Expense",
       "reqd": 1
+    },
+    {
+      "default": "Today",
+      "fieldname": "request_date",
+      "fieldtype": "Date",
+      "in_list_view": 1,
+      "label": "Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "column_break_header",
+      "fieldtype": "Column Break"
+    },
+    {
+      "allow_on_submit": 1,
+      "bold": 1,
+      "fieldname": "status",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Status",
+      "read_only": 1
     },
     {
       "allow_on_submit": 1,
@@ -135,45 +160,51 @@
       "options": "Workflow State",
       "read_only": 1
     },
-    {
-      "allow_on_submit": 1,
-      "bold": 1,
-      "fieldname": "status",
-      "fieldtype": "Data",
-      "in_list_view": 0,
-      "label": "Status",
-      "read_only": 1
-    },
 
     {
-      "fieldname": "tab_basic",
+      "fieldname": "tab_details",
       "fieldtype": "Tab Break",
-      "label": "Informasi Dasar"
+      "label": "Details"
     },
     {
-      "fieldname": "basic_info_section",
+      "fieldname": "supplier_section",
       "fieldtype": "Section Break",
-      "label": "Detail Pengajuan"
+      "label": "Supplier"
     },
     {
-      "default": "Today",
-      "fieldname": "request_date",
-      "fieldtype": "Date",
-      "in_list_view": 1,
-      "label": "Tanggal Pengajuan",
+      "fieldname": "supplier",
+      "fieldtype": "Link",
+      "in_standard_filter": 1,
+      "label": "Supplier",
+      "options": "Supplier",
       "reqd": 1
+    },
+    {
+      "fieldname": "supplier_invoice_no",
+      "fieldtype": "Data",
+      "label": "Invoice No"
+    },
+    {
+      "fieldname": "column_break_supplier",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "supplier_invoice_date",
+      "fieldtype": "Date",
+      "label": "Invoice Date"
     },
     {
       "default": "IDR",
       "fieldname": "currency",
       "fieldtype": "Link",
-      "label": "Mata Uang",
+      "label": "Currency",
       "options": "Currency",
       "reqd": 1
     },
     {
-      "fieldname": "column_break_basic_1",
-      "fieldtype": "Column Break"
+      "fieldname": "allocation_section",
+      "fieldtype": "Section Break",
+      "label": "Allocation"
     },
     {
       "fieldname": "cost_center",
@@ -184,13 +215,6 @@
       "reqd": 1
     },
     {
-      "fieldname": "allocation_mode",
-      "fieldtype": "Select",
-      "label": "Allocation Mode",
-      "options": "Direct\nAllocated via Internal Charge",
-      "default": "Direct"
-    },
-    {
       "fieldname": "project",
       "fieldtype": "Link",
       "in_standard_filter": 1,
@@ -198,92 +222,71 @@
       "options": "Project"
     },
     {
-      "fieldname": "supplier_section",
-      "fieldtype": "Section Break",
-      "label": "Data Supplier"
-    },
-    {
-      "fieldname": "supplier",
-      "fieldtype": "Link",
-      "in_standard_filter": 1,
-      "label": "Nama Supplier",
-      "options": "Supplier",
-      "reqd": 1
-    },
-    {
-      "fieldname": "supplier_invoice_no",
-      "fieldtype": "Data",
-      "label": "No. Invoice Supplier"
-    },
-    {
-      "fieldname": "column_break_supplier",
+      "fieldname": "column_break_allocation",
       "fieldtype": "Column Break"
-    },
-    {
-      "fieldname": "supplier_invoice_date",
-      "fieldtype": "Date",
-      "label": "Tanggal Invoice"
     },
     {
       "fieldname": "branch",
       "fieldtype": "Link",
-      "label": "Cabang",
+      "label": "Branch",
       "options": "Branch"
     },
     {
-      "fieldname": "attachment_section",
+      "default": "Direct",
+      "fieldname": "allocation_mode",
+      "fieldtype": "Select",
+      "label": "Mode",
+      "options": "Direct\nAllocated via Internal Charge"
+    },
+
+    {
+      "fieldname": "tab_items",
+      "fieldtype": "Tab Break",
+      "label": "Items"
+    },
+    {
+      "fieldname": "items",
+      "fieldtype": "Table",
+      "label": "Items",
+      "options": "Expense Request Item",
+      "reqd": 1
+    },
+    {
+      "fieldname": "totals_section",
       "fieldtype": "Section Break",
-      "label": "Dokumen & Catatan"
+      "label": "Summary"
     },
     {
-      "fieldname": "attachment",
-      "fieldtype": "Attach",
-      "label": "Dokumen Pendukung",
-      "description": "Upload invoice atau dokumen pendukung lainnya"
-    },
-    {
-      "fieldname": "column_break_attachment",
-      "fieldtype": "Column Break"
-    },
-    {
-      "fieldname": "description",
-      "fieldtype": "Small Text",
-      "label": "Catatan / Keterangan"
-    },
-    {
-      "fieldname": "basic_totals_section",
-      "fieldtype": "Section Break",
-      "label": "Ringkasan Total"
-    },
-    {
-      "fieldname": "total_expense",
+      "bold": 1,
+      "fieldname": "amount",
       "fieldtype": "Currency",
-      "label": "Total Expense",
+      "in_list_view": 1,
+      "label": "Subtotal",
       "options": "currency",
       "read_only": 1
     },
     {
-      "fieldname": "column_break_basic_totals",
+      "fieldname": "expense_account",
+      "fieldtype": "Link",
+      "label": "Account",
+      "options": "Account",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_totals",
       "fieldtype": "Column Break"
     },
     {
       "fieldname": "total_ppn",
       "fieldtype": "Currency",
-      "label": "Total PPN",
-      "options": "currency",
-      "read_only": 1
-    },
-    {
-      "fieldname": "total_ppnbm",
-      "fieldtype": "Currency",
-      "label": "Total PPnBM",
+      "label": "PPN",
       "options": "currency",
       "read_only": 1
     },
     {
       "fieldname": "total_pph",
       "fieldtype": "Currency",
-      "label": "Total PPh",
+      "label": "PPh",
       "options": "currency",
       "read_only": 1
     },
@@ -295,55 +298,6 @@
       "options": "currency",
       "read_only": 1
     },
-
-    {
-      "fieldname": "tab_items",
-      "fieldtype": "Tab Break",
-      "label": "Item & Total"
-    },
-    {
-      "fieldname": "items_section",
-      "fieldtype": "Section Break",
-      "label": "Daftar Item"
-    },
-    {
-      "fieldname": "items",
-      "fieldtype": "Table",
-      "label": "Item",
-      "options": "Expense Request Item",
-      "reqd": 1
-    },
-    {
-      "fieldname": "section_break_totals",
-      "fieldtype": "Section Break",
-      "label": "Ringkasan"
-    },
-    {
-      "bold": 1,
-      "fieldname": "amount",
-      "fieldtype": "Currency",
-      "in_list_view": 1,
-      "label": "Total Amount",
-      "options": "currency",
-      "read_only": 1
-    },
-    {
-      "fieldname": "column_break_totals",
-      "fieldtype": "Column Break"
-    },
-    {
-      "fieldname": "expense_account",
-      "fieldtype": "Link",
-      "label": "Akun Expense",
-      "description": "Otomatis terisi jika semua item menggunakan akun yang sama",
-      "options": "Account",
-      "read_only": 1
-    },
-    {
-      "fieldname": "items_totals_section",
-      "fieldtype": "Section Break",
-      "label": "Ringkasan Total"
-    },
     {
       "fieldname": "items_totals_html",
       "fieldtype": "HTML"
@@ -352,25 +306,25 @@
     {
       "fieldname": "tab_taxes",
       "fieldtype": "Tab Break",
-      "label": "Pajak & Deferred"
+      "label": "Tax"
     },
     {
       "fieldname": "ppn_section",
       "fieldtype": "Section Break",
-      "label": "PPN (Pajak Pertambahan Nilai)"
+      "label": "PPN"
     },
     {
       "default": "0",
       "fieldname": "is_ppn_applicable",
       "fieldtype": "Check",
-      "label": "Dikenakan PPN?"
+      "label": "Apply PPN"
     },
     {
-      "depends_on": "eval:doc.is_ppn_applicable==1",
+      "depends_on": "is_ppn_applicable",
       "fieldname": "ppn_template",
       "fieldtype": "Link",
-      "label": "Template PPN",
-      "mandatory_depends_on": "eval:doc.is_ppn_applicable==1",
+      "label": "Template",
+      "mandatory_depends_on": "is_ppn_applicable",
       "options": "Purchase Taxes and Charges Template"
     },
     {
@@ -378,158 +332,40 @@
       "fieldtype": "Column Break"
     },
     {
-      "depends_on": "eval:doc.is_ppn_applicable==1",
+      "depends_on": "is_ppn_applicable",
       "fieldname": "tax_invoice_number",
       "fieldtype": "Data",
-      "label": "Nomor Faktur Pajak",
-      "description": "Masukkan nomor faktur pajak dari supplier"
+      "label": "Tax Invoice No"
     },
     {
-      "depends_on": "eval:doc.is_ppn_applicable==1",
+      "depends_on": "is_ppn_applicable",
       "fieldname": "tax_invoice_date",
       "fieldtype": "Date",
-      "label": "Tanggal Faktur Pajak"
+      "label": "Tax Invoice Date"
     },
     {
-      "depends_on": "eval:doc.is_ppn_applicable==1",
+      "depends_on": "is_ppn_applicable",
       "fieldname": "tax_invoice_attachment",
       "fieldtype": "Attach",
-      "label": "Upload Faktur Pajak",
-      "description": "Upload file faktur pajak (PDF/Image)"
-    },
-    {
-      "collapsible": 1,
-      "depends_on": "eval:doc.is_ppn_applicable==1",
-      "fieldname": "ti_tax_invoice_section",
-      "fieldtype": "Section Break",
-      "label": "Tax Invoice OCR"
-    },
-    {
-      "allow_on_submit": 1,
-      "depends_on": "eval:doc.is_ppn_applicable==1",
-      "fieldname": "ti_tax_invoice_upload",
-      "fieldtype": "Link",
-      "label": "Tax Invoice OCR Upload",
-      "options": "Tax Invoice OCR Upload"
-    },
-    {
-      "depends_on": "eval:doc.ti_tax_invoice_upload",
-      "fieldname": "ti_ocr_data_section",
-      "fieldtype": "Section Break",
-      "label": "Data Hasil OCR"
-    },
-    {
-      "allow_on_submit": 1,
-      "fieldname": "ti_fp_no",
-      "fieldtype": "Data",
-      "label": "No Faktur Pajak (OCR)",
-      "read_only": 1
-    },
-    {
-      "allow_on_submit": 1,
-      "fieldname": "ti_fp_date",
-      "fieldtype": "Date",
-      "label": "Tanggal Faktur (OCR)",
-      "read_only": 1
-    },
-    {
-      "allow_on_submit": 1,
-      "fieldname": "ti_fp_npwp",
-      "fieldtype": "Data",
-      "label": "NPWP (OCR)",
-      "read_only": 1
-    },
-    {
-      "fieldname": "ti_column_break_ocr",
-      "fieldtype": "Column Break"
-    },
-    {
-      "allow_on_submit": 1,
-      "fieldname": "ti_fp_dpp",
-      "fieldtype": "Currency",
-      "label": "DPP (OCR)",
-      "read_only": 1
-    },
-    {
-      "allow_on_submit": 1,
-      "fieldname": "ti_fp_ppn",
-      "fieldtype": "Currency",
-      "label": "PPN (OCR)",
-      "read_only": 1
-    },
-    {
-      "allow_on_submit": 1,
-      "fieldname": "ti_fp_ppnbm",
-      "fieldtype": "Currency",
-      "label": "PPnBM (OCR)",
-      "read_only": 1
-    },
-    {
-      "depends_on": "eval:doc.ti_tax_invoice_upload",
-      "fieldname": "ti_verification_section",
-      "fieldtype": "Section Break",
-      "label": "Verifikasi OCR"
-    },
-    {
-      "allow_on_submit": 1,
-      "default": "Standard",
-      "fieldname": "ti_fp_ppn_type",
-      "fieldtype": "Select",
-      "label": "Tipe PPN",
-      "options": "Standard\nZero Rated\nExempt/Not PPN",
-      "read_only": 1
-    },
-    {
-      "allow_on_submit": 1,
-      "default": "Needs Review",
-      "fieldname": "ti_verification_status",
-      "fieldtype": "Select",
-      "label": "Status Verifikasi",
-      "options": "Needs Review\nVerified\nRejected",
-      "read_only": 1
-    },
-    {
-      "fieldname": "ti_column_break_verify",
-      "fieldtype": "Column Break"
-    },
-    {
-      "allow_on_submit": 1,
-      "fieldname": "ti_duplicate_flag",
-      "fieldtype": "Check",
-      "label": "Duplicate Tax Invoice",
-      "read_only": 1
-    },
-    {
-      "allow_on_submit": 1,
-      "fieldname": "ti_npwp_match",
-      "fieldtype": "Check",
-      "label": "NPWP Match",
-      "read_only": 1
-    },
-    {
-      "allow_on_submit": 1,
-      "fieldname": "ti_verification_notes",
-      "fieldtype": "Small Text",
-      "label": "Catatan Verifikasi",
-      "read_only": 1
+      "label": "Tax Invoice File"
     },
     {
       "fieldname": "pph_section",
       "fieldtype": "Section Break",
-      "label": "PPh (Pajak Penghasilan)"
+      "label": "PPh"
     },
     {
       "default": "0",
       "fieldname": "is_pph_applicable",
       "fieldtype": "Check",
-      "label": "Dikenakan PPh?"
+      "label": "Apply PPh"
     },
     {
-      "depends_on": "eval:doc.is_pph_applicable==1",
+      "depends_on": "is_pph_applicable",
       "fieldname": "pph_type",
       "fieldtype": "Link",
-      "label": "Jenis PPh",
-      "mandatory_depends_on": "eval:doc.is_pph_applicable==1",
+      "label": "Type",
+      "mandatory_depends_on": "is_pph_applicable",
       "options": "Tax Withholding Category"
     },
     {
@@ -537,67 +373,175 @@
       "fieldtype": "Column Break"
     },
     {
-      "depends_on": "eval:doc.is_pph_applicable==1",
+      "depends_on": "is_pph_applicable",
       "fieldname": "pph_base_amount",
       "fieldtype": "Currency",
-      "label": "Dasar Pengenaan PPh",
+      "label": "Base Amount",
       "options": "currency"
     },
+    {
+      "collapsible": 1,
+      "collapsible_depends_on": "eval:!doc.ti_tax_invoice_upload",
+      "depends_on": "is_ppn_applicable",
+      "fieldname": "ocr_section",
+      "fieldtype": "Section Break",
+      "label": "OCR Data"
+    },
+    {
+      "allow_on_submit": 1,
+      "fieldname": "ti_tax_invoice_upload",
+      "fieldtype": "Link",
+      "label": "OCR Upload",
+      "options": "Tax Invoice OCR Upload"
+    },
+    {
+      "allow_on_submit": 1,
+      "default": "Needs Review",
+      "fieldname": "ti_verification_status",
+      "fieldtype": "Select",
+      "label": "Verification",
+      "options": "Needs Review\nVerified\nRejected",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_ocr",
+      "fieldtype": "Column Break"
+    },
+    {
+      "allow_on_submit": 1,
+      "fieldname": "ti_fp_no",
+      "fieldtype": "Data",
+      "label": "FP No",
+      "read_only": 1
+    },
+    {
+      "allow_on_submit": 1,
+      "fieldname": "ti_fp_date",
+      "fieldtype": "Date",
+      "label": "FP Date",
+      "read_only": 1
+    },
+    {
+      "allow_on_submit": 1,
+      "fieldname": "ti_fp_dpp",
+      "fieldtype": "Currency",
+      "hidden": 1,
+      "label": "DPP",
+      "read_only": 1
+    },
+    {
+      "allow_on_submit": 1,
+      "fieldname": "ti_fp_ppn",
+      "fieldtype": "Currency",
+      "hidden": 1,
+      "label": "PPN",
+      "read_only": 1
+    },
+    {
+      "allow_on_submit": 1,
+      "fieldname": "ti_fp_npwp",
+      "fieldtype": "Data",
+      "hidden": 1,
+      "label": "NPWP",
+      "read_only": 1
+    },
+    {
+      "allow_on_submit": 1,
+      "fieldname": "ti_fp_ppnbm",
+      "fieldtype": "Currency",
+      "hidden": 1,
+      "label": "PPnBM",
+      "read_only": 1
+    },
+    {
+      "allow_on_submit": 1,
+      "default": "Standard",
+      "fieldname": "ti_fp_ppn_type",
+      "fieldtype": "Select",
+      "hidden": 1,
+      "label": "PPN Type",
+      "options": "Standard\nZero Rated\nExempt/Not PPN",
+      "read_only": 1
+    },
+    {
+      "allow_on_submit": 1,
+      "fieldname": "ti_duplicate_flag",
+      "fieldtype": "Check",
+      "hidden": 1,
+      "label": "Duplicate",
+      "read_only": 1
+    },
+    {
+      "allow_on_submit": 1,
+      "fieldname": "ti_npwp_match",
+      "fieldtype": "Check",
+      "hidden": 1,
+      "label": "NPWP Match",
+      "read_only": 1
+    },
+    {
+      "allow_on_submit": 1,
+      "fieldname": "ti_verification_notes",
+      "fieldtype": "Small Text",
+      "hidden": 1,
+      "label": "Notes",
+      "read_only": 1
+    },
+
     {
       "fieldname": "tab_approval",
       "fieldtype": "Tab Break",
       "label": "Approval"
     },
     {
-      "fieldname": "approval_status_section",
+      "fieldname": "approval_section",
       "fieldtype": "Section Break",
-      "label": "Status Approval"
+      "label": "Status"
     },
     {
       "allow_on_submit": 1,
-      "default": "1",
+      "default": "0",
       "fieldname": "current_approval_level",
       "fieldtype": "Int",
-      "label": "Level Approval Saat Ini",
+      "label": "Current Level",
       "read_only": 1
+    },
+    {
+      "fieldname": "column_break_approval",
+      "fieldtype": "Column Break"
     },
     {
       "fieldname": "budget_lock_status",
       "fieldtype": "Select",
-      "label": "Budget Lock Status",
-      "options": "Not Locked\nLocked\nReleased\nConsumed\nOverrun Allowed",
+      "label": "Budget Lock",
+      "options": "\nNot Locked\nLocked\nReleased\nConsumed\nOverrun Allowed",
       "read_only": 1
     },
     {
+      "default": "Draft",
       "fieldname": "budget_workflow_state",
       "fieldtype": "Select",
-      "label": "Budget Workflow State",
+      "label": "Budget State",
       "options": "Draft\nSubmitted\nUnder Review\nApproved\nRejected\nCompleted",
-      "default": "Draft",
       "read_only": 1
     },
     {
       "fieldname": "approvers_section",
       "fieldtype": "Section Break",
-      "label": "Daftar Approver"
+      "label": "Approvers"
     },
     {
       "fieldname": "level_1_user",
       "fieldtype": "Link",
-      "label": "Level 1 - Approver",
+      "label": "Level 1",
       "options": "User",
       "read_only": 1
     },
     {
+      "allow_on_submit": 1,
       "fieldname": "level_1_approved_on",
       "fieldtype": "Datetime",
-      "label": "Level 1 - Approved On",
-      "read_only": 1
-    },
-    {
-      "fieldname": "level_1_rejected_on",
-      "fieldtype": "Datetime",
-      "label": "Level 1 - Rejected On",
+      "label": "Approved On",
       "read_only": 1
     },
     {
@@ -607,20 +551,15 @@
     {
       "fieldname": "level_2_user",
       "fieldtype": "Link",
-      "label": "Level 2 - Approver",
+      "label": "Level 2",
       "options": "User",
       "read_only": 1
     },
     {
+      "allow_on_submit": 1,
       "fieldname": "level_2_approved_on",
       "fieldtype": "Datetime",
-      "label": "Level 2 - Approved On",
-      "read_only": 1
-    },
-    {
-      "fieldname": "level_2_rejected_on",
-      "fieldtype": "Datetime",
-      "label": "Level 2 - Rejected On",
+      "label": "Approved On",
       "read_only": 1
     },
     {
@@ -630,32 +569,42 @@
     {
       "fieldname": "level_3_user",
       "fieldtype": "Link",
-      "label": "Level 3 - Approver",
+      "label": "Level 3",
       "options": "User",
       "read_only": 1
     },
     {
+      "allow_on_submit": 1,
       "fieldname": "level_3_approved_on",
       "fieldtype": "Datetime",
-      "label": "Level 3 - Approved On",
-      "read_only": 1
-    },
-    {
-      "fieldname": "level_3_rejected_on",
-      "fieldtype": "Datetime",
-      "label": "Level 3 - Rejected On",
+      "label": "Approved On",
       "read_only": 1
     },
 
     {
-      "fieldname": "tab_integration",
+      "fieldname": "tab_docs",
       "fieldtype": "Tab Break",
-      "label": "Dokumen Terkait"
+      "label": "Documents"
     },
     {
-      "fieldname": "integration_section",
+      "fieldname": "attachments_section",
       "fieldtype": "Section Break",
-      "label": "Link Dokumen"
+      "label": "Attachments"
+    },
+    {
+      "fieldname": "attachment",
+      "fieldtype": "Attach",
+      "label": "Supporting Document"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Small Text",
+      "label": "Notes"
+    },
+    {
+      "fieldname": "links_section",
+      "fieldtype": "Section Break",
+      "label": "Linked Documents"
     },
     {
       "fieldname": "linked_purchase_invoice",
@@ -667,12 +616,12 @@
     {
       "fieldname": "pending_purchase_invoice",
       "fieldtype": "Link",
-      "label": "Purchase Invoice (Draft)",
+      "label": "Draft PI",
       "options": "Purchase Invoice",
       "read_only": 1
     },
     {
-      "fieldname": "column_break_integration",
+      "fieldname": "column_break_links",
       "fieldtype": "Column Break"
     },
     {
@@ -685,21 +634,32 @@
     {
       "fieldname": "internal_charge_request",
       "fieldtype": "Link",
-      "label": "Internal Charge Request",
+      "label": "Internal Charge",
       "options": "Internal Charge Request",
+      "read_only": 1,
+      "depends_on": "eval:doc.allocation_mode=='Allocated via Internal Charge'",
+      "bold": 1,
+      "description": "Link to Internal Charge Request for budget allocation across cost centers"
+    },
+
+    {
+      "fieldname": "hidden_section",
+      "fieldtype": "Section Break",
+      "hidden": 1
+    },
+    {
+      "fieldname": "total_expense",
+      "fieldtype": "Currency",
+      "hidden": 1,
+      "label": "Total Expense",
       "read_only": 1
     },
     {
-      "fieldname": "prevent_pi_if_not_ready",
-      "fieldtype": "Check",
-      "label": "Prevent PI if Not Ready",
-      "read_only": 1,
-      "hidden": 1
-    },
-    {
-      "fieldname": "section_break_hidden",
-      "fieldtype": "Section Break",
-      "hidden": 1
+      "fieldname": "total_ppnbm",
+      "fieldtype": "Currency",
+      "hidden": 1,
+      "label": "Total PPnBM",
+      "read_only": 1
     },
     {
       "allow_on_submit": 1,
@@ -729,7 +689,6 @@
     },
     {
       "allow_on_submit": 1,
-      "default": "",
       "fieldname": "pending_edit_allowed_fields",
       "fieldtype": "Small Text",
       "hidden": 1,
@@ -737,19 +696,50 @@
       "read_only": 1
     },
     {
+      "fieldname": "prevent_pi_if_not_ready",
+      "fieldtype": "Check",
+      "hidden": 1,
+      "label": "Prevent PI",
+      "read_only": 1
+    },
+    {
       "fieldname": "created_by_user",
       "fieldtype": "Link",
+      "hidden": 1,
       "label": "Created By",
       "options": "User",
-      "read_only": 1,
-      "no_copy": 1
+      "read_only": 1
     },
     {
       "fieldname": "submit_on",
       "fieldtype": "Datetime",
+      "hidden": 1,
       "label": "Submit On",
-      "read_only": 1,
-      "no_copy": 1
+      "read_only": 1
+    },
+    {
+      "allow_on_submit": 1,
+      "fieldname": "level_1_rejected_on",
+      "fieldtype": "Datetime",
+      "hidden": 1,
+      "label": "L1 Rejected On",
+      "read_only": 1
+    },
+    {
+      "allow_on_submit": 1,
+      "fieldname": "level_2_rejected_on",
+      "fieldtype": "Datetime",
+      "hidden": 1,
+      "label": "L2 Rejected On",
+      "read_only": 1
+    },
+    {
+      "allow_on_submit": 1,
+      "fieldname": "level_3_rejected_on",
+      "fieldtype": "Datetime",
+      "hidden": 1,
+      "label": "L3 Rejected On",
+      "read_only": 1
     }
   ],
   "index_web_pages_for_search": 1,

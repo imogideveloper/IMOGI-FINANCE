@@ -8,77 +8,97 @@
   "engine": "InnoDB",
   "field_order": [
     "expense_account",
-    "is_deferred_expense",
-    "prepaid_account",
-    "deferred_start_date",
-    "deferred_periods",
+    "description",
     "amount",
+    "column_break_item",
     "is_pph_applicable",
     "pph_base_amount",
-    "description"
+    "is_deferred_expense",
+    "deferred_section",
+    "prepaid_account",
+    "deferred_start_date",
+    "deferred_periods"
   ],
   "fields": [
     {
       "fieldname": "expense_account",
       "fieldtype": "Link",
       "in_list_view": 1,
-      "label": "Expense Account",
+      "label": "Account",
       "options": "Account",
-      "reqd": 1
+      "reqd": 1,
+      "columns": 3
     },
     {
-      "default": "0",
-      "fieldname": "is_deferred_expense",
-      "fieldtype": "Check",
+      "fieldname": "description",
+      "fieldtype": "Data",
       "in_list_view": 1,
-      "label": "Deferred Expense"
-    },
-    {
-      "depends_on": "eval:doc.is_deferred_expense==1",
-      "fieldname": "prepaid_account",
-      "fieldtype": "Link",
-      "label": "Prepaid Account",
-      "mandatory_depends_on": "eval:doc.is_deferred_expense==1",
-      "options": "Account"
-    },
-    {
-      "depends_on": "eval:doc.is_deferred_expense==1",
-      "fieldname": "deferred_start_date",
-      "fieldtype": "Date",
-      "label": "Deferred Start Date",
-      "mandatory_depends_on": "eval:doc.is_deferred_expense==1"
-    },
-    {
-      "depends_on": "eval:doc.is_deferred_expense==1",
-      "fieldname": "deferred_periods",
-      "fieldtype": "Int",
-      "label": "Deferred Periods",
-      "mandatory_depends_on": "eval:doc.is_deferred_expense==1"
+      "label": "Description",
+      "columns": 3
     },
     {
       "fieldname": "amount",
       "fieldtype": "Currency",
       "in_list_view": 1,
       "label": "Amount",
-      "reqd": 1
+      "reqd": 1,
+      "columns": 2
+    },
+    {
+      "fieldname": "column_break_item",
+      "fieldtype": "Column Break"
     },
     {
       "default": "0",
       "fieldname": "is_pph_applicable",
       "fieldtype": "Check",
       "in_list_view": 1,
-      "label": "Apply PPh"
+      "label": "PPh",
+      "columns": 1
     },
     {
+      "depends_on": "is_pph_applicable",
       "fieldname": "pph_base_amount",
       "fieldtype": "Currency",
-      "label": "PPh Base Amount"
+      "label": "PPh Base"
     },
     {
-      "fieldname": "description",
-      "fieldtype": "Small Text",
+      "default": "0",
+      "fieldname": "is_deferred_expense",
+      "fieldtype": "Check",
       "in_list_view": 1,
-      "label": "Description"
+      "label": "Deferred",
+      "columns": 1
+    },
+    {
+      "collapsible": 1,
+      "collapsible_depends_on": "eval:!doc.is_deferred_expense",
+      "depends_on": "is_deferred_expense",
+      "fieldname": "deferred_section",
+      "fieldtype": "Section Break",
+      "label": "Deferred Settings"
+    },
+    {
+      "depends_on": "is_deferred_expense",
+      "fieldname": "prepaid_account",
+      "fieldtype": "Link",
+      "label": "Prepaid Account",
+      "mandatory_depends_on": "is_deferred_expense",
+      "options": "Account"
+    },
+    {
+      "depends_on": "is_deferred_expense",
+      "fieldname": "deferred_start_date",
+      "fieldtype": "Date",
+      "label": "Start Date",
+      "mandatory_depends_on": "is_deferred_expense"
+    },
+    {
+      "depends_on": "is_deferred_expense",
+      "fieldname": "deferred_periods",
+      "fieldtype": "Int",
+      "label": "Periods",
+      "mandatory_depends_on": "is_deferred_expense"
     }
   ],
   "index_web_pages_for_search": 1,
