@@ -72,22 +72,23 @@ def record_approval_timestamp(doc, level: int):
 
 
 def advance_approval_level(doc):
-    """Advance to next approval level."""
-    current_level = getattr(doc, "current_approval_level", 0) or 0
-    next_level = current_level + 1
+    """Advance to next approval level or mark as approved."""
+    current_level = getattr(doc, "current_approval_level", 0) or 1
     
     # Record approval timestamp for current level
-    if current_level > 0:
-        record_approval_timestamp(doc, current_level)
+    record_approval_timestamp(doc, current_level)
     
     # Check if there's a next level
-    next_user = getattr(doc, f"level_{next_level + 1}_user", None)
+    next_level = current_level + 1
+    next_user = getattr(doc, f"level_{next_level}_user", None)
+    
     if next_user:
-        doc.current_approval_level = next_level + 1
+        # Move to next level
+        doc.current_approval_level = next_level
         doc.workflow_state = "Pending Approval"
+        doc.status = "Pending Approval"
     else:
         # No more levels, mark as approved
-        record_approval_timestamp(doc, next_level)
         doc.current_approval_level = 0
         doc.workflow_state = "Approved"
         doc.status = "Approved"
