@@ -76,12 +76,19 @@ window.check_budget_dimensions = function() {
     console.log('Cost Center:', doc.cost_center);
     console.log('Project:', doc.project);
     console.log('Branch:', doc.branch);
-    console.log('Company:', doc.company);
+    console.log('Company:', doc.company || '⚠️ NOT SET - will resolve from Cost Center');
+    console.log('Fiscal Year:', doc.fiscal_year || '⚠️ NOT SET - will resolve from defaults');
     console.log('Status:', doc.status);
     console.log('Workflow State:', doc.workflow_state);
     console.log('Allocation Mode:', doc.allocation_mode);
     console.log('Budget Lock Status:', doc.budget_lock_status);
     console.log('Budget Workflow State:', doc.budget_workflow_state);
+    
+    // Check fiscal year resolution
+    if (!doc.fiscal_year && !doc.company) {
+        console.warn('\n⚠️ WARNING: Both fiscal_year and company are not set!');
+        console.log('Run check_fiscal_year() to diagnose');
+    }
     
     console.log('\n=== Items ===');
     if (doc.items && doc.items.length > 0) {
@@ -233,20 +240,197 @@ window.debug_budget_control = function(expense_request_name) {
 // 7. HELPER: RELOAD DOCUMENT
 // ============================================================================
 window.reload_doc = function() {
-    if (cur_frm) {
-        cur_frm.reload_doc();
-        console.log('✅ Document reloaded');
-    }
+    if (cur_FISCAL YEAR
+// ============================================================================
+window.check_fiscal_year = function() {
+    console.log('=== Checking Fiscal Year Configuration ===\n');
+    
+    // Check System Settings
+    frappe.db.get_single_value('System Settings', 'current_fiscal_year')
+        .then(fy => {
+            console.log('System Settings > Current Fiscal Year:', fy || '❌ NOT SET');
+            return frappe.call({
+                method: 'frappe.client.get_value',
+                args: {
+                    doctype: 'User',
+                    filters: { name: frappe.session.user },
+                    fieldname: ['defaults']
+                }
+            });
+        })
+        .then(r => {
+            console.log('User Defaults for', frappe.session.user + ':');
+            if (r.message && r.message.defaults) {
+                try {
+                    const defaults = JSON.parse(r.message.defaults);
+                    console.log('  Fiscal Year:', defaults.fiscal_year || '❌ NOT SET');
+                } catch(e) {
+                    console.log('  ❌ No defaults set');
+                }
+            } else {
+                console.log('  ❌ No defaults set');
+            }
+            
+            // List all fiscal years
+   11        return frappe.call({
+                method: 'frappe.client.get_list',
+                args: {
+                    doctype: 'Fiscal Year',
+                    fields: ['name', 'year_start_date', 'year_end_date', 'disabled'],
+                    order_by: 'year_start_date desc',
+                    limit: 5
+                }
+            });
+        })
+        .then(r => {
+            console.log('\nAvailable Fiscal Years:');
+            if (r.message && r.message.length > 0) {
+                console.table(r.message);
+            } else {
+                console.log('❌ No Fiscal Years found!');
+            }
+            
+            console.log('\n💡 To fix:');
+            console.log('Option 1: Set default in System Settings');
+            console.log('  Setup > System Settings > Current Fiscal Year');
+            console.log('');
+            console.log('Option 2: Set for your user');
+            console.log('  set_fiscal_year("2026")');
+        })
+        .catch(err => {
+            console.error('Error:', err);
+        });
 }
 
 // ============================================================================
-// 8. CHECK IF HOOKS ARE WORKING
+// 9. SET FISCAL YEAR FOR CURRENT USER
+// ============================================================================
+window.set_fiscal_year = function(fiscal_year) {
+    if (!fiscal_year) {
+        console.error('Please provide fiscal year name, e.g., set_fiscal_year("2026")');
+        return;
+    }
+    
+    console.log('🔄 Setting fiscal_year to:', fiscal_year);
+    
+    frappe.call({
+        method: 'frappe.defaults.set_user_default',
+        args: {
+            key: 'fiscal_year',
+            value: fiscal_year
+        },
+        callback: function(r) {
+            if (!r.exc) {
+                console.log('✅ Fiscal year set successfully!');
+                console.log('Now try: trigger_reserve_budget()');
+            } else {
+                console.error('❌ Failed to set fiscal year');
+            }
+        }
+    });
+}
+
+// ============================================================================
+// 10. CHECK IF HOOKS ARE WORKING
 // ============================================================================
 window.check_hooks = function() {
     console.log('=== Checking Event Hooks ===');
     
     frappe.call({
         method: 'frappe.client.get_list',
+        args: {
+            doctype: 'Error Log',
+            filters: {
+                error: ['like', '%handle_budget_workflow%']
+            },
+            fields: ['name', 'creation', 'error'],
+            order_by: 'creation desc',
+            limit: 5
+        },
+        callback: function(r) {
+            if (r.message && r.message.length > 0) {
+                console.log('⚠️ Found errors related to budget workflow:');
+                console.table(r.message);
+            } else {
+                console.log('✅ No errors found for budget workflow hooks');
+            }
+        }
+    });
+    
+    console.log('\n💡 To verify hooks are active:');
+    console.log('1. Edit and save ER → Check browser console for log messages');
+    console.log('2. Or check: Setup > System Console > View Logs');
+}
+
+// ============================================================================
+// 11. SIMULATE APPROVAL (FOR TESTING)
+// ============================================================================
+window.simulate_approval = function() {
+    if (!cur_frm || cur_frm.doctype !== 'Expense Request') {
+        console.error('Please open an Expense Request first!');
+        return;
+    }
+    
+    console.log('⚠️ SIMULATING APPROVAL WORKFLOW');
+    console.log('This will manually call handle_budget_workflow');
+    console.log('');
+    
+    const doc = cur_frm.doc;
+    
+    if (doc.workflow_state !== 'Approved') {
+        console.error('❌ Document must be in Approved state first!');
+        console.log('Current state:', doc.workflow_state);
+        return;
+    }
+    
+    console.log('🔄 Calling handle_budget_workflow...');
+    
+    frappe.call({
+        method: 'imogi_finance.events.expense_request.handle_budget_workflow',
+        args: {
+            doc: doc,
+            method: 'on_update_after_submit'
+        },
+        freeze: true,
+        callback: function(r) {
+            console.log('✅ Hook called!');
+            if (r.message) {
+                console.log('Result:', r.message);
+            }
+            
+            setTimeout(() => {
+                cur_frm.reload_doc();
+                window.check_bce_exists(doc.name);
+            }, 1000);
+        },
+        error: function(r) {
+            console.error('❌ Error:', r);
+        }
+    });
+}
+
+// ============================================================================
+// INSTRUCTIONS
+// ============================================================================
+console.log('==============================================');
+console.log('Budget Control Debug Commands Loaded!');
+console.log('==============================================');
+console.log('');
+console.log('Available Commands:');
+console.log('1. check_bce_exists()         - Cek apakah Budget Control Entry sudah dibuat');
+console.log('Quick Start:');
+console.log('1. Buka Expense Request yang sudah Approved');
+console.log('2. Run: debug_budget_control()');
+console.log('3. If fiscal year error: check_fiscal_year() then set_fiscal_year("2026")');
+console.log('4. Try again: trigger_reserve_budget()');
+console.log('');
+console.log('Manual Trigger:');
+console.log('trigger_reserve_budget()');
+console.log('');
+console.log('Fix Fiscal Year Error:');
+console.log('1. check_fiscal_year()');
+console.log('2. set_fiscal_year("2026")');
+console.log('3. trigger_reserve_budget(
         args: {
             doctype: 'Error Log',
             filters: {
