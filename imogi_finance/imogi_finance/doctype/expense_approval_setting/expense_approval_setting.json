@@ -21,7 +21,8 @@
     {
       "fieldname": "basic_info_section",
       "fieldtype": "Section Break",
-      "label": "📋 Informasi Dasar"
+      "label": "Basic Information",
+      "description": "Cost center and active status"
     },
     {
       "fieldname": "cost_center",
@@ -31,7 +32,7 @@
       "reqd": 1,
       "in_list_view": 1,
       "in_standard_filter": 1,
-      "description": "Pilih Cost Center yang akan menggunakan setting approval ini"
+      "description": "Cost center that will use this approval configuration"
     },
     {
       "fieldname": "column_break_basic",
@@ -41,36 +42,37 @@
       "default": "1",
       "fieldname": "is_active",
       "fieldtype": "Check",
-      "label": "Is Active",
+      "label": "Active",
       "in_list_view": 1,
       "bold": 1,
-      "description": "Hanya satu setting aktif per Cost Center"
+      "description": "Only one active setting per cost center"
     },
     {
       "fieldname": "section_break_info",
       "fieldtype": "Section Break",
       "collapsible": 1,
       "collapsible_depends_on": "eval:1",
-      "label": "ℹ️ Panduan Penggunaan"
+      "label": "Usage Guide",
+      "description": "How the approval system works"
     },
     {
       "fieldname": "info_html",
       "fieldtype": "HTML",
-      "options": "<div class=\"alert alert-info\" style=\"margin-bottom: 0;\">\n<h5>📖 Cara Kerja Approval</h5>\n<ol style=\"margin-bottom: 10px;\">\n<li><strong>Matching Account:</strong> Sistem mencari line dengan Expense Account yang cocok</li>\n<li><strong>Fallback Default:</strong> Jika tidak ada yang cocok, gunakan line dengan \"Apply to All Accounts\"</li>\n<li><strong>Filter by Amount:</strong> Setiap level hanya aktif jika amount dalam range Min-Max level tersebut</li>\n</ol>\n<h5>💡 Tips Setup</h5>\n<ul style=\"margin-bottom: 0;\">\n<li>Buat minimal 1 line dengan <strong>Apply to All Accounts</strong> sebagai fallback</li>\n<li>Untuk account khusus, buat line terpisah dengan Expense Account spesifik</li>\n<li>Jika tidak ada level yang match dengan amount, request akan <strong>auto-approve</strong></li>\n</ul>\n</div>"
+      "options": "<div class=\"alert alert-info\" style=\"margin-bottom: 0; border-left: 4px solid #17a2b8;\">\n<h5 style=\"margin-top: 0; color: #0c5460;\">How Approval Routing Works</h5>\n<ol style=\"margin-bottom: 12px; padding-left: 20px;\">\n<li><strong>Account Matching:</strong> System finds approval line matching the expense account</li>\n<li><strong>Default Fallback:</strong> If no match, uses line with \"Apply to All Accounts\"</li>\n<li><strong>Amount Filter:</strong> Each level activates only if amount falls within Min-Max range</li>\n</ol>\n<h5 style=\"color: #0c5460;\">Setup Best Practices</h5>\n<ul style=\"margin-bottom: 0; padding-left: 20px;\">\n<li>Create at least one line with <strong>Apply to All Accounts</strong> as fallback</li>\n<li>For specific accounts, create separate lines with dedicated expense accounts</li>\n<li>If no level matches the amount, request will <strong>auto-approve</strong></li>\n</ul>\n</div>"
     },
     {
       "fieldname": "approval_lines_section",
       "fieldtype": "Section Break",
-      "label": "✅ Approval Lines",
-      "description": "Definisikan aturan approval berdasarkan expense account dan range amount"
+      "label": "Approval Rules",
+      "description": "Define approval routing based on expense account and amount range"
     },
     {
       "fieldname": "expense_approval_lines",
       "fieldtype": "Table",
-      "label": "Daftar Approval Lines",
+      "label": "Approval Lines",
       "options": "Expense Approval Line",
       "reqd": 1,
-      "description": "Tambahkan minimal 1 line dengan 'Apply to All Accounts' sebagai default"
+      "description": "Add at least one line with \"Apply to All Accounts\" as default"
     }
   ],
   "index_web_pages_for_search": 1,
@@ -109,5 +111,6 @@
   "sort_field": "modified",
   "sort_order": "DESC",
   "track_changes": 1,
-  "title_field": "cost_center"
+  "title_field": "cost_center",
+  "description": "Configure approval rules for Expense Requests based on cost center and expense account. System matches expense account and amount range to determine appropriate approvers."
 }

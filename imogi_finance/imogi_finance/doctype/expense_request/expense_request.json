@@ -3,6 +3,7 @@
   "allow_rename": 0,
   "autoname": "format:ER-{YYYY}-{######}",
   "creation": "",
+  "description": "Operational expense request with multi-level approval workflow and automated budget control. Supports VAT/WHT tax management, invoice OCR integration, and flexible cost allocation.",
   "docstatus": 0,
   "doctype": "DocType",
   "editable_grid": 0,
@@ -14,7 +15,6 @@
     "column_break_header",
     "status",
     "workflow_state",
-
     "tab_details",
     "supplier_section",
     "supplier",
@@ -22,14 +22,12 @@
     "column_break_supplier",
     "supplier_invoice_date",
     "currency",
-
     "allocation_section",
     "cost_center",
     "project",
     "column_break_allocation",
     "branch",
     "allocation_mode",
-
     "tab_items",
     "items",
     "totals_section",
@@ -40,7 +38,6 @@
     "total_pph",
     "total_amount",
     "items_totals_html",
-
     "tab_taxes",
     "ppn_section",
     "is_ppn_applicable",
@@ -49,13 +46,11 @@
     "tax_invoice_number",
     "tax_invoice_date",
     "tax_invoice_attachment",
-
     "pph_section",
     "is_pph_applicable",
     "pph_type",
     "column_break_pph",
     "pph_base_amount",
-
     "ocr_section",
     "ti_tax_invoice_upload",
     "ti_verification_status",
@@ -72,14 +67,12 @@
     "ti_verification_notes",
     "ti_dpp_variance",
     "ti_ppn_variance",
-
     "tab_approval",
     "approval_section",
     "current_approval_level",
     "column_break_approval",
     "budget_lock_status",
     "budget_workflow_state",
-
     "approvers_section",
     "level_1_user",
     "level_1_approved_on",
@@ -89,19 +82,16 @@
     "column_break_approver_3",
     "level_3_user",
     "level_3_approved_on",
-
     "tab_docs",
     "attachments_section",
     "attachment",
     "description",
-
     "links_section",
     "linked_purchase_invoice",
     "pending_purchase_invoice",
     "column_break_links",
     "linked_payment_entry",
     "internal_charge_request",
-
     "hidden_section",
     "total_expense",
     "total_ppnbm",
@@ -162,7 +152,6 @@
       "options": "Workflow State",
       "read_only": 1
     },
-
     {
       "fieldname": "tab_details",
       "fieldtype": "Tab Break",
@@ -171,7 +160,8 @@
     {
       "fieldname": "supplier_section",
       "fieldtype": "Section Break",
-      "label": "Supplier"
+      "label": "Supplier Information",
+      "description": "Vendor details and invoice reference"
     },
     {
       "fieldname": "supplier",
@@ -179,12 +169,14 @@
       "in_standard_filter": 1,
       "label": "Supplier",
       "options": "Supplier",
-      "reqd": 1
+      "reqd": 1,
+      "description": "Select the vendor who issued the invoice"
     },
     {
       "fieldname": "supplier_invoice_no",
       "fieldtype": "Data",
-      "label": "Invoice No"
+      "label": "Invoice Number",
+      "description": "Supplier invoice reference number"
     },
     {
       "fieldname": "column_break_supplier",
@@ -193,7 +185,8 @@
     {
       "fieldname": "supplier_invoice_date",
       "fieldtype": "Date",
-      "label": "Invoice Date"
+      "label": "Invoice Date",
+      "description": "Date on the supplier invoice"
     },
     {
       "default": "IDR",
@@ -206,7 +199,8 @@
     {
       "fieldname": "allocation_section",
       "fieldtype": "Section Break",
-      "label": "Allocation"
+      "label": "Cost Allocation",
+      "description": "Define how costs will be allocated to cost centers and projects"
     },
     {
       "fieldname": "cost_center",
@@ -214,14 +208,16 @@
       "in_standard_filter": 1,
       "label": "Cost Center",
       "options": "Cost Center",
-      "reqd": 1
+      "reqd": 1,
+      "description": "Primary cost center for expense allocation (used in Direct mode)"
     },
     {
       "fieldname": "project",
       "fieldtype": "Link",
       "in_standard_filter": 1,
       "label": "Project",
-      "options": "Project"
+      "options": "Project",
+      "description": "Optional project assignment"
     },
     {
       "fieldname": "column_break_allocation",
@@ -237,13 +233,12 @@
       "default": "Direct",
       "fieldname": "allocation_mode",
       "fieldtype": "Select",
-      "label": "Budget Allocation Mode",
+      "label": "Allocation Mode",
       "options": "Direct\nAllocated via Internal Charge",
       "in_list_view": 1,
       "in_standard_filter": 1,
-      "description": "Direct: allocate to source cost center. Internal Charge: split across multiple cost centers"
+      "description": "Direct: allocate to primary cost center. Internal Charge: split across multiple cost centers"
     },
-
     {
       "fieldname": "tab_items",
       "fieldtype": "Tab Break",
@@ -252,14 +247,16 @@
     {
       "fieldname": "items",
       "fieldtype": "Table",
-      "label": "Items",
+      "label": "Expense Items",
       "options": "Expense Request Item",
-      "reqd": 1
+      "reqd": 1,
+      "description": "Line items with account and amount details"
     },
     {
       "fieldname": "totals_section",
       "fieldtype": "Section Break",
-      "label": "Summary"
+      "label": "Summary",
+      "description": "Total amounts including taxes"
     },
     {
       "bold": 1,
@@ -307,7 +304,6 @@
       "fieldname": "items_totals_html",
       "fieldtype": "HTML"
     },
-
     {
       "fieldname": "tab_taxes",
       "fieldtype": "Tab Break",
@@ -316,13 +312,15 @@
     {
       "fieldname": "ppn_section",
       "fieldtype": "Section Break",
-      "label": "PPN"
+      "label": "Value Added Tax (VAT)",
+      "description": "VAT configuration and tax invoice details"
     },
     {
       "default": "0",
       "fieldname": "is_ppn_applicable",
       "fieldtype": "Check",
-      "label": "Apply PPN"
+      "label": "Apply VAT",
+      "description": "Enable if this transaction is subject to VAT"
     },
     {
       "depends_on": "is_ppn_applicable",
@@ -357,13 +355,15 @@
     {
       "fieldname": "pph_section",
       "fieldtype": "Section Break",
-      "label": "PPh"
+      "label": "Withholding Tax (WHT)",
+      "description": "Income tax withholding configuration"
     },
     {
       "default": "0",
       "fieldname": "is_pph_applicable",
       "fieldtype": "Check",
-      "label": "Apply PPh"
+      "label": "Apply WHT",
+      "description": "Enable if this transaction requires withholding tax"
     },
     {
       "depends_on": "is_pph_applicable",
@@ -390,7 +390,8 @@
       "depends_on": "is_ppn_applicable",
       "fieldname": "ocr_section",
       "fieldtype": "Section Break",
-      "label": "OCR Data"
+      "label": "OCR Tax Invoice Data",
+      "description": "Automatically scanned tax invoice information (if OCR enabled)"
     },
     {
       "allow_on_submit": 1,
@@ -510,7 +511,6 @@
       "read_only": 1,
       "description": "Difference between OCR PPN and Expected PPN (OCR - Expected). Can be negative or positive."
     },
-
     {
       "fieldname": "tab_approval",
       "fieldtype": "Tab Break",
@@ -519,7 +519,8 @@
     {
       "fieldname": "approval_section",
       "fieldtype": "Section Break",
-      "label": "Status"
+      "label": "Approval & Budget Status",
+      "description": "Current approval status and budget control information"
     },
     {
       "allow_on_submit": 1,
@@ -551,7 +552,8 @@
     {
       "fieldname": "approvers_section",
       "fieldtype": "Section Break",
-      "label": "Approvers"
+      "label": "Approval History",
+      "description": "Approvers and approval timestamps for each level"
     },
     {
       "fieldname": "level_1_user",
@@ -603,7 +605,6 @@
       "label": "Approved On",
       "read_only": 1
     },
-
     {
       "fieldname": "tab_docs",
       "fieldtype": "Tab Break",
@@ -612,7 +613,8 @@
     {
       "fieldname": "attachments_section",
       "fieldtype": "Section Break",
-      "label": "Attachments"
+      "label": "Attachments",
+      "description": "Upload supporting documents (invoice, receipt, contract, etc.)"
     },
     {
       "fieldname": "attachment",
@@ -627,7 +629,8 @@
     {
       "fieldname": "links_section",
       "fieldtype": "Section Break",
-      "label": "Linked Documents"
+      "label": "Related Documents",
+      "description": "Links to documents created from this expense request"
     },
     {
       "fieldname": "linked_purchase_invoice",
@@ -663,9 +666,8 @@
       "depends_on": "eval:doc.allocation_mode=='Allocated via Internal Charge'",
       "bold": 1,
       "in_list_view": 1,
-      "description": "Link to Internal Charge Request for budget allocation across cost centers"
+      "description": "Link to Internal Charge Request for multi-cost center budget allocation"
     },
-
     {
       "fieldname": "hidden_section",
       "fieldtype": "Section Break",

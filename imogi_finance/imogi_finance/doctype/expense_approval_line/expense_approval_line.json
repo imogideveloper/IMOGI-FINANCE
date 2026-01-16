@@ -31,7 +31,8 @@
     {
       "fieldname": "account_section",
       "fieldtype": "Section Break",
-      "label": "🎯 Target Account"
+      "label": "Target Account",
+      "description": "Specify which account this rule applies to"
     },
     {
       "fieldname": "expense_account",
@@ -40,7 +41,7 @@
       "options": "Account",
       "in_list_view": 1,
       "columns": 3,
-      "description": "Pilih expense account spesifik, atau kosongkan jika Apply to All"
+      "description": "Select specific expense account, or leave blank if \"Apply to All\""
     },
     {
       "fieldname": "column_break_account",
@@ -54,21 +55,22 @@
       "in_list_view": 1,
       "columns": 1,
       "bold": 1,
-      "description": "Centang sebagai fallback untuk account yang tidak didefinisikan"
+      "description": "Enable as fallback for accounts not explicitly defined"
     },
     {
       "fieldname": "level_1_section",
       "fieldtype": "Section Break",
-      "label": "👤 Level 1 - First Approver"
+      "label": "Level 1 - First Approver",
+      "description": "Primary approval level"
     },
     {
       "fieldname": "level_1_user",
       "fieldtype": "Link",
-      "label": "Approver User",
+      "label": "Approver",
       "options": "User",
       "in_list_view": 1,
       "columns": 3,
-      "description": "User yang dapat approve di level ini"
+      "description": "User authorized to approve at this level"
     },
     {
       "fieldname": "column_break_level_1",
@@ -77,33 +79,34 @@
     {
       "fieldname": "level_1_min_amount",
       "fieldtype": "Currency",
-      "label": "Min Amount",
+      "label": "Minimum Amount",
       "default": "0",
       "in_list_view": 1,
       "columns": 1,
-      "description": "Level aktif jika amount ≥ nilai ini"
+      "description": "Level activates if expense amount ≥ this value"
     },
     {
       "fieldname": "level_1_max_amount",
       "fieldtype": "Currency",
-      "label": "Max Amount",
+      "label": "Maximum Amount",
       "in_list_view": 1,
       "columns": 1,
-      "description": "Level aktif jika amount ≤ nilai ini"
+      "description": "Level activates if expense amount ≤ this value"
     },
     {
       "fieldname": "level_2_section",
       "fieldtype": "Section Break",
-      "label": "👥 Level 2 - Second Approver",
+      "label": "Level 2 - Second Approver",
       "collapsible": 1,
-      "collapsible_depends_on": "eval:!doc.level_2_user"
+      "collapsible_depends_on": "eval:!doc.level_2_user",
+      "description": "Secondary approval level"
     },
     {
       "fieldname": "level_2_user",
       "fieldtype": "Link",
-      "label": "Approver User",
+      "label": "Approver",
       "options": "User",
-      "description": "User yang dapat approve di level ini"
+      "description": "User authorized to approve at this level"
     },
     {
       "fieldname": "column_break_level_2",
@@ -112,28 +115,29 @@
     {
       "fieldname": "level_2_min_amount",
       "fieldtype": "Currency",
-      "label": "Min Amount",
-      "description": "Level aktif jika amount ≥ nilai ini"
+      "label": "Minimum Amount",
+      "description": "Level activates if expense amount ≥ this value"
     },
     {
       "fieldname": "level_2_max_amount",
       "fieldtype": "Currency",
-      "label": "Max Amount",
-      "description": "Level aktif jika amount ≤ nilai ini"
+      "label": "Maximum Amount",
+      "description": "Level activates if expense amount ≤ this value"
     },
     {
       "fieldname": "level_3_section",
       "fieldtype": "Section Break",
-      "label": "👑 Level 3 - Final Approver",
+      "label": "Level 3 - Final Approver",
       "collapsible": 1,
-      "collapsible_depends_on": "eval:!doc.level_3_user"
+      "collapsible_depends_on": "eval:!doc.level_3_user",
+      "description": "Highest approval level"
     },
     {
       "fieldname": "level_3_user",
       "fieldtype": "Link",
-      "label": "Approver User",
+      "label": "Approver",
       "options": "User",
-      "description": "User yang dapat approve di level ini"
+      "description": "User authorized to approve at this level"
     },
     {
       "fieldname": "column_break_level_3",
@@ -142,14 +146,14 @@
     {
       "fieldname": "level_3_min_amount",
       "fieldtype": "Currency",
-      "label": "Min Amount",
-      "description": "Level aktif jika amount ≥ nilai ini"
+      "label": "Minimum Amount",
+      "description": "Level activates if expense amount ≥ this value"
     },
     {
       "fieldname": "level_3_max_amount",
       "fieldtype": "Currency",
-      "label": "Max Amount",
-      "description": "Level aktif jika amount ≤ nilai ini"
+      "label": "Maximum Amount",
+      "description": "Level activates if expense amount ≤ this value"
     }
   ],
   "index_web_pages_for_search": 1,
@@ -159,5 +163,6 @@
   "naming_rule": "Random",
   "permissions": [],
   "quick_entry": 0,
-  "track_changes": 1
+  "track_changes": 1,
+  "description": "Approval rule configuration for specific expense accounts with multi-level approval based on amount ranges."
 }

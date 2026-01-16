@@ -54,5 +54,6 @@
     }
   ],
   "quick_entry": 0,
-  "track_changes": 1
+  "track_changes": 1,
+  "description": "Global configuration for deferred expense functionality. Define default accounts and amortization rules for prepaid expenses."
 }

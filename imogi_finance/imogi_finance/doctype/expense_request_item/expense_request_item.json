@@ -24,17 +24,19 @@
       "fieldname": "expense_account",
       "fieldtype": "Link",
       "in_list_view": 1,
-      "label": "Account",
+      "label": "Expense Account",
       "options": "Account",
       "reqd": 1,
-      "columns": 3
+      "columns": 3,
+      "description": "Select the appropriate expense account"
     },
     {
       "fieldname": "description",
       "fieldtype": "Data",
       "in_list_view": 1,
       "label": "Description",
-      "columns": 3
+      "columns": 3,
+      "description": "Brief description of the expense item"
     },
     {
       "fieldname": "amount",
@@ -42,7 +44,8 @@
       "in_list_view": 1,
       "label": "Amount",
       "reqd": 1,
-      "columns": 2
+      "columns": 2,
+      "description": "Expense amount before tax"
     },
     {
       "fieldname": "column_break_item",
@@ -53,22 +56,25 @@
       "fieldname": "is_pph_applicable",
       "fieldtype": "Check",
       "in_list_view": 1,
-      "label": "PPh",
-      "columns": 1
+      "label": "Apply WHT",
+      "columns": 1,
+      "description": "Enable if this item is subject to withholding tax"
     },
     {
       "depends_on": "is_pph_applicable",
       "fieldname": "pph_base_amount",
       "fieldtype": "Currency",
-      "label": "PPh Base"
+      "label": "WHT Base",
+      "description": "Withholding tax base amount if different from item amount"
     },
     {
       "default": "0",
       "fieldname": "is_deferred_expense",
       "fieldtype": "Check",
       "in_list_view": 1,
-      "label": "Deferred",
-      "columns": 1
+      "label": "Deferred Expense",
+      "columns": 1,
+      "description": "Enable for prepaid expenses that require amortization"
     },
     {
       "collapsible": 1,
@@ -76,7 +82,8 @@
       "depends_on": "is_deferred_expense",
       "fieldname": "deferred_section",
       "fieldtype": "Section Break",
-      "label": "Deferred Settings"
+      "label": "Deferral Settings",
+      "description": "Configuration for expense amortization"
     },
     {
       "depends_on": "is_deferred_expense",
@@ -84,21 +91,24 @@
       "fieldtype": "Link",
       "label": "Prepaid Account",
       "mandatory_depends_on": "is_deferred_expense",
-      "options": "Account"
+      "options": "Account",
+      "description": "Balance sheet account for deferred expense"
     },
     {
       "depends_on": "is_deferred_expense",
       "fieldname": "deferred_start_date",
       "fieldtype": "Date",
       "label": "Start Date",
-      "mandatory_depends_on": "is_deferred_expense"
+      "mandatory_depends_on": "is_deferred_expense",
+      "description": "First month of amortization"
     },
     {
       "depends_on": "is_deferred_expense",
       "fieldname": "deferred_periods",
       "fieldtype": "Int",
       "label": "Periods",
-      "mandatory_depends_on": "is_deferred_expense"
+      "mandatory_depends_on": "is_deferred_expense",
+      "description": "Number of months to amortize over"
     }
   ],
   "index_web_pages_for_search": 1,
@@ -108,5 +118,6 @@
   "name": "Expense Request Item",
   "permissions": [],
   "quick_entry": 0,
-  "track_changes": 1
+  "track_changes": 1,
+  "description": "Expense line items with deferred expense capability for prepaid costs that require amortization over time."
 }
