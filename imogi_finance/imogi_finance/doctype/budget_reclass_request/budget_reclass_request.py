@@ -67,8 +67,10 @@ class BudgetReclassRequest(Document):
             # Advance approval level and get next state
             next_state = budget_approval.advance_approval_level(self)
             
-            # Set workflow state to guide Frappe workflow engine
-            self.workflow_state = next_state
+            # Force workflow_state to match the next_state
+            if hasattr(self, "db_set"):
+                self.db_set("workflow_state", next_state, update_modified=False)
+                self.db_set("status", next_state, update_modified=False)
             
             # Execute budget reclass only when fully approved
             if next_state == "Approved":
