@@ -95,26 +95,24 @@ def advance_approval_level(doc):
     next_user = getattr(doc, f"level_{next_level}_user", None)
     
     if next_user:
-        # Move to next level - let workflow handle workflow_state
+        # Move to next level
         doc.current_approval_level = next_level
-        doc.status = "Pending Approval"
         
         # Save changes to database
         if hasattr(doc, "db_set"):
             doc.db_set("current_approval_level", next_level)
-            doc.db_set("status", "Pending Approval")
         
+        # Return state to stay at Pending Approval for next level
         return "Pending Approval"
     else:
-        # No more levels, mark as approved - let workflow handle workflow_state
+        # No more levels, mark as approved
         doc.current_approval_level = 0
-        doc.status = "Approved"
         
         # Save changes to database
         if hasattr(doc, "db_set"):
             doc.db_set("current_approval_level", 0)
-            doc.db_set("status", "Approved")
         
+        # Return Approved to move workflow to final state
         return "Approved"
 
 

@@ -63,10 +63,9 @@ class AdditionalBudgetRequest(Document):
             # Advance approval level and get next state
             next_state = budget_approval.advance_approval_level(self)
             
-            # Force workflow_state to match the next_state
+            # Force workflow_state - override_status=1 will auto-sync status field
             if hasattr(self, "db_set"):
                 self.db_set("workflow_state", next_state, update_modified=False)
-                self.db_set("status", next_state, update_modified=False)
             
             # Execute budget supplement only when fully approved
             if next_state == "Approved":
