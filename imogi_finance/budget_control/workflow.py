@@ -406,7 +406,7 @@ def reserve_budget_for_request(expense_request, *, trigger_action: str | None = 
         result = service.check_budget_available(dims, float(amount or 0))
         frappe.logger().info(
             f"reserve_budget_for_request: Budget check for {dims.cost_center}/{dims.account}: "
-            f"amount={amount}, available={result.get('available')}, ok={result.get('ok')}"
+            f"amount={amount}, available={result.available}, ok={result.ok}"
         )
         if not result.ok and not allow_overrun:
             frappe.throw(result.message)
