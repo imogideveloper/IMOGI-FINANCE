@@ -33,10 +33,22 @@ def validate_filters(filters):
         filters = {}
     
     if not filters.get("company"):
-        frappe.throw(_("Company is required"))
+        filters["company"] = frappe.defaults.get_user_default("Company")
+        if not filters["company"]:
+            frappe.throw(_("Please select a Company"))
     
     if not filters.get("fiscal_year"):
-        frappe.throw(_("Fiscal Year is required"))
+        # Try to get current fiscal year
+        try:
+            from erpnext.accounts.utils import get_fiscal_year
+            fiscal_year = get_fiscal_year(date=frappe.utils.today(), company=filters["company"])
+            if fiscal_year:
+                filters["fiscal_year"] = fiscal_year[0]
+        except:
+            pass
+        
+        if not filters.get("fiscal_year"):
+            frappe.throw(_("Please select a Fiscal Year"))
 
 
 def get_columns():
