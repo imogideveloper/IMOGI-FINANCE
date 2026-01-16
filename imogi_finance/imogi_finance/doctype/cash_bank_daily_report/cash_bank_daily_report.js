@@ -22,6 +22,9 @@ frappe.ui.form.on('Cash Bank Daily Report', {
       });
     }
 
+    // Show mode indicator
+    show_report_mode_indicator(frm);
+
     // Render read-only preview from snapshot_json
     render_daily_report_preview(frm);
   },
@@ -29,13 +32,40 @@ frappe.ui.form.on('Cash Bank Daily Report', {
     if (frm.doc.bank_account && frm.doc.cash_account) {
       frm.set_value('cash_account', null);
     }
+    show_report_mode_indicator(frm);
   },
   cash_account(frm) {
     if (frm.doc.cash_account && frm.doc.bank_account) {
       frm.set_value('bank_account', null);
     }
+    show_report_mode_indicator(frm);
   },
 });
+
+function show_report_mode_indicator(frm) {
+  if (!frm.dashboard) return;
+  
+  frm.dashboard.clear_headline();
+  
+  if (frm.doc.cash_account) {
+    frm.dashboard.set_headline_alert(
+      __('Mode: GL Entry (Cash Ledger)') + ' — ' + 
+      __('Fetching transactions directly from General Ledger'),
+      'blue'
+    );
+  } else if (frm.doc.bank_account) {
+    frm.dashboard.set_headline_alert(
+      __('Mode: Bank Transaction') + ' — ' + 
+      __('Fetching from imported bank statement records'),
+      'green'
+    );
+  } else {
+    frm.dashboard.set_headline_alert(
+      __('Please select either Bank Account or Cash Account to generate the report'),
+      'orange'
+    );
+  }
+}
 
 function render_daily_report_preview(frm) {
   const wrapper = frm.fields_dict.preview_html && frm.fields_dict.preview_html.$wrapper;

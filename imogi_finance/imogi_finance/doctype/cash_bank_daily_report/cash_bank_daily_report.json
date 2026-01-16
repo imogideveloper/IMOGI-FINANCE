@@ -42,18 +42,18 @@
     {
       "fieldname": "bank_account",
       "fieldtype": "Link",
-      "label": "Bank / Cash Account",
+      "label": "Bank Account (via Bank Transaction)",
       "options": "Bank Account",
       "in_list_view": 1,
       "in_standard_filter": 1,
-      "description": "Filter report to a specific Bank Account. Cash accounts must be set up as a Bank Account linked to the Cash ledger."
+      "description": "Use this for accounts with imported Bank Transactions. The report will fetch data from Bank Transaction records."
     },
     {
       "fieldname": "cash_account",
       "fieldtype": "Link",
-      "label": "Cash Account",
+      "label": "Cash Account (via GL Entry)",
       "options": "Account",
-      "description": "Optional: use this to generate the report from the cash ledger when no Bank Account exists."
+      "description": "Use this for cash ledger accounts without Bank Account setup. The report will fetch data directly from GL Entry."
     },
     {
       "fieldname": "section_snapshot",

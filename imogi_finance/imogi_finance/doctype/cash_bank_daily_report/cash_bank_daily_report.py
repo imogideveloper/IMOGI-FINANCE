@@ -91,7 +91,8 @@ class CashBankDailyReport(Document):
         if self.bank_account and self.cash_account:
             frappe.throw(
                 frappe._(
-                    "Please select either Bank / Cash Account or Cash Account, not both."
+                    "Cannot select both Bank Account and Cash Account. "
+                    "Use Bank Account for imported transactions, or Cash Account for ledger-based reporting."
                 )
             )
 
@@ -101,6 +102,10 @@ class CashBankDailyReport(Document):
 
         This enforces sequential daily reports whenever there are
         consecutive Bank Transactions.
+        
+        Note: This validation only applies to Bank Account mode.
+        Cash Account mode (via GL Entry) does not require sequential validation
+        as GL entries are more flexible and can be posted retroactively.
         """
 
         if not self.report_date or not self.bank_account or not getattr(frappe, "db", None):
