@@ -2,12 +2,31 @@
 # For license information, please see license.txt
 
 """
-Budget Control Dashboard - Consolidated Report
+Budget Control Dashboard - Consolidated Hybrid Report
 
-Combines data from:
+HYBRID APPROACH:
+This report combines data from multiple sources to provide complete budget visibility:
+
 1. Native ERPNext Budget (allocated amount)
+   - Source: Budget and Budget Account doctypes
+   - Shows: Total allocated budget per Cost Center + Account
+
 2. GL Entry (actual spent)
+   - Source: Posted GL Entries
+   - Shows: Actual expenses already posted to ledger
+
 3. Budget Control Entry (reserved/locked amount)
+   - Source: Budget Control Entry doctype (custom ledger)
+   - Shows: Reserved amounts from approved Expense Requests (not yet in GL)
+
+FIELD COMPATIBILITY:
+Report columns are aligned with Budget Control Entry structure:
+- Dimensions: fiscal_year, cost_center, account, project, branch
+- Aggregates: allocated, actual, reserved, committed, available, variance
+- Status: Dynamic status based on utilization
+
+Users can drill-down from this summary to detailed Budget Control Entries
+by clicking the "View Budget Control Entries" button with auto-filtered list.
 
 This is the MAIN report that users should use - combines all budget tracking in one place.
 """
@@ -52,7 +71,7 @@ def validate_filters(filters):
 
 
 def get_columns():
-    """Define report columns - combines native budget + reservation data."""
+    """Define report columns - combines native budget + Budget Control Entry breakdown."""
     return [
         {
             "fieldname": "cost_center",
@@ -69,40 +88,78 @@ def get_columns():
             "width": 200
         },
         {
+            "fieldname": "project",
+            "label": _("Project"),
+            "fieldtype": "Link",
+            "options": "Project",
+            "width": 150
+        },
+        {
+            "fieldname": "branch",
+            "label": _("Branch"),
+            "fieldtype": "Link",
+            "options": "Branch",
+            "width": 150
+        },
+        {
             "fieldname": "allocated",
             "label": _("Allocated"),
             "fieldtype": "Currency",
-            "width": 130
+            "width": 120
         },
         {
             "fieldname": "actual",
-            "label": _("Actual Spent"),
+            "label": _("Actual (GL)"),
             "fieldtype": "Currency",
-            "width": 130
+            "width": 120
         },
         {
-            "fieldname": "actual_pct",
-            "label": _("Actual %"),
-            "fieldtype": "Percent",
-            "width": 100
-        },
-        {
-            "fieldname": "reserved",
-            "label": _("Reserved"),
+            "fieldname": "reservation",
+            "label": _("Reservation"),
             "fieldtype": "Currency",
-            "width": 130
+            "width": 120
         },
         {
-            "fieldname": "reserved_pct",
-            "label": _("Reserved %"),
-            "fieldtype": "Percent",
-            "width": 100
+            "fieldname": "consumption",
+            "label": _("Consumption"),
+            "fieldtype": "Currency",
+            "width": 120
+        },
+        {
+            "fieldname": "release",
+            "label": _("Release"),
+            "fieldtype": "Currency",
+            "width": 120
+        },
+        {
+            "fieldname": "reversal",
+            "label": _("Reversal"),
+            "fieldtype": "Currency",
+            "width": 120
+        },
+        {
+            "fieldname": "reclass",
+            "label": _("Reclass"),
+            "fieldtype": "Currency",
+            "width": 120
+        },
+        {
+            "fieldname": "supplement",
+            "label": _("Supplement"),
+            "fieldtype": "Currency",
+            "width": 120
+        },
+        {
+            "fieldname": "net_reserved",
+            "label": _("Net Reserved"),
+            "fieldtype": "Currency",
+            "width": 120
         },
         {
             "fieldname": "committed",
             "label": _("Committed"),
             "fieldtype": "Currency",
-            "width": 130
+            "width": 120
         },
         {
             "fieldname": "committed_pct",
@@ -114,19 +171,7 @@ def get_columns():
             "fieldname": "available",
             "label": _("Available"),
             "fieldtype": "Currency",
-            "width": 130
-        },
-        {
-            "fieldname": "available_pct",
-            "label": _("Available %"),
-            "fieldtype": "Percent",
-            "width": 100
-        },
-        {
-            "fieldname": "variance",
-            "label": _("Variance"),
-            "fieldtype": "Currency",
-            "width": 130
+            "width": 120
         },
         {
             "fieldname": "status",
@@ -137,14 +182,67 @@ def get_columns():
     ]
 
 
+def get_budget_control_breakdown(dims, from_date=None, to_date=None):
+    """
+    Get breakdown of Budget Control Entry by entry_type.
+    Returns dict with keys: reservation, consumption, release, reversal, reclass, supplement
+    """
+    filters = {
+        "company": dims.company,
+        "fiscal_year": dims.fiscal_year,
+        "cost_center": dims.cost_center,
+        "account": dims.account,
+        "docstatus": 1
+    }
+    
+    if dims.project:
+        filters["project"] = dims.project
+    if dims.branch:
+        filters["branch"] = dims.branch
+    if from_date and to_date:
+        filters["posting_date"] = ["between", [from_date, to_date]]
+    
+    try:
+        entries = frappe.get_all(
+            "Budget Control Entry",
+            filters=filters,
+            fields=["entry_type", "direction", "amount"]
+        )
+    except:
+        entries = []
+    
+    breakdown = {
+        "reservation": 0.0,
+        "consumption": 0.0,
+        "release": 0.0,
+        "reversal": 0.0,
+        "reclass": 0.0,
+        "supplement": 0.0
+    }
+    
+    for entry in entries:
+        entry_type = entry.get("entry_type", "").lower()
+        direction = entry.get("direction")
+        amount = float(entry.get("amount") or 0.0)
+        
+        if entry_type in breakdown:
+            # OUT = pengurang, IN = penambah
+            if direction == "OUT":
+                breakdown[entry_type] -= amount
+            elif direction == "IN":
+                breakdown[entry_type] += amount
+    
+    return breakdown
+
+
 def get_data(filters):
     """
-    Get consolidated budget data.
+    Get consolidated budget data with Budget Control Entry breakdown.
     
     Combines:
     1. Budget allocation (from native Budget)
     2. Actual spending (from GL Entry)
-    3. Reserved amount (from Budget Control Entry)
+    3. Budget Control Entry breakdown (RESERVATION, CONSUMPTION, RELEASE, etc.)
     """
     company = filters.get("company")
     fiscal_year = filters.get("fiscal_year")
@@ -204,34 +302,41 @@ def get_data(filters):
             reserved = availability["reserved"]
             available = availability["available"]
             
-            # Calculate percentages
-            actual_pct = (actual / allocated * 100) if allocated > 0 else 0
-            reserved_pct = (reserved / allocated * 100) if allocated > 0 else 0
-            committed = actual + reserved
+            # Get Budget Control Entry breakdown by entry_type
+            breakdown = get_budget_control_breakdown(dims, from_date=from_date, to_date=to_date)
+            
+            # Net reserved = reservation - release - consumption
+            # (reservation locks budget OUT, release/consumption frees it back IN)
+            net_reserved = breakdown["reservation"] + breakdown["release"] + breakdown["consumption"]
+            
+            # Calculate committed = actual + net reserved
+            committed = actual + net_reserved
             committed_pct = (committed / allocated * 100) if allocated > 0 else 0
-            available_pct = (available / allocated * 100) if allocated > 0 else 0
-            variance = allocated - actual
             
             # Skip if no activity (optional filter)
-            if filters.get("hide_zero") and allocated == 0 and actual == 0 and reserved == 0:
+            if filters.get("hide_zero") and allocated == 0 and actual == 0 and net_reserved == 0:
                 continue
             
             # Determine status
-            status = get_status(allocated, actual, reserved, available)
+            status = get_status(allocated, actual, net_reserved, available)
             
             data.append({
                 "cost_center": budget.cost_center,
                 "account": ba.account,
+                "project": dims.project or "",
+                "branch": dims.branch or "",
                 "allocated": allocated or 0,
                 "actual": actual or 0,
-                "actual_pct": actual_pct or 0,
-                "reserved": reserved or 0,
-                "reserved_pct": reserved_pct or 0,
+                "reservation": breakdown["reservation"] or 0,
+                "consumption": breakdown["consumption"] or 0,
+                "release": breakdown["release"] or 0,
+                "reversal": breakdown["reversal"] or 0,
+                "reclass": breakdown["reclass"] or 0,
+                "supplement": breakdown["supplement"] or 0,
+                "net_reserved": net_reserved or 0,
                 "committed": committed or 0,
                 "committed_pct": committed_pct or 0,
                 "available": available or 0,
-                "available_pct": available_pct or 0,
-                "variance": variance or 0,
                 "status": status
             })
     
@@ -265,7 +370,7 @@ def get_status(allocated, actual, reserved, available):
 
 
 def get_chart_data(data, filters):
-    """Generate stacked bar chart for top 10 accounts."""
+    """Generate stacked bar chart for top 10 accounts with Budget Control Entry breakdown."""
     if not data:
         return None
     
@@ -277,7 +382,8 @@ def get_chart_data(data, filters):
     
     labels = []
     actual_values = []
-    reserved_values = []
+    reservation_values = []
+    consumption_values = []
     available_values = []
     
     for row in top_data:
@@ -290,7 +396,9 @@ def get_chart_data(data, filters):
         
         labels.append(label)
         actual_values.append(float(row.get("actual", 0) or 0))
-        reserved_values.append(float(row.get("reserved", 0) or 0))
+        # Show absolute values for chart
+        reservation_values.append(abs(float(row.get("reservation", 0) or 0)))
+        consumption_values.append(abs(float(row.get("consumption", 0) or 0)))
         available_values.append(max(0, float(row.get("available", 0) or 0)))  # Don't show negative in chart
     
     chart_data = {
@@ -298,12 +406,16 @@ def get_chart_data(data, filters):
             "labels": labels,
             "datasets": [
                 {
-                    "name": _("Actual Spent"),
+                    "name": _("Actual (GL)"),
                     "values": actual_values
                 },
                 {
-                    "name": _("Reserved"),
-                    "values": reserved_values
+                    "name": _("Reservation"),
+                    "values": reservation_values
+                },
+                {
+                    "name": _("Consumption"),
+                    "values": consumption_values
                 },
                 {
                     "name": _("Available"),
@@ -317,20 +429,24 @@ def get_chart_data(data, filters):
             "spaceRatio": 0.5
         },
         "height": 350,
-        "colors": ["#FF6B6B", "#FFA726", "#66BB6A"]
+        "colors": ["#FF6B6B", "#FFA726", "#42A5F5", "#66BB6A"]
     }
     
     return chart_data
 
 
 def get_summary(data):
-    """Generate summary cards."""
+    """Generate summary cards with Budget Control Entry breakdown."""
     if not data:
         return []
     
     total_allocated = sum(row.get("allocated", 0) or 0 for row in data)
     total_actual = sum(row.get("actual", 0) or 0 for row in data)
-    total_reserved = sum(row.get("reserved", 0) or 0 for row in data)
+    total_reservation = sum(row.get("reservation", 0) or 0 for row in data)
+    total_consumption = sum(row.get("consumption", 0) or 0 for row in data)
+    total_release = sum(row.get("release", 0) or 0 for row in data)
+    total_net_reserved = sum(row.get("net_reserved", 0) or 0 for row in data)
+    total_committed = sum(row.get("committed", 0) or 0 for row in data)
     total_available = sum(row.get("available", 0) or 0 for row in data)
     
     over_budget_count = len([r for r in data if (r.get("available", 0) or 0) < 0])
@@ -346,13 +462,37 @@ def get_summary(data):
         {
             "value": total_actual,
             "indicator": "orange",
-            "label": _("Total Actual Spent"),
+            "label": _("Total Actual (GL)"),
             "datatype": "Currency"
         },
         {
-            "value": total_reserved,
+            "value": abs(total_reservation),
+            "indicator": "red",
+            "label": _("Total Reservation"),
+            "datatype": "Currency"
+        },
+        {
+            "value": abs(total_consumption),
+            "indicator": "blue",
+            "label": _("Total Consumption"),
+            "datatype": "Currency"
+        },
+        {
+            "value": abs(total_release),
+            "indicator": "green",
+            "label": _("Total Release"),
+            "datatype": "Currency"
+        },
+        {
+            "value": abs(total_net_reserved),
             "indicator": "purple",
-            "label": _("Total Reserved"),
+            "label": _("Net Reserved"),
+            "datatype": "Currency"
+        },
+        {
+            "value": total_committed,
+            "indicator": "orange",
+            "label": _("Total Committed"),
             "datatype": "Currency"
         },
         {

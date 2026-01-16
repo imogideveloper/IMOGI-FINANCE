@@ -378,11 +378,16 @@ def reverse_payment_entry(payment_entry_name: str, reversal_date: str | None = N
         "paid_to": original_pe.paid_from,  # Reversed
         "paid_amount": original_pe.paid_amount,
         "received_amount": original_pe.received_amount,
+        # Flip account currencies to match flipped accounts
+        "paid_from_account_currency": getattr(original_pe, "paid_to_account_currency", None),
+        "paid_to_account_currency": getattr(original_pe, "paid_from_account_currency", None),
         "source_exchange_rate": original_pe.source_exchange_rate,
         "target_exchange_rate": original_pe.target_exchange_rate,
         "mode_of_payment": original_pe.mode_of_payment,
         "party_type": original_pe.party_type,
         "party": original_pe.party,
+        # Copy party_account - this is the party's receivable/payable account
+        "party_account": getattr(original_pe, "party_account", None),
         "branch": original_pe.branch if hasattr(original_pe, "branch") else None,
         "remarks": frappe._(
             "Reversal of Payment Entry {0} (original date: {1})"

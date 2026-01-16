@@ -89,6 +89,39 @@ frappe.query_reports["Budget Control Dashboard"] = {
 			return value;
 		}
 		
+		// Color code Budget Control Entry types
+		if (column.fieldname == "reservation" && data.reservation !== undefined && data.reservation < 0) {
+			value = `<span style="color: #d9534f; font-weight: bold;">${frappe.format(data.reservation, {fieldtype: 'Currency'})}</span>`;
+		}
+		
+		if (column.fieldname == "consumption" && data.consumption !== undefined && data.consumption > 0) {
+			value = `<span style="color: #5cb85c;">${frappe.format(data.consumption, {fieldtype: 'Currency'})}</span>`;
+		}
+		
+		if (column.fieldname == "release" && data.release !== undefined && data.release > 0) {
+			value = `<span style="color: #5cb85c;">${frappe.format(data.release, {fieldtype: 'Currency'})}</span>`;
+		}
+		
+		if (column.fieldname == "reversal" && data.reversal !== undefined && data.reversal !== 0) {
+			value = `<span style="color: #f0ad4e;">${frappe.format(data.reversal, {fieldtype: 'Currency'})}</span>`;
+		}
+		
+		if (column.fieldname == "reclass" && data.reclass !== undefined && data.reclass !== 0) {
+			value = `<span style="color: #5bc0de;">${frappe.format(data.reclass, {fieldtype: 'Currency'})}</span>`;
+		}
+		
+		if (column.fieldname == "supplement" && data.supplement !== undefined && data.supplement > 0) {
+			value = `<span style="color: #5cb85c; font-weight: bold;">${frappe.format(data.supplement, {fieldtype: 'Currency'})}</span>`;
+		}
+		
+		if (column.fieldname == "net_reserved" && data.net_reserved !== undefined) {
+			if (data.net_reserved < 0) {
+				value = `<span style="color: #d9534f; font-weight: bold;">${frappe.format(data.net_reserved, {fieldtype: 'Currency'})}</span>`;
+			} else if (data.net_reserved > 0) {
+				value = `<span style="color: #f0ad4e; font-weight: bold;">${frappe.format(data.net_reserved, {fieldtype: 'Currency'})}</span>`;
+			}
+		}
+		
 		// Color code status
 		if (column.fieldname == "status" && data.status) {
 			if (data.status == "Over Budget" || data.status == "Over Committed") {
@@ -119,32 +152,19 @@ frappe.query_reports["Budget Control Dashboard"] = {
 			}
 		}
 		
-		// Color code percentages
-		if (column.fieldname == "actual_pct" || column.fieldname == "reserved_pct" || column.fieldname == "committed_pct" || column.fieldname == "available_pct") {
+		// Color code committed percentage
+		if (column.fieldname == "committed_pct") {
 			let pct_value = data[column.fieldname];
 			if (pct_value !== undefined && pct_value !== null && !isNaN(pct_value)) {
-				if (column.fieldname == "committed_pct") {
-					if (pct_value >= 100) {
-						value = `<span style="color: #d9534f; font-weight: bold;">${pct_value.toFixed(1)}%</span>`;
-					} else if (pct_value > 90) {
-						value = `<span style="color: #f0ad4e; font-weight: bold;">${pct_value.toFixed(1)}%</span>`;
-					} else if (pct_value > 75) {
-						value = `<span style="color: #ffc107;">${pct_value.toFixed(1)}%</span>`;
-					} else {
-						value = `<span style="color: #5cb85c;">${pct_value.toFixed(1)}%</span>`;
-					}
+				if (pct_value >= 100) {
+					value = `<span style="color: #d9534f; font-weight: bold;">${pct_value.toFixed(1)}%</span>`;
+				} else if (pct_value > 90) {
+					value = `<span style="color: #f0ad4e; font-weight: bold;">${pct_value.toFixed(1)}%</span>`;
+				} else if (pct_value > 75) {
+					value = `<span style="color: #ffc107;">${pct_value.toFixed(1)}%</span>`;
 				} else {
-					value = `<span>${pct_value.toFixed(1)}%</span>`;
+					value = `<span style="color: #5cb85c;">${pct_value.toFixed(1)}%</span>`;
 				}
-			}
-		}
-		
-		// Color code variance
-		if (column.fieldname == "variance" && data.variance !== undefined) {
-			if (data.variance < 0) {
-				value = `<span style="color: #d9534f;">${frappe.format(data.variance, {fieldtype: 'Currency'})}</span>`;
-			} else if (data.variance > 0) {
-				value = `<span style="color: #5cb85c;">${frappe.format(data.variance, {fieldtype: 'Currency'})}</span>`;
 			}
 		}
 		
