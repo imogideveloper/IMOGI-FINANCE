@@ -79,16 +79,18 @@ def _extract_signers_from_settings(doc, bank_account: str | None = None) -> dict
 
 
 @frappe.whitelist()
-def preview_daily_report(branches=None, report_date=None, bank_account=None):
+def preview_daily_report(branches=None, report_date=None, bank_account=None, cash_account=None):
     settings = _get_settings()
     signers = resolve_signers(_extract_signers_from_settings(settings, bank_account))
     report_date_obj = date.fromisoformat(report_date) if report_date else None
     branch_filter = branches or None
     bank_filter = bank_account or None
+    cash_filter = cash_account or None
     transactions, opening_balances = load_daily_inputs(
         report_date_obj,
         branches=branch_filter,
         bank_accounts=[bank_filter] if isinstance(bank_filter, str) and bank_filter else bank_filter,
+        cash_accounts=[cash_filter] if isinstance(cash_filter, str) and cash_filter else cash_filter,
     )
     bundle = build_daily_report(
         transactions,
@@ -102,16 +104,18 @@ def preview_daily_report(branches=None, report_date=None, bank_account=None):
 
 
 @frappe.whitelist()
-def get_dashboard_snapshot(branches=None, report_date=None, bank_account=None):
+def get_dashboard_snapshot(branches=None, report_date=None, bank_account=None, cash_account=None):
     settings = _get_settings()
     signers = resolve_signers(_extract_signers_from_settings(settings, bank_account))
     report_date_obj = date.fromisoformat(report_date) if report_date else None
     branch_filter = branches or None
     bank_filter = bank_account or None
+    cash_filter = cash_account or None
     transactions, opening_balances = load_daily_inputs(
         report_date_obj,
         branches=branch_filter,
         bank_accounts=[bank_filter] if isinstance(bank_filter, str) and bank_filter else bank_filter,
+        cash_accounts=[cash_filter] if isinstance(cash_filter, str) and cash_filter else cash_filter,
     )
     snapshot = build_dashboard_snapshot(
         transactions=transactions,
