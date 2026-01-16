@@ -79,7 +79,7 @@
 			{"state": "Rejected", "doc_status": "1", "allow_edit": "All"}
 		],
 		"transitions": [
-			{"action": "Submit", "allow_self_approval": 0, "allowed": "All", "state": "Draft", "next_state": "Pending Approval"},
+			{"action": "Submit", "allow_self_approval": 1, "allowed": "All", "state": "Draft", "next_state": "Pending Approval"},
 			{"action": "Approve", "allowed": "All", "state": "Pending Approval", "next_state": "Approved"},
 			{"action": "Reject", "allowed": "All", "state": "Pending Approval", "next_state": "Rejected"}
 		],
@@ -111,7 +111,7 @@
 			{"state": "Cancelled", "doc_status": "2", "allow_edit": "Accounts Manager"}
 		],
 		"transitions": [
-			{"action": "Submit for Approval", "allow_self_approval": 0, "allowed": "All", "state": "Draft", "next_state": "Pending Approval"},
+			{"action": "Submit for Approval", "allow_self_approval": 1, "allowed": "All", "state": "Draft", "next_state": "Pending Approval"},
 			{"action": "Approve", "allowed": "Accounts Manager", "state": "Pending Approval", "next_state": "Approved"},
 			{"action": "Reject", "allowed": "Accounts Manager", "state": "Pending Approval", "next_state": "Rejected"},
 			{"action": "Post", "allowed": "Accounts Manager", "state": "Approved", "next_state": "Posted"},

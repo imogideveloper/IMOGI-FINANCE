@@ -61,7 +61,8 @@
       "default": "Draft",
       "in_list_view": 1,
       "in_standard_filter": 1,
-      "bold": 1
+      "bold": 1,
+      "allow_on_submit": 1
     },
     {
       "fieldname": "workflow_state",
@@ -70,7 +71,8 @@
       "options": "Workflow State",
       "hidden": 1,
       "read_only": 1,
-      "no_copy": 1
+      "no_copy": 1,
+      "allow_on_submit": 1
     },
     {
       "fieldname": "tab_main",
@@ -204,7 +206,8 @@
       "label": "Current Level",
       "fieldtype": "Int",
       "read_only": 1,
-      "default": "0"
+      "default": "0",
+      "allow_on_submit": 1
     },
     {
       "fieldname": "column_break_approval",
@@ -243,13 +246,15 @@
       "label": "Level 1 Approved By",
       "fieldtype": "Link",
       "options": "User",
-      "read_only": 1
+      "read_only": 1,
+      "allow_on_submit": 1
     },
     {
       "fieldname": "level_1_approved_at",
       "label": "Level 1 Approved At",
       "fieldtype": "Datetime",
-      "read_only": 1
+      "read_only": 1,
+      "allow_on_submit": 1
     },
     {
       "fieldname": "column_break_tracking_1",
@@ -260,13 +265,15 @@
       "label": "Level 2 Approved By",
       "fieldtype": "Link",
       "options": "User",
-      "read_only": 1
+      "read_only": 1,
+      "allow_on_submit": 1
     },
     {
       "fieldname": "level_2_approved_at",
       "label": "Level 2 Approved At",
       "fieldtype": "Datetime",
-      "read_only": 1
+      "read_only": 1,
+      "allow_on_submit": 1
     },
     {
       "fieldname": "column_break_tracking_2",
@@ -277,13 +284,15 @@
       "label": "Level 3 Approved By",
       "fieldtype": "Link",
       "options": "User",
-      "read_only": 1
+      "read_only": 1,
+      "allow_on_submit": 1
     },
     {
       "fieldname": "level_3_approved_at",
       "label": "Level 3 Approved At",
       "fieldtype": "Datetime",
-      "read_only": 1
+      "read_only": 1,
+      "allow_on_submit": 1
     },
     {
       "fieldname": "section_break_hidden",
