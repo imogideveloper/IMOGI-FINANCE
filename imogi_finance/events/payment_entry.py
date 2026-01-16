@@ -241,6 +241,29 @@ def on_submit(doc, method=None):
         {"status": "Paid", "workflow_state": "Paid"},
     )
     
+def before_cancel(doc, method=None):
+    """Pre-cancel validation and setup.
+    
+    1. Check if included in printed daily reports
+    2. Set flags to ignore ALL linked documents (they should not be cancelled)
+    3. Suppress "Cancel All Documents" dialog completely
+    """
+    # Check printed report constraint
+    if _check_linked_to_printed_report(doc):
+        frappe.throw(
+            frappe._(
+                "Cannot cancel Payment Entry {0} because it is included in a printed Cash/Bank Daily Report. "
+                "Use the 'Reverse Payment Entry' button instead to create a reversal entry at today's date."
+            ).format(doc.name),
+            title=_("Cancellation Blocked")
+        )
+    
+    # Set multiple flags to completely suppress "Cancel All Documents" dialog
+    doc.flags.ignore_links = True
+    doc.flags.ignore_link_validation = True
+    doc.flags.skip_link_doctypes = True
+
+
 def on_cancel(doc, method=None):
     """Handle Payment Entry cancellation.
     
@@ -254,20 +277,10 @@ def on_cancel(doc, method=None):
     - Only constraint: printed daily reports (accounting lock)
     
     When PE is cancelled:
-    1. Check if linked to any printed daily reports
+    1. Check if linked to any printed daily reports (done in before_cancel)
     2. If yes, BLOCK cancellation and suggest reversal
     3. If no, allow cancellation without touching ER/PI status
     """
-    
-    # ONLY constraint: Cash/Bank Daily Report lock
-    if _check_linked_to_printed_report(doc):
-        frappe.throw(
-            frappe._(
-                "Cannot cancel Payment Entry {0} because it is included in a printed Cash/Bank Daily Report. "
-                "Use the 'Reverse Payment Entry' button instead to create a reversal entry at today's date."
-            ).format(doc.name),
-            title=_("Cancellation Blocked")
-        )
     
     # That's it! No need to rollback ER status or clear links
     # ER stays "Paid", links stay intact, PI remains valid

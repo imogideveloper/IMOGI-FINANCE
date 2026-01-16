@@ -335,6 +335,9 @@ doc_events = {
             "imogi_finance.transfer_application.payment_entry_hooks.on_submit",
             "imogi_finance.advance_payment.workflow.on_payment_entry_submit",
         ],
+        "before_cancel": [
+            "imogi_finance.events.payment_entry.before_cancel",
+        ],
         "on_cancel": [
             "imogi_finance.events.payment_entry.on_cancel",
             "imogi_finance.receipt_control.payment_entry_hooks.remove_payment_entry",

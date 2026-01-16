@@ -2,10 +2,16 @@
  * Payment Entry UI Enhancements
  * - Reverse Entry button for reversing payment entries included in printed reports
  * - Status indicators for reversed/reversal entries
+ * - Custom cancel confirmation with clear messaging
  */
 
 frappe.ui.form.on('Payment Entry', {
   refresh(frm) {
+    // Override standard cancel to show better message
+    if (frm.doc.docstatus === 1 && !frm.is_new()) {
+      _setupCancelButton(frm);
+    }
+    
     // Show Reverse Entry button if PE is submitted and not already reversed
     if (frm.doc.docstatus === 1 && !frm.doc.is_reversed) {
       frm.add_custom_button(__('Reverse Entry'), () => {
@@ -95,3 +101,73 @@ frappe.ui.form.on('Payment Entry', {
     }
   }
 });
+
+/**
+ * Setup custom cancel button - bypass "Cancel All Documents" dialog
+ */
+function _setupCancelButton(frm) {
+  // Hide standard cancel button to prevent default Frappe dialog
+  if (frm.page.btn_secondary) {
+    const cancelBtns = frm.page.btn_secondary.find('.btn-secondary').filter(function() {
+      return $(this).text().trim() === __('Cancel');
+    });
+    cancelBtns.hide();
+  }
+  
+  // Remove from dropdown menu
+  setTimeout(() => {
+    if (frm.page.inner_toolbar) {
+      frm.page.inner_toolbar.find('[data-label="Cancel"]').parent().hide();
+    }
+  }, 100);
+  
+  // Add custom cancel button with simple confirmation
+  frm.page.add_action_item(__('Cancel'), () => {
+    _showSimpleCancelDialog(frm);
+  }, true);
+}
+
+/**
+ * Show simple cancel dialog - no "Cancel All Documents" list
+ */
+function _showSimpleCancelDialog(frm) {
+  let message = '<div style="padding: 10px;">';
+  message += '<p style="font-size: 14px;">' + __('Are you sure you want to cancel this Payment Entry?') + '</p>';
+  
+  // Simple note about linked documents (if any)
+  if (frm.doc.imogi_expense_request) {
+    message += '<div class="alert alert-info" style="margin-top: 15px; font-size: 12px;">';
+    message += '<strong>ℹ️ ' + __('Note:') + '</strong><br>';
+    message += __('Linked documents will remain active for audit trail.');
+    message += '<br>' + __('Only this Payment Entry will be cancelled.');
+    message += '</div>';
+  }
+  
+  message += '</div>';
+  
+  frappe.confirm(
+    message,
+    () => {
+      // Direct cancel - backend will handle ignore_links flag
+      frappe.call({
+        method: 'frappe.client.cancel',
+        args: {
+          doctype: frm.doc.doctype,
+          name: frm.doc.name
+        },
+        freeze: true,
+        freeze_message: __('Cancelling Payment Entry...'),
+        callback: (r) => {
+          if (!r.exc) {
+            frappe.show_alert({
+              message: __('Payment Entry cancelled successfully'),
+              indicator: 'orange'
+            });
+            frm.reload_doc();
+          }
+        }
+      });
+    }
+  );
+}
+
