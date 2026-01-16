@@ -335,22 +335,22 @@
       "fieldtype": "Column Break"
     },
     {
-      "depends_on": "is_ppn_applicable",
+      "depends_on": "eval:doc.is_ppn_applicable && !doc.__ocr_enabled",
       "fieldname": "tax_invoice_number",
       "fieldtype": "Data",
-      "label": "Tax Invoice No"
+      "label": "Tax Invoice No (Manual)"
     },
     {
-      "depends_on": "is_ppn_applicable",
+      "depends_on": "eval:doc.is_ppn_applicable && !doc.__ocr_enabled",
       "fieldname": "tax_invoice_date",
       "fieldtype": "Date",
-      "label": "Tax Invoice Date"
+      "label": "Tax Invoice Date (Manual)"
     },
     {
-      "depends_on": "is_ppn_applicable",
+      "depends_on": "eval:doc.is_ppn_applicable && !doc.__ocr_enabled",
       "fieldname": "tax_invoice_attachment",
       "fieldtype": "Attach",
-      "label": "Tax Invoice File"
+      "label": "Tax Invoice File (Manual)"
     },
     {
       "fieldname": "pph_section",

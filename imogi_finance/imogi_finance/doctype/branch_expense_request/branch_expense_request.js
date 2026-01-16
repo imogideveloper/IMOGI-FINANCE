@@ -113,6 +113,17 @@ function formatApprovalTimestamps(frm) {
 	}
 }
 
+async function checkOcrEnabledBer(frm) {
+	try {
+		const ocrEnabled = await frappe.db.get_single_value('Tax Invoice OCR Settings', 'enable_tax_invoice_ocr');
+		frm.doc.__ocr_enabled = Boolean(ocrEnabled);
+		frm.refresh_fields();
+	} catch (error) {
+		console.error('Unable to check OCR settings', error);
+		frm.doc.__ocr_enabled = false;
+	}
+}
+
 async function setBerUploadQuery(frm) {
 	let usedUploads = [];
 	let verifiedUploads = [];
@@ -121,7 +132,7 @@ async function setBerUploadQuery(frm) {
 
 	try {
 		const { message } = await frappe.call({
-			method: "imogi_finance.api.tax_invoice.get_tax_invoice_upload_context_api",
+			method: "imogi_finance.api.tax_invoice.get_tax_invoice.get_tax_invoice_upload_context_api",
 			args: { target_doctype: "Branch Expense Request", target_name: frm.doc.name },
 		});
 		usedUploads = message?.used_uploads || [];
@@ -146,6 +157,17 @@ async function setBerUploadQuery(frm) {
 			...(usedUploads.length ? { name: ["not in", usedUploads] } : {}),
 		},
 	}));
+}
+
+async function checkOcrEnabledBer(frm) {
+	try {
+		const ocrEnabled = await frappe.db.get_single_value('Tax Invoice OCR Settings', 'enable_tax_invoice_ocr');
+		frm.doc.__ocr_enabled = Boolean(ocrEnabled);
+		frm.refresh_fields();
+	} catch (error) {
+		console.error('Unable to check OCR settings', error);
+		frm.doc.__ocr_enabled = false;
+	}
 }
 
 function maybeAddDeferredExpenseActions(frm) {
@@ -265,6 +287,7 @@ frappe.ui.form.on("Branch Expense Request", {
 		formatApprovalTimestamps(frm);
 		update_totals(frm);
 		await setBerUploadQuery(frm);
+		await checkOcrEnabledBer(frm);
 		await syncBerUpload(frm);
 		await setDeferredExpenseQueries(frm);
 		addDeferredExpenseItemActions(frm);

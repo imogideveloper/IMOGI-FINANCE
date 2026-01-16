@@ -280,6 +280,17 @@ function maybeRenderPrimarySubmitButton(frm) {
   submitBtn.addClass('btn-primary');
 }
 
+async function checkOcrEnabled(frm) {
+  try {
+    const ocrEnabled = await frappe.db.get_single_value('Tax Invoice OCR Settings', 'enable_tax_invoice_ocr');
+    frm.doc.__ocr_enabled = Boolean(ocrEnabled);
+    frm.refresh_fields();
+  } catch (error) {
+    console.error('Unable to check OCR settings', error);
+    frm.doc.__ocr_enabled = false;
+  }
+}
+
 async function setErUploadQuery(frm) {
   let usedUploads = [];
   let verifiedUploads = [];
@@ -441,6 +452,7 @@ frappe.ui.form.on('Expense Request', {
     formatApprovalTimestamps(frm);
     frm.dashboard.clear_headline();
     await setErUploadQuery(frm);
+    await checkOcrEnabled(frm);
     await syncErUpload(frm);
     await setPphRate(frm);
     await setDeferredExpenseQueries(frm);
@@ -629,7 +641,8 @@ frappe.ui.form.on('Expense Request', {
   pph_base_amount(frm) {
     updateTotalsSummary(frm);
   },
-  is_pph_applicable(frm) {
+  async is_ppn_applicable(frm) {
+    await checkOcrEnabled(frm);
     updateTotalsSummary(frm);
   },
 
