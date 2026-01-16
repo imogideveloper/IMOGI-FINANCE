@@ -264,6 +264,7 @@ doc_events = {
     "Additional Budget Request": {
         "validate": ["imogi_finance.events.metadata_fields.set_created_by"],
         "on_submit": ["imogi_finance.events.metadata_fields.set_submit_on"],
+        "on_update_after_submit": ["imogi_finance.events.budget_approval.sync_workflow_state_after_approval"],
     },
     "Administrative Payment Voucher": {
         "validate": ["imogi_finance.events.metadata_fields.set_created_by"],
@@ -280,6 +281,7 @@ doc_events = {
     "Budget Reclass Request": {
         "validate": ["imogi_finance.events.metadata_fields.set_created_by"],
         "on_submit": ["imogi_finance.events.metadata_fields.set_submit_on"],
+        "on_update_after_submit": ["imogi_finance.events.budget_approval.sync_workflow_state_after_approval"],
     },
     "Cash Bank Daily Report": {
         "validate": ["imogi_finance.events.metadata_fields.set_created_by"],
