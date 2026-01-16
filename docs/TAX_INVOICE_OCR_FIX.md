@@ -55,5 +55,8 @@ Purchase Invoice sudah tidak memiliki field manual tax invoice dan sudah sepenuh
 2. `/imogi_finance/imogi_finance/doctype/expense_request/expense_request.js`
 3. `/imogi_finance/imogi_finance/doctype/branch_expense_request/branch_expense_request.js`
 
+## Related Documentation
+See [TAX_INVOICE_OCR_VALIDATION_BEFORE_SUBMIT.md](TAX_INVOICE_OCR_VALIDATION_BEFORE_SUBMIT.md) for validation logic before submit.
+
 ## Date
 January 16, 2026

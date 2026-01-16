@@ -70,6 +70,8 @@
     "ti_duplicate_flag",
     "ti_npwp_match",
     "ti_verification_notes",
+    "ti_dpp_variance",
+    "ti_ppn_variance",
 
     "tab_approval",
     "approval_section",
@@ -489,6 +491,24 @@
       "hidden": 1,
       "label": "Notes",
       "read_only": 1
+    },
+    {
+      "allow_on_submit": 1,
+      "fieldname": "ti_dpp_variance",
+      "fieldtype": "Currency",
+      "hidden": 1,
+      "label": "DPP Variance",
+      "read_only": 1,
+      "description": "Difference between OCR DPP and Expected DPP (OCR - Expected). Can be negative or positive."
+    },
+    {
+      "allow_on_submit": 1,
+      "fieldname": "ti_ppn_variance",
+      "fieldtype": "Currency",
+      "hidden": 1,
+      "label": "PPN Variance",
+      "read_only": 1,
+      "description": "Difference between OCR PPN and Expected PPN (OCR - Expected). Can be negative or positive."
     },
 
     {

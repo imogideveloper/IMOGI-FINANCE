@@ -25,9 +25,15 @@
     "require_verification_before_submit_pi",
     "require_verification_before_create_pi_from_expense_request",
     "tolerance_idr",
+    "tolerance_percentage",
     "block_duplicate_fp_no",
+    "section_accounts",
     "ppn_input_account",
     "ppn_output_account",
+    "column_break_accounts",
+    "dpp_variance_account",
+    "ppn_variance_account",
+    "section_templates",
     "default_ppn_type",
     "use_tax_rule_effective_date",
     "default_ppn_tax_template",
@@ -137,7 +143,15 @@
       "default": 10,
       "fieldname": "tolerance_idr",
       "fieldtype": "Currency",
-      "label": "Tolerance (IDR)"
+      "label": "Tolerance (IDR)",
+      "description": "Maximum allowed difference in IDR for DPP and PPN validation"
+    },
+    {
+      "default": 1.0,
+      "fieldname": "tolerance_percentage",
+      "fieldtype": "Percent",
+      "label": "Tolerance (%)",
+      "description": "Maximum allowed difference in percentage for DPP and PPN validation (e.g., 1 = 1%)"
     },
     {
       "default": "1",
@@ -146,16 +160,46 @@
       "label": "Block Duplicate Tax Invoice No"
     },
     {
+      "fieldname": "section_accounts",
+      "fieldtype": "Section Break",
+      "label": "Accounts Configuration"
+    },
+    {
       "fieldname": "ppn_input_account",
       "fieldtype": "Link",
       "label": "PPN Input Account",
-      "options": "Account"
+      "options": "Account",
+      "description": "Account for PPN Input (Purchase/Expense)"
     },
     {
       "fieldname": "ppn_output_account",
       "fieldtype": "Link",
       "label": "PPN Output Account",
-      "options": "Account"
+      "options": "Account",
+      "description": "Account for PPN Output (Sales/Revenue)"
+    },
+    {
+      "fieldname": "column_break_accounts",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "dpp_variance_account",
+      "fieldtype": "Link",
+      "label": "DPP Variance Account",
+      "options": "Account",
+      "description": "Account to journal DPP variance (difference between OCR and document). Can be expense or income depending on variance sign."
+    },
+    {
+      "fieldname": "ppn_variance_account",
+      "fieldtype": "Link",
+      "label": "PPN Variance Account",
+      "options": "Account",
+      "description": "Account to journal PPN variance (difference between OCR and document). Usually a liability adjustment account."
+    },
+    {
+      "fieldname": "section_templates",
+      "fieldtype": "Section Break",
+      "label": "Tax Templates"
     },
     {
       "default": "Standard",

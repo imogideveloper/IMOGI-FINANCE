@@ -16,3 +16,19 @@ class TaxInvoiceOCRSettings(Document):
 
         if self.ocr_provider == "Tesseract" and not self.tesseract_cmd:
             frappe.throw(_("Tesseract command/path is required when provider is Tesseract."))
+        
+        # Validate variance accounts if OCR is enabled
+        if self.enable_tax_invoice_ocr:
+            if not self.dpp_variance_account:
+                frappe.msgprint(
+                    _("DPP Variance Account is not configured. Variance will not be journaled."),
+                    indicator="orange",
+                    alert=True
+                )
+            
+            if not self.ppn_variance_account:
+                frappe.msgprint(
+                    _("PPN Variance Account is not configured. Variance will not be journaled."),
+                    indicator="orange",
+                    alert=True
+                )

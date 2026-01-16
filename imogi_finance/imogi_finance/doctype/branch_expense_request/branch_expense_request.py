@@ -84,6 +84,10 @@ class BranchExpenseRequest(Document):
         self.validate_amounts()
         self.apply_branch_defaults()
         self.validate_tax_fields()
+        
+        # Validate tax invoice OCR data if OCR is enabled and applicable
+        self.validate_tax_invoice_ocr_before_submit()
+        
         self._validate_deferred_expense()
         self._update_totals()
         self._set_fiscal_year()
@@ -232,6 +236,160 @@ class BranchExpenseRequest(Document):
 
     def validate_tax_fields(self):
         FinanceValidator.validate_tax_fields(self)
+
+    def validate_tax_invoice_ocr_before_submit(self):
+        """Validate tax invoice OCR data before submit: NPWP, DPP, PPN, PPnBM."""
+        # Skip if OCR not enabled or no OCR upload
+        try:
+            from imogi_finance.tax_invoice_ocr import get_settings, normalize_npwp
+        except ImportError:
+            return
+
+        settings = get_settings()
+        if not settings.get("enable_tax_invoice_ocr"):
+            return
+
+        # Skip if not using OCR upload
+        if not getattr(self, "ti_tax_invoice_upload", None):
+            return
+
+        # Skip if PPN not applicable
+        if not getattr(self, "is_ppn_applicable", 0):
+            return
+
+        errors = []
+        warnings = []
+
+        # 1. Validate NPWP matches supplier
+        supplier = getattr(self, "supplier", None)
+        if supplier:
+            supplier_npwp = frappe.db.get_value("Supplier", supplier, "tax_id")
+            if supplier_npwp:
+                supplier_npwp = normalize_npwp(supplier_npwp)
+                ocr_npwp = normalize_npwp(getattr(self, "ti_fp_npwp", None))
+                
+                if ocr_npwp and supplier_npwp and ocr_npwp != supplier_npwp:
+                    errors.append(
+                        _("NPWP dari OCR ({0}) tidak sesuai dengan NPWP Supplier ({1})").format(
+                            getattr(self, "ti_fp_npwp", ""), supplier_npwp
+                        )
+                    )
+
+        # 2. Validate DPP, PPN, PPnBM with tolerance
+        # Get tolerance from settings (both fixed IDR and percentage)
+        tolerance = flt(settings.get("tolerance_idr", 10000))  # Default Rp 10,000
+        tolerance_pct = flt(settings.get("tolerance_percentage", 1.0))  # Default 1%
+        
+        # Get PPN type - only validate amounts for Standard PPN
+        ppn_type = getattr(self, "ti_fp_ppn_type", None)
+        if ppn_type and ppn_type != "Standard":
+            # Skip DPP/PPN validation for Zero Rated or Exempt
+            # Only NPWP validation applies
+            if errors:
+                frappe.throw(
+                    "<br>".join(["<strong>Validasi Faktur Pajak Gagal:</strong>"] + errors),
+                    title=_("Tax Invoice Validation Error")
+                )
+            return
+        
+        # Get OCR values
+        ocr_dpp = flt(getattr(self, "ti_fp_dpp", 0) or 0)
+        ocr_ppn = flt(getattr(self, "ti_fp_ppn", 0) or 0)
+        ocr_ppnbm = flt(getattr(self, "ti_fp_ppnbm", 0) or 0)
+        
+        # Calculate expected values from expense request
+        expected_dpp = flt(getattr(self, "amount", 0) or 0)  # Total expense as DPP
+        
+        # Expected PPN calculation
+        ppn_template = getattr(self, "ppn_template", None)
+        ppn_rate = 11  # Default PPN rate
+        if ppn_template:
+            # Get rate from template
+            template = frappe.get_doc("Purchase Taxes and Charges Template", ppn_template)
+            for tax in template.get("taxes", []):
+                if tax.rate:
+                    ppn_rate = flt(tax.rate)
+                    break
+        
+        expected_ppn = expected_dpp * ppn_rate / 100
+        
+        # Check DPP difference
+        # Use both fixed IDR tolerance and percentage tolerance (whichever is more lenient)
+        if ocr_dpp > 0 and expected_dpp > 0:
+            # Calculate variance (OCR - Expected) - can be negative or positive
+            dpp_variance = ocr_dpp - expected_dpp
+            dpp_diff = abs(dpp_variance)
+            dpp_diff_pct = (dpp_diff / expected_dpp * 100) if expected_dpp > 0 else 0
+            
+            # Save variance for tax operations (will be used for PPN payable calculation)
+            self.ti_dpp_variance = dpp_variance
+            
+            # Validate using tolerance from settings
+            if dpp_diff > tolerance and dpp_diff_pct > tolerance_pct:
+                errors.append(
+                    _("DPP dari OCR ({0}) berbeda dengan Total Expense ({1}). Selisih: {2} atau {3:.2f}% (toleransi: {4} atau {5}%)").format(
+                        frappe.format_value(ocr_dpp, {"fieldtype": "Currency"}),
+                        frappe.format_value(expected_dpp, {"fieldtype": "Currency"}),
+                        frappe.format_value(dpp_variance, {"fieldtype": "Currency"}),
+                        dpp_diff_pct,
+                        frappe.format_value(tolerance, {"fieldtype": "Currency"}),
+                        tolerance_pct
+                    )
+                )
+            elif dpp_diff > tolerance or dpp_diff_pct > tolerance_pct:
+                # Warning zone: exceeds one tolerance but not both
+                warnings.append(
+                    _("⚠️ DPP dari OCR berbeda {0} atau {1:.2f}% (masih dalam toleransi)").format(
+                        frappe.format_value(dpp_variance, {"fieldtype": "Currency"}),
+                        dpp_diff_pct
+                    )
+                )
+        
+        # Check PPN difference
+        if ocr_ppn > 0:
+            ppn_diff = abs(ocr_ppn - expected_ppn)
+            ppn_diff_pct = (ppn_diff / expected_ppn * 100) if expected_ppn > 0 else 0
+            
+            # Allow up to 1% difference OR fixed tolerance (whichever is more lenient)
+            max_pct_tolerance = 1.0  # 1%
+            
+            if ppn_diff > tolerance and ppn_diff_pct > max_pct_tolerance:
+                errors.append(
+                    _("PPN dari OCR ({0}) berbeda dengan PPN yang dihitung ({1}). Selisih: {2} atau {3:.2f}% (toleransi: {4} atau {5}%)").format(
+                        frappe.format_value(ocr_ppn, {"fieldtype": "Currency"}),
+                        frappe.format_value(expected_ppn, {"fieldtype": "Currency"}),
+                        frappe.format_value(ppn_diff, {"fieldtype": "Currency"}),
+                        ppn_diff_pct,
+                        frappe.format_value(tolerance, {"fieldtype": "Currency"}),
+                        max_pct_tolerance
+                    )
+                )
+            elif ppn_diff > tolerance or ppn_diff_pct > max_pct_tolerance:
+                # Warning zone: exceeds one tolerance but not both
+                warnings.append(
+                    _("⚠️ PPN dari OCR berbeda {0} atau {1:.2f}% (masih dalam toleransi)").format(
+                        frappe.format_value(ppn_diff, {"fieldtype": "Currency"}),
+                        ppn_diff_pct
+                    )
+                )
+        
+        # PPnBM validation (if applicable) - usually PPnBM should be 0 or match expected
+        # For now, just note if PPnBM exists but we can add validation later if needed
+        
+        # Show warnings as msgprint (non-blocking)
+        if warnings:
+            frappe.msgprint(
+                "<br>".join(["<strong>Peringatan Validasi Faktur Pajak:</strong>"] + warnings),
+                title=_("Tax Invoice Validation Warning"),
+                indicator="orange"
+            )
+        
+        # Show errors and block submission
+        if errors:
+            frappe.throw(
+                "<br>".join(["<strong>Validasi Faktur Pajak Gagal:</strong>"] + errors),
+                title=_("Tax Invoice Validation Error")
+            )
 
     def _validate_deferred_expense(self):
         settings, deferrable_accounts = get_deferrable_account_map()
