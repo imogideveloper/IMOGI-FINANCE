@@ -80,7 +80,11 @@ def record_approval_timestamp(doc, level: int):
 
 
 def advance_approval_level(doc):
-    """Advance to next approval level or mark as approved."""
+    """Advance to next approval level or mark as approved.
+    
+    Returns:
+        str: 'Pending Approval' if more levels exist, 'Approved' if final approval
+    """
     current_level = getattr(doc, "current_approval_level", 0) or 1
     
     # Record approval timestamp for current level
@@ -91,27 +95,27 @@ def advance_approval_level(doc):
     next_user = getattr(doc, f"level_{next_level}_user", None)
     
     if next_user:
-        # Move to next level
+        # Move to next level - let workflow handle workflow_state
         doc.current_approval_level = next_level
-        doc.workflow_state = "Pending Approval"
         doc.status = "Pending Approval"
         
         # Save changes to database
         if hasattr(doc, "db_set"):
             doc.db_set("current_approval_level", next_level)
-            doc.db_set("workflow_state", "Pending Approval")
             doc.db_set("status", "Pending Approval")
+        
+        return "Pending Approval"
     else:
-        # No more levels, mark as approved
+        # No more levels, mark as approved - let workflow handle workflow_state
         doc.current_approval_level = 0
-        doc.workflow_state = "Approved"
         doc.status = "Approved"
         
         # Save changes to database
         if hasattr(doc, "db_set"):
             doc.db_set("current_approval_level", 0)
-            doc.db_set("workflow_state", "Approved")
             doc.db_set("status", "Approved")
+        
+        return "Approved"
 
 
 def validate_approver_permission(doc, action: str):

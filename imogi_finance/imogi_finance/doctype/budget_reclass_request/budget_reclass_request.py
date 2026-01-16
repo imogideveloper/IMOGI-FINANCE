@@ -64,14 +64,16 @@ class BudgetReclassRequest(Document):
             # Validate approver permission
             budget_approval.validate_approver_permission(self, action)
             
-            # Advance approval level
-            budget_approval.advance_approval_level(self)
+            # Advance approval level and get next state
+            next_state = budget_approval.advance_approval_level(self)
+            
+            # Set workflow state to guide Frappe workflow engine
+            self.workflow_state = next_state
             
             # Execute budget reclass only when fully approved
-            if self.status == "Approved":
+            if next_state == "Approved":
                 self._execute_budget_reclass()
             
-            # Don't modify workflow_state here, let advance_approval_level handle it
             return
         
         if action == "Reject":

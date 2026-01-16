@@ -192,8 +192,9 @@ def on_submit(doc, method=None):
         return
     
     # Sync link with validation for submit
+    # Allow "Paid" status for re-submitting PE after previous PE was cancelled
     request = _sync_expense_request_link(
-        doc, request_name, allowed_statuses=frozenset({"PI Created"})
+        doc, request_name, allowed_statuses=frozenset({"PI Created", "Paid"})
     )
     if not request:
         return
