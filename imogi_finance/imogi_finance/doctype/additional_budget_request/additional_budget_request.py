@@ -72,9 +72,9 @@ class AdditionalBudgetRequest(Document):
 
 	def on_update_after_submit(self):
 		"""Execute budget supplement when approved."""
-		if self.workflow_state == "Approved" and not self.get("_budget_executed"):
+		if self.workflow_state == "Approved" and not hasattr(self, "_budget_executed"):
 			self._execute_budget_supplement()
-			self.db_set("_budget_executed", 1, update_modified=False)
+			self._budget_executed = True
 
 	def _execute_budget_supplement(self):
 		"""Execute budget supplement after approval."""

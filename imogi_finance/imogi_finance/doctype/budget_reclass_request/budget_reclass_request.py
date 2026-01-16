@@ -75,9 +75,9 @@ class BudgetReclassRequest(Document):
 
 	def on_update_after_submit(self):
 		"""Execute budget reclass when approved."""
-		if self.workflow_state == "Approved" and not self.get("_budget_executed"):
+		if self.workflow_state == "Approved" and not hasattr(self, "_budget_executed"):
 			self._execute_budget_reclass()
-			self.db_set("_budget_executed", 1, update_modified=False)
+			self._budget_executed = True
 
 	def _execute_budget_reclass(self):
 		"""Execute budget reclass after approval."""
