@@ -48,6 +48,8 @@ class AdditionalBudgetRequest(Document):
 
     def on_workflow_action(self, action, **kwargs):
         """Handle workflow state transitions."""
+        frappe.logger().debug(f"[ABR] on_workflow_action called: {self.name}, action={action}")
+        
         if action == "Submit":
             self.workflow_state = "Pending Approval"
             self.status = "Pending Approval"
@@ -57,14 +59,18 @@ class AdditionalBudgetRequest(Document):
             return
         
         if action == "Approve":
+            frappe.logger().debug(f"[ABR] Before advance: current_level={self.current_approval_level}, level_2_user={self.level_2_user}")
+            
             # Validate approver permission
             budget_approval.validate_approver_permission(self, action)
             
             # Advance approval level and get next state
             next_state = budget_approval.advance_approval_level(self)
+            frappe.logger().debug(f"[ABR] advance_approval_level returned: {next_state}")
             
             # For intermediate levels: manually set workflow_state and prevent transition
             if next_state == "Pending Approval":
+                frappe.logger().debug(f"[ABR] Setting workflow_state to Pending Approval and returning False")
                 if hasattr(self, "db_set"):
                     self.db_set("workflow_state", "Pending Approval", update_modified=False)
                     self.reload()
@@ -74,8 +80,10 @@ class AdditionalBudgetRequest(Document):
             # For final level (Approved): let workflow execute the transition
             # Execute budget supplement before workflow completes
             if next_state == "Approved":
+                frappe.logger().debug(f"[ABR] Executing budget supplement and allowing Frappe transition")
                 self._execute_budget_supplement()
             
+            frappe.logger().debug(f"[ABR] Returning None to allow Frappe to handle transition")
             # Don't return False - let workflow execute Pending → Approved transition
             return
         

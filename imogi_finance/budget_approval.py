@@ -87,12 +87,17 @@ def advance_approval_level(doc):
     """
     current_level = getattr(doc, "current_approval_level", 0) or 1
     
+    frappe.logger().debug(f"[BUDGET_APPROVAL] advance_approval_level called for {doc.name}")
+    frappe.logger().debug(f"[BUDGET_APPROVAL] current_level: {current_level}")
+    
     # Record approval timestamp for current level
     record_approval_timestamp(doc, current_level)
     
     # Check if there's a next level
     next_level = current_level + 1
     next_user = getattr(doc, f"level_{next_level}_user", None)
+    
+    frappe.logger().debug(f"[BUDGET_APPROVAL] next_level: {next_level}, next_user: {next_user}")
     
     if next_user:
         # Move to next level
@@ -102,6 +107,7 @@ def advance_approval_level(doc):
         if hasattr(doc, "db_set"):
             doc.db_set("current_approval_level", next_level)
         
+        frappe.logger().debug(f"[BUDGET_APPROVAL] Moving to level {next_level}, returning 'Pending Approval'")
         # Return state to stay at Pending Approval for next level
         return "Pending Approval"
     else:
@@ -112,6 +118,7 @@ def advance_approval_level(doc):
         if hasattr(doc, "db_set"):
             doc.db_set("current_approval_level", 0)
         
+        frappe.logger().debug(f"[BUDGET_APPROVAL] No more levels, returning 'Approved'")
         # Return Approved to move workflow to final state
         return "Approved"
 
