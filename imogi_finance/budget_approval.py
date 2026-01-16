@@ -67,8 +67,16 @@ def record_approval_timestamp(doc, level: int):
     user = frappe.session.user
     now = frappe.utils.now()
     
-    setattr(doc, f"level_{level}_approved_by", user)
-    setattr(doc, f"level_{level}_approved_at", now)
+    approved_by_field = f"level_{level}_approved_by"
+    approved_at_field = f"level_{level}_approved_at"
+    
+    setattr(doc, approved_by_field, user)
+    setattr(doc, approved_at_field, now)
+    
+    # Save to database
+    if hasattr(doc, "db_set"):
+        doc.db_set(approved_by_field, user)
+        doc.db_set(approved_at_field, now)
 
 
 def advance_approval_level(doc):
@@ -87,11 +95,23 @@ def advance_approval_level(doc):
         doc.current_approval_level = next_level
         doc.workflow_state = "Pending Approval"
         doc.status = "Pending Approval"
+        
+        # Save changes to database
+        if hasattr(doc, "db_set"):
+            doc.db_set("current_approval_level", next_level)
+            doc.db_set("workflow_state", "Pending Approval")
+            doc.db_set("status", "Pending Approval")
     else:
         # No more levels, mark as approved
         doc.current_approval_level = 0
         doc.workflow_state = "Approved"
         doc.status = "Approved"
+        
+        # Save changes to database
+        if hasattr(doc, "db_set"):
+            doc.db_set("current_approval_level", 0)
+            doc.db_set("workflow_state", "Approved")
+            doc.db_set("status", "Approved")
 
 
 def validate_approver_permission(doc, action: str):

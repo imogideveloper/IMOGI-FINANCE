@@ -55,6 +55,9 @@ class BudgetReclassRequest(Document):
         if action == "Submit":
             self.workflow_state = "Pending Approval"
             self.status = "Pending Approval"
+            if hasattr(self, "db_set"):
+                self.db_set("workflow_state", "Pending Approval")
+                self.db_set("status", "Pending Approval")
             return
         
         if action == "Approve":
@@ -78,6 +81,11 @@ class BudgetReclassRequest(Document):
             self.status = "Rejected"
             self.workflow_state = "Rejected"
             self.current_approval_level = 0
+            
+            if hasattr(self, "db_set"):
+                self.db_set("status", "Rejected")
+                self.db_set("workflow_state", "Rejected")
+                self.db_set("current_approval_level", 0)
             return
 
     def _execute_budget_reclass(self):
