@@ -71,7 +71,12 @@ class AdditionalBudgetRequest(Document):
 			self.db_set("current_approval_level", 0, update_modified=False)
 
 	def on_update_after_submit(self):
-		"""Execute budget supplement when approved."""
+		"""Sync status with workflow and execute budget supplement when approved."""
+		# Keep Status field in sync with workflow_state for submitted documents
+		if getattr(self, "workflow_state", None):
+			self.db_set("status", self.workflow_state, update_modified=False)
+
+		# Execute budget supplement only once when final approval is reached
 		if self.workflow_state == "Approved" and not hasattr(self, "_budget_executed"):
 			self._execute_budget_supplement()
 			self._budget_executed = True
