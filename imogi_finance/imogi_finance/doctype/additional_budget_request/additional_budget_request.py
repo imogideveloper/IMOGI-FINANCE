@@ -46,34 +46,35 @@ class AdditionalBudgetRequest(Document):
         # Set initial status
         self.status = "Pending Approval"
 
-    def before_workflow_action(self, action, **kwargs):
-        """Validate approver before workflow action."""
-        if action == "Submit":
-            return
-        
-        budget_approval.validate_approver_permission(self, action)
-
     def on_workflow_action(self, action, **kwargs):
         """Handle workflow state transitions."""
-        next_state = kwargs.get("next_state")
-        
         if action == "Submit":
             self.workflow_state = "Pending Approval"
             self.status = "Pending Approval"
             return
         
         if action == "Approve":
+            # Validate approver permission
+            budget_approval.validate_approver_permission(self, action)
+            
+            # Advance approval level
             budget_approval.advance_approval_level(self)
             
             # Execute budget supplement only when fully approved
             if self.status == "Approved":
                 self._execute_budget_supplement()
+            
+            # Don't modify workflow_state here, let advance_approval_level handle it
             return
         
         if action == "Reject":
+            # Validate approver permission
+            budget_approval.validate_approver_permission(self, action)
+            
             self.status = "Rejected"
             self.workflow_state = "Rejected"
             self.current_approval_level = 0
+            return
 
     def _execute_budget_supplement(self):
         """Execute budget supplement after full approval."""
