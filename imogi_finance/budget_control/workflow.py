@@ -220,6 +220,15 @@ def _build_allocation_slices(expense_request, *, settings=None, ic_doc=None):
     company = utils.resolve_company_from_cost_center(getattr(expense_request, "cost_center", None))
     # FIX: Expense Request doesn't have fiscal_year field, need to resolve it
     fiscal_year = utils.resolve_fiscal_year(getattr(expense_request, "fiscal_year", None))
+    
+    # Validate fiscal year is found
+    if not fiscal_year:
+        frappe.throw(
+            _("Fiscal Year could not be determined for Expense Request {0}. Please set a default Fiscal Year in System Settings or User Defaults.").format(
+                getattr(expense_request, "name", "Unknown")
+            ),
+            title=_("Fiscal Year Required")
+        )
 
     total_amount, account_totals = _get_account_totals(getattr(expense_request, "items", []) or [])
     if not account_totals:
@@ -453,13 +462,17 @@ def handle_expense_request_workflow(expense_request, action: str | None, next_st
     target_state = settings.get("lock_on_workflow_state") or "Approved"
     _record_budget_workflow_event(expense_request, action, next_state, target_state)
 
-    if action in {"Reject", "Reopen"} or (next_state and next_state not in {target_state, "PI Created"}):
+    # Release budget on rejection or reopen
+    if action in {"Reject", "Reopen"}:
         release_budget_for_request(expense_request, reason=action)
         return
 
+    # Reserve budget when transitioning to target state (e.g., "Approved")
+    # Check both the current state and the next state to handle different workflow patterns
     status = getattr(expense_request, "status", None)
     workflow_state = getattr(expense_request, "workflow_state", None)
-    if status == target_state or workflow_state == target_state or next_state == target_state:
+    
+    if next_state == target_state or workflow_state == target_state or status == target_state:
         reserve_budget_for_request(expense_request, trigger_action=action, next_state=next_state)
 
 

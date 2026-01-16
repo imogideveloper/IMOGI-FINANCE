@@ -41,9 +41,8 @@
     {
       "state": "Pending Approval",
       "action": "Approve",
-      "next_state": "Approved",
-      "allowed": "All",
-      "condition": "not (((doc.get('current_approval_level') or 1) == 1 and (doc.get('level_2_user') or doc.get('level_3_user'))) or ((doc.get('current_approval_level') or 1) == 2 and doc.get('level_3_user')))"
+      "next_state": "Pending Approval",
+      "allowed": "All"
     },
     {
       "state": "Pending Approval",

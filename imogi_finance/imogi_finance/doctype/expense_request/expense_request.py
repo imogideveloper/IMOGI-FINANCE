@@ -183,7 +183,8 @@ class ExpenseRequest(Document):
         # Post-action: sync related systems
         if action in ("Approve", "Reject", "Reopen"):
             try:
-                handle_expense_request_workflow(self, action, getattr(self, "workflow_state"))
+                # Pass next_state from kwargs, not the already-changed workflow_state
+                handle_expense_request_workflow(self, action, next_state)
             except frappe.ValidationError:
                 # Re-raise validation errors
                 raise

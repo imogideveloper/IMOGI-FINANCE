@@ -138,6 +138,17 @@ def resolve_fiscal_year(fiscal_year: str | None) -> str | None:
                 return value
         except Exception:
             pass
+        
+        # Last resort: try to get fiscal year from current date using ERPNext's built-in function
+        try:
+            get_fiscal_year = getattr(frappe.utils, "get_fiscal_year", None)
+            if callable(get_fiscal_year):
+                from frappe.utils import nowdate
+                result = get_fiscal_year(nowdate(), as_dict=True)
+                if result and result.get("name"):
+                    return result.get("name")
+        except Exception:
+            pass
 
     return None
 
