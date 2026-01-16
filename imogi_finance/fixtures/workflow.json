@@ -140,8 +140,8 @@
 			{"state": "Draft", "doc_status": "0", "allow_edit": "All"},
 			{"state": "Generated", "doc_status": "0", "allow_edit": "All"},
 			{"state": "Approved", "doc_status": "0", "allow_edit": "All"},
-			{"state": "Printed", "doc_status": "1", "allow_edit": ""},
-			{"state": "Cancelled", "doc_status": "2", "allow_edit": ""}
+			{"state": "Printed", "doc_status": "1", "allow_edit": "System Manager"},
+			{"state": "Cancelled", "doc_status": "2", "allow_edit": "System Manager"}
 		],
 		"transitions": [
 			{"action": "Generate", "allow_self_approval": 1, "allowed": "All", "state": "Draft", "next_state": "Generated"},
