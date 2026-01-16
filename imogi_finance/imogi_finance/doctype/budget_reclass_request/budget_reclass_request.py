@@ -5,144 +5,120 @@ from __future__ import annotations
 
 import frappe
 from frappe import _
+from frappe.model.document import Document
 
 from imogi_finance.budget_control import service, utils
 from imogi_finance import budget_approval
 
-try:
-    from frappe.model.document import Document
-except Exception:  # pragma: no cover - fallback for test stubs
-    class Document:  # type: ignore
-        def __init__(self, *args, **kwargs):
-            for key, value in kwargs.items():
-                setattr(self, key, value)
-
 
 class BudgetReclassRequest(Document):
-    """Request to reclassify budget between cost centers/accounts with multi-level approval."""
+	"""Request to reclassify budget between cost centers/accounts with multi-level approval."""
 
-    def validate(self):
-        if getattr(self, "amount", 0) is None or float(self.amount) <= 0:
-            frappe.throw(_("Amount must be greater than zero."))
+	def validate(self):
+		"""Validate document before save."""
+		if not self.amount or float(self.amount) <= 0:
+			frappe.throw(_("Amount must be greater than zero"))
 
-        if not getattr(self, "fiscal_year", None):
-            frappe.throw(_("Fiscal Year must be specified."))
+		if not self.fiscal_year:
+			frappe.throw(_("Fiscal Year must be specified"))
 
-    def before_submit(self):
-        """Resolve approval route before submission."""
-        # Use from_cost_center for approval routing
-        cost_center = getattr(self, "from_cost_center", None)
-        if not cost_center:
-            frappe.throw(_("From Cost Center is required"))
-        
-        # Resolve approval route
-        route = budget_approval.get_budget_approval_route(cost_center)
-        
-        # Store approval route
-        self.approval_setting = route["approval_setting"]
-        self.level_1_user = route["level_1_user"]
-        self.level_2_user = route.get("level_2_user")
-        self.level_3_user = route.get("level_3_user")
-        
-        # Initialize approval level
-        self.current_approval_level = 1
-        
-        # Set initial status
-        self.status = "Pending Approval"
+	def before_submit(self):
+		"""Resolve approval route before submission."""
+		if not self.from_cost_center:
+			frappe.throw(_("From Cost Center is required"))
+		
+		# Get approval route based on from_cost_center
+		route = budget_approval.get_budget_approval_route(self.from_cost_center)
+		
+		# Store approval route
+		self.approval_setting = route["approval_setting"]
+		self.level_1_user = route["level_1_user"]
+		self.level_2_user = route.get("level_2_user")
+		self.level_3_user = route.get("level_3_user")
+		
+		# Initialize at level 1
+		self.current_approval_level = 1
 
-    def on_workflow_action(self, action, **kwargs):
-        """Handle workflow state transitions."""
-        frappe.logger().debug(f"[BCR] on_workflow_action called: {self.name}, action={action}")
-        
-        if action == "Submit":
-            self.workflow_state = "Pending Approval"
-            self.status = "Pending Approval"
-            if hasattr(self, "db_set"):
-                self.db_set("workflow_state", "Pending Approval")
-                self.db_set("status", "Pending Approval")
-            return
-        
-        if action == "Approve":
-            frappe.logger().debug(f"[BCR] Before advance: current_level={self.current_approval_level}, level_2_user={self.level_2_user}")
-            
-            # Validate approver permission
-            budget_approval.validate_approver_permission(self, action)
-            
-            # Advance approval level and get next state
-            next_state = budget_approval.advance_approval_level(self)
-            frappe.logger().debug(f"[BCR] advance_approval_level returned: {next_state}")
-            
-            # For intermediate levels: manually set workflow_state and prevent transition
-            if next_state == "Pending Approval":
-                frappe.logger().debug(f"[BCR] Setting workflow_state to Pending Approval and returning False")
-                if hasattr(self, "db_set"):
-                    self.db_set("workflow_state", "Pending Approval", update_modified=False)
-                    self.reload()
-                # Return False to prevent Frappe from executing transition
-                return False
-            
-            # For final level (Approved): let workflow execute the transition
-            # Execute budget reclass before workflow completes
-            if next_state == "Approved":
-                frappe.logger().debug(f"[BCR] Executing budget reclass and allowing Frappe transition")
-                self._execute_budget_reclass()
-            
-            frappe.logger().debug(f"[BCR] Returning None to allow Frappe to handle transition")
-            # Don't return False - let workflow execute Pending → Approved transition
-            return
-        
-        if action == "Reject":
-            # Validate approver permission
-            budget_approval.validate_approver_permission(self, action)
-            
-            self.status = "Rejected"
-            self.workflow_state = "Rejected"
-            self.current_approval_level = 0
-            
-            if hasattr(self, "db_set"):
-                self.db_set("status", "Rejected")
-                self.db_set("workflow_state", "Rejected")
-                self.db_set("current_approval_level", 0)
-            return
+	def before_workflow_action(self, workflow_state_name, action):
+		"""Handle multi-level approval before workflow executes."""
+		if action == "Approve":
+			# Validate approver permission
+			budget_approval.validate_approver_permission(self, "Approve")
+			
+			# Get current and next level
+			current_level = self.current_approval_level or 1
+			next_level = current_level + 1
+			next_user = getattr(self, f"level_{next_level}_user", None)
+			
+			# Record approval timestamp
+			budget_approval.record_approval_timestamp(self, current_level)
+			
+			if next_user:
+				# More levels exist - advance to next level
+				self.db_set("current_approval_level", next_level, update_modified=False)
+				self.db_set("workflow_state", "Pending Approval", update_modified=False)
+				self.reload()
+				
+				# Prevent workflow from proceeding
+				frappe.throw(_("Approval Level {0} completed. Now waiting for Level {1} approval from {2}").format(
+					current_level, next_level, next_user
+				))
+			else:
+				# Final level - reset and allow workflow to proceed to Approved
+				self.db_set("current_approval_level", 0, update_modified=False)
+		
+		elif action == "Reject":
+			# Validate approver permission
+			budget_approval.validate_approver_permission(self, "Reject")
+			# Reset approval level
+			self.db_set("current_approval_level", 0, update_modified=False)
 
-    def _execute_budget_reclass(self):
-        """Execute budget reclass after full approval."""
-        settings = utils.get_settings()
-        if not settings.get("enable_budget_reclass"):
-            return
+	def on_update_after_submit(self):
+		"""Execute budget reclass when approved."""
+		if self.workflow_state == "Approved" and not self.get("_budget_executed"):
+			self._execute_budget_reclass()
+			self.db_set("_budget_executed", 1, update_modified=False)
 
-        from_dims = service.resolve_dims(
-            company=getattr(self, "company", None),
-            fiscal_year=getattr(self, "fiscal_year", None),
-            cost_center=getattr(self, "from_cost_center", None),
-            account=getattr(self, "from_account", None),
-            project=getattr(self, "project", None),
-            branch=getattr(self, "branch", None),
-        )
-        to_dims = service.resolve_dims(
-            company=getattr(self, "company", None),
-            fiscal_year=getattr(self, "fiscal_year", None),
-            cost_center=getattr(self, "to_cost_center", None),
-            account=getattr(self, "to_account", None),
-            project=getattr(self, "project", None),
-            branch=getattr(self, "branch", None),
-        )
+	def _execute_budget_reclass(self):
+		"""Execute budget reclass after approval."""
+		settings = utils.get_settings()
+		if not settings.get("enable_budget_reclass"):
+			return
 
-        override_role = settings.get("allow_reclass_override_role")
-        if override_role and override_role in frappe.get_roles():
-            override_allowed = True
-        else:
-            override_allowed = False
+		# Resolve dimensions
+		from_dims = service.resolve_dims(
+			company=self.company,
+			fiscal_year=self.fiscal_year,
+			cost_center=self.from_cost_center,
+			account=self.from_account,
+			project=self.project,
+			branch=self.branch,
+		)
+		
+		to_dims = service.resolve_dims(
+			company=self.company,
+			fiscal_year=self.fiscal_year,
+			cost_center=self.to_cost_center,
+			account=self.to_account,
+			project=self.project,
+			branch=self.branch,
+		)
 
-        if not override_allowed:
-            result = service.check_budget_available(from_dims, float(getattr(self, "amount", 0) or 0))
-            if not result.ok:
-                frappe.throw(result.message)
+		# Check override permission
+		override_role = settings.get("allow_reclass_override_role")
+		override_allowed = override_role and override_role in frappe.get_roles()
 
-        service.record_reclass(
-            from_dims=from_dims,
-            to_dims=to_dims,
-            amount=float(getattr(self, "amount", 0) or 0),
-            ref_doctype="Budget Reclass Request",
-            ref_name=getattr(self, "name", None),
-        )
+		# Validate budget availability unless override allowed
+		if not override_allowed:
+			result = service.check_budget_available(from_dims, float(self.amount))
+			if not result.ok:
+				frappe.throw(result.message)
+
+		# Record the reclass transaction
+		service.record_reclass(
+			from_dims=from_dims,
+			to_dims=to_dims,
+			amount=float(self.amount),
+			ref_doctype="Budget Reclass Request",
+			ref_name=self.name,
+		)
