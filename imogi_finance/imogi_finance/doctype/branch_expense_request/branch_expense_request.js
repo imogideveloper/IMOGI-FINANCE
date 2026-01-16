@@ -63,6 +63,12 @@ async function syncBerUpload(frm) {
 	if (!frm.doc.ti_tax_invoice_upload) {
 		return;
 	}
+	
+	// Skip sync for non-draft documents - OCR fields are read-only and already saved
+	if (frm.doc.docstatus !== 0) {
+		return;
+	}
+	
 	const cachedUpload = frm.taxInvoiceUploadCache?.[frm.doc.ti_tax_invoice_upload];
 	const upload = cachedUpload || await frappe.db.get_doc("Tax Invoice OCR Upload", frm.doc.ti_tax_invoice_upload);
 	const updates = {};
@@ -81,6 +87,12 @@ function lockBerTaxInvoiceFields(frm) {
 	Object.values(BER_TAX_INVOICE_FIELDS).forEach((field) => {
 		frm.set_df_property(field, "read_only", true);
 	});
+}
+
+function hideBerOcrStatus(frm) {
+	if (frm.fields_dict?.ti_ocr_status) {
+		frm.set_df_property('ti_ocr_status', 'hidden', true);
+	}
 }
 
 function setExpenseAccountQuery(frm) {
@@ -132,7 +144,7 @@ async function setBerUploadQuery(frm) {
 
 	try {
 		const { message } = await frappe.call({
-			method: "imogi_finance.api.tax_invoice.get_tax_invoice.get_tax_invoice_upload_context_api",
+			method: "imogi_finance.api.tax_invoice.get_tax_invoice_upload_context_api",
 			args: { target_doctype: "Branch Expense Request", target_name: frm.doc.name },
 		});
 		usedUploads = message?.used_uploads || [];
@@ -159,15 +171,72 @@ async function setBerUploadQuery(frm) {
 	}));
 }
 
-async function checkOcrEnabledBer(frm) {
-	try {
-		const ocrEnabled = await frappe.db.get_single_value('Tax Invoice OCR Settings', 'enable_tax_invoice_ocr');
-		frm.doc.__ocr_enabled = Boolean(ocrEnabled);
-		frm.refresh_fields();
-	} catch (error) {
-		console.error('Unable to check OCR settings', error);
-		frm.doc.__ocr_enabled = false;
+function computeTotalsBer(frm) {
+	const flt = (frappe.utils && frappe.utils.flt) || window.flt || ((value) => parseFloat(value) || 0);
+	const totalExpense = flt(frm.doc.amount || 0);
+	const totalPpn = flt(frm.doc.ti_fp_ppn || 0);
+	const totalPpnbm = flt(frm.doc.ti_fp_ppnbm || 0);
+	const totalAmount = totalExpense + totalPpn + totalPpnbm;
+
+	return {
+		totalExpense,
+		totalPpn,
+		totalPpnbm,
+		totalAmount,
+	};
+}
+
+function renderTotalsHtmlBer(frm, totals) {
+	const format = (value) =>
+		frappe.format(value, { fieldtype: 'Currency', options: frm.doc.currency });
+
+	const rows = [
+		['Total Expense', format(totals.totalExpense)],
+		['Total PPN', format(totals.totalPpn)],
+		['Total PPnBM', format(totals.totalPpnbm)],
+		['Total', format(totals.totalAmount)],
+	];
+
+	const cells = rows
+		.map(
+			([label, value]) => `
+			<tr>
+				<td>${frappe.utils.escape_html(label)}</td>
+				<td class="text-right">${value}</td>
+			</tr>
+			`
+		)
+		.join('');
+
+	return `<table class="table table-bordered table-sm"><tbody>${cells}</tbody></table>`;
+}
+
+function updateTotalsSummaryBer(frm) {
+	const totals = computeTotalsBer(frm);
+	const fields = {
+		total_amount: totals.totalAmount,
+	};
+
+	// Only update fields in draft mode to prevent "Not Saved" badge on submitted docs
+	if (frm.doc.docstatus === 0) {
+		Object.entries(fields).forEach(([field, value]) => {
+			if (!frm.fields_dict[field]) {
+				return;
+			}
+			if (frm.doc[field] !== value) {
+				frm.doc[field] = value;
+				frm.refresh_field(field);
+			}
+		});
 	}
+
+	const html = renderTotalsHtmlBer(frm, totals);
+	['items_totals_html'].forEach((fieldname) => {
+		const field = frm.fields_dict[fieldname];
+		if (field?.$wrapper) {
+			field.$wrapper.html(html);
+		}
+	});
 }
 
 function maybeAddDeferredExpenseActions(frm) {
@@ -282,9 +351,11 @@ frappe.ui.form.on("Branch Expense Request", {
 		update_totals(frm);
 	},
 	async refresh(frm) {
-		setExpenseAccountQuery(frm);
+		hideBerOcrStatus(frm);
 		lockBerTaxInvoiceFields(frm);
+		setExpenseAccountQuery(frm);
 		formatApprovalTimestamps(frm);
+		frm.dashboard.clear_headline();
 		update_totals(frm);
 		await setBerUploadQuery(frm);
 		await checkOcrEnabledBer(frm);
@@ -292,6 +363,7 @@ frappe.ui.form.on("Branch Expense Request", {
 		await setDeferredExpenseQueries(frm);
 		addDeferredExpenseItemActions(frm);
 		updateDeferredExpenseIndicators(frm);
+		updateTotalsSummaryBer(frm);
 		maybeAddOcrButton(frm);
 		maybeAddUploadActions(frm);
 		addCheckRouteButton(frm);
@@ -300,10 +372,18 @@ frappe.ui.form.on("Branch Expense Request", {
 		update_totals(frm);
 		addDeferredExpenseItemActions(frm);
 		updateDeferredExpenseIndicators(frm);
+		updateTotalsSummaryBer(frm);
 	},
 	items_remove(frm) {
 		update_totals(frm);
 		updateDeferredExpenseIndicators(frm);
+		updateTotalsSummaryBer(frm);
+	},
+	ti_fp_ppn(frm) {
+		updateTotalsSummaryBer(frm);
+	},
+	ti_fp_ppnbm(frm) {
+		updateTotalsSummaryBer(frm);
 	},
 	ti_tax_invoice_upload: async function (frm) {
 		await syncBerUpload(frm);
@@ -319,6 +399,7 @@ frappe.ui.form.on("Branch Expense Request Item", {
 	},
 	amount(frm) {
 		update_totals(frm);
+		updateTotalsSummaryBer(frm);
 	},
 	async prepaid_account(frm, cdt, cdn) {
 		await loadDeferrableAccounts(frm);
@@ -354,6 +435,7 @@ function update_item_amount(frm, cdt, cdn) {
 	const amount = qty * rate;
 	frappe.model.set_value(cdt, cdn, "amount", amount);
 	update_totals(frm);
+	updateTotalsSummaryBer(frm);
 }
 
 function update_totals(frm) {
@@ -368,6 +450,7 @@ function update_totals(frm) {
 	frm.set_value("total_amount", total);
 	frm.set_value("amount", total);
 	frm.set_value("expense_account", accounts.size === 1 ? [...accounts][0] : null);
+	updateTotalsSummaryBer(frm);
 }
 
 async function maybeAddOcrButton(frm) {

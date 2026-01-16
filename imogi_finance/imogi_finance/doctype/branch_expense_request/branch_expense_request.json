@@ -24,6 +24,7 @@
     "totals_section",
     "total_amount",
     "amount",
+    "items_totals_html",
     "column_break_totals",
     "expense_account",
     "expense_accounts",
@@ -202,6 +203,10 @@
       "label": "Amount",
       "read_only": 1,
       "precision": 2
+    },
+    {
+      "fieldname": "items_totals_html",
+      "fieldtype": "HTML"
     },
     {
       "fieldname": "column_break_totals",
