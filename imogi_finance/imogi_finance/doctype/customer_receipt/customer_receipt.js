@@ -103,22 +103,42 @@ frappe.ui.form.on('Customer Receipt Item', {
 
     sales_invoice: function(frm, cdt, cdn) {
         let row = locals[cdt][cdn];
-        if (row.sales_invoice && frm.doc.receipt_purpose === 'Billing (Sales Invoice)') {
+        console.log('sales_invoice triggered', {sales_invoice: row.sales_invoice, receipt_purpose: frm.doc.receipt_purpose});
+        
+        if (row.sales_invoice) {
+            // Validate receipt purpose
+            if (frm.doc.receipt_purpose !== 'Billing (Sales Invoice)') {
+                frappe.msgprint(__('Please set Receipt Purpose to "Billing (Sales Invoice)" to use Sales Invoice'));
+                frappe.model.set_value(cdt, cdn, 'sales_invoice', '');
+                return;
+            }
+            
             // Clear sales_order if accidentally filled
             if (row.sales_order) {
                 frappe.model.set_value(cdt, cdn, 'sales_order', '');
             }
+            
             fetch_sales_invoice_data(frm, row);
         }
     },
 
     sales_order: function(frm, cdt, cdn) {
         let row = locals[cdt][cdn];
-        if (row.sales_order && frm.doc.receipt_purpose === 'Before Billing (Sales Order)') {
+        console.log('sales_order triggered', {sales_order: row.sales_order, receipt_purpose: frm.doc.receipt_purpose});
+        
+        if (row.sales_order) {
+            // Validate receipt purpose
+            if (frm.doc.receipt_purpose !== 'Before Billing (Sales Order)') {
+                frappe.msgprint(__('Please set Receipt Purpose to "Before Billing (Sales Order)" to use Sales Order'));
+                frappe.model.set_value(cdt, cdn, 'sales_order', '');
+                return;
+            }
+            
             // Clear sales_invoice if accidentally filled
             if (row.sales_invoice) {
                 frappe.model.set_value(cdt, cdn, 'sales_invoice', '');
             }
+            
             fetch_sales_order_data(frm, row);
         }
     }
@@ -184,6 +204,8 @@ function fetch_sales_invoice_data(frm, row) {
 }
 
 function fetch_sales_order_data(frm, row) {
+    console.log('fetch_sales_order_data called', {sales_order: row.sales_order, row_name: row.name});
+    
     frappe.call({
         method: 'frappe.client.get',
         args: {
@@ -192,6 +214,8 @@ function fetch_sales_order_data(frm, row) {
             fields: ['customer', 'company', 'transaction_date', 'advance_paid', 'grand_total', 'docstatus']
         },
         callback: function(r) {
+            console.log('fetch_sales_order_data response', r);
+            
             if (r.message) {
                 // Auto-populate customer if empty
                 if (!frm.doc.customer) {
