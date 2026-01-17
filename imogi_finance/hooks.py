@@ -208,6 +208,7 @@ doc_events = {
             "imogi_finance.events.purchase_invoice.on_cancel",
             "imogi_finance.advance_payment.api.on_reference_cancel",
         ],
+        "before_delete": "imogi_finance.events.purchase_invoice.before_delete",
         "on_trash": "imogi_finance.events.purchase_invoice.on_trash",
     },
     "Sales Invoice": {
@@ -342,6 +343,7 @@ doc_events = {
             "imogi_finance.transfer_application.payment_entry_hooks.on_cancel",
             "imogi_finance.advance_payment.workflow.on_payment_entry_cancel",
         ],
+        "before_delete": "imogi_finance.events.payment_entry.before_delete",
         "on_trash": [
             "imogi_finance.events.payment_entry.on_trash",
         ],

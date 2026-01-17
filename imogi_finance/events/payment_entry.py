@@ -340,6 +340,17 @@ def before_cancel(doc, method=None):
     doc.flags.skip_link_doctypes = True
 
 
+def before_delete(doc, method=None):
+    """Set flag to ignore link validation before deletion.
+    
+    This prevents LinkExistsError when deleting draft PE that is linked to ER.
+    The actual link cleanup happens in on_trash.
+    """
+    expense_request, branch_request = _resolve_expense_request(doc)
+    if expense_request or branch_request:
+        doc.flags.ignore_links = True
+
+
 def on_cancel(doc, method=None):
     """Handle Payment Entry cancellation.
     
@@ -618,19 +629,27 @@ def reverse_payment_entry(payment_entry_name: str, reversal_date: str | None = N
 
 
 def on_trash(doc, method=None):
-    """Update workflow state when Payment Entry is deleted."""
+    """Clear links from Expense Request before deleting PE to avoid LinkExistsError."""
     expense_request, branch_request = _resolve_expense_request(doc)
     
-    # Handle Expense Request - update workflow state
-    # Status akan auto-update via query
+    # Handle Expense Request - clear link and update workflow state
     if expense_request:
-        request_links = get_expense_request_links(expense_request)
-        next_status = get_expense_request_status(request_links)
-        frappe.db.set_value(
-            "Expense Request",
-            expense_request,
-            {"workflow_state": next_status}
-        )
+        if frappe.db.exists("Expense Request", expense_request):
+            updates = {}
+            
+            # Clear linked_payment_entry if it matches (THIS IS THE KEY FIX)
+            # This field is what causes LinkExistsError
+            current_linked = frappe.db.get_value("Expense Request", expense_request, "linked_payment_entry")
+            if current_linked == doc.name:
+                updates["linked_payment_entry"] = None
+            
+            # Update workflow state based on remaining links
+            request_links = get_expense_request_links(expense_request)
+            next_status = get_expense_request_status(request_links)
+            updates["workflow_state"] = next_status
+            
+            frappe.db.set_value("Expense Request", expense_request, updates)
+            frappe.db.commit()  # Commit immediately to ensure link is cleared
     
     # Handle Branch Expense Request
     if branch_request:
@@ -638,3 +657,4 @@ def on_trash(doc, method=None):
             linked_pe = frappe.db.get_value("Branch Expense Request", branch_request, "linked_payment_entry")
             if linked_pe == doc.name:
                 frappe.db.set_value("Branch Expense Request", branch_request, "linked_payment_entry", None)
+                frappe.db.commit()  # Commit immediately

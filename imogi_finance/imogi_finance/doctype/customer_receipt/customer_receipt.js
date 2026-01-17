@@ -185,14 +185,17 @@ function fetch_sales_invoice_data(frm, row) {
                     return;
                 }
 
-                // Auto-fill data
-                frappe.model.set_value(row.doctype, row.name, 'reference_date', r.message.posting_date);
-                frappe.model.set_value(row.doctype, row.name, 'reference_outstanding', r.message.outstanding_amount);
+                // Auto-fill data - update locals directly to avoid refresh issues with depends_on
+                row.reference_date = r.message.posting_date;
+                row.reference_outstanding = r.message.outstanding_amount;
                 
                 // Set amount_to_collect to outstanding amount if not already set
                 if (!row.amount_to_collect || row.amount_to_collect === 0) {
-                    frappe.model.set_value(row.doctype, row.name, 'amount_to_collect', r.message.outstanding_amount);
+                    row.amount_to_collect = r.message.outstanding_amount;
                 }
+                
+                // Refresh the grid row to show updated values
+                frm.fields_dict.items.grid.grid_rows_by_docname[row.name].refresh();
 
                 frappe.show_alert({
                     message: __('Sales Invoice data fetched: Customer={0}, Amount={1}', [r.message.customer, format_currency(r.message.outstanding_amount)]),
@@ -251,14 +254,17 @@ function fetch_sales_order_data(frm, row) {
                 // Calculate outstanding (grand_total - advance_paid)
                 let outstanding = r.message.grand_total - (r.message.advance_paid || 0);
 
-                // Auto-fill data
-                frappe.model.set_value(row.doctype, row.name, 'reference_date', r.message.transaction_date);
-                frappe.model.set_value(row.doctype, row.name, 'reference_outstanding', outstanding);
+                // Auto-fill data - update locals directly to avoid refresh issues with depends_on
+                row.reference_date = r.message.transaction_date;
+                row.reference_outstanding = outstanding;
                 
                 // Set amount_to_collect to outstanding amount if not already set
                 if (!row.amount_to_collect || row.amount_to_collect === 0) {
-                    frappe.model.set_value(row.doctype, row.name, 'amount_to_collect', outstanding);
+                    row.amount_to_collect = outstanding;
                 }
+                
+                // Refresh the grid row to show updated values
+                frm.fields_dict.items.grid.grid_rows_by_docname[row.name].refresh();
 
                 frappe.show_alert({
                     message: __('Sales Order data fetched: Customer={0}, Amount={1}', [r.message.customer, format_currency(outstanding)]),

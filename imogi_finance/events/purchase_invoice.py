@@ -259,6 +259,16 @@ def before_cancel(doc, method=None):
         doc.flags.ignore_links = True
 
 
+def before_delete(doc, method=None):
+    """Set flag to ignore link validation before deletion.
+    
+    This prevents LinkExistsError when deleting draft PI that is linked to ER.
+    The actual link cleanup happens in on_trash.
+    """
+    if doc.get("imogi_expense_request") or doc.get("branch_expense_request"):
+        doc.flags.ignore_links = True
+
+
 def on_cancel(doc, method=None):
     """Handle Purchase Invoice cancellation.
     
@@ -315,25 +325,35 @@ def on_cancel(doc, method=None):
 
 
 def on_trash(doc, method=None):
+    """Clear links from Expense Request before deleting PI to avoid LinkExistsError."""
     expense_request = doc.get("imogi_expense_request")
     branch_request = doc.get("branch_expense_request")
     
     # Handle Expense Request
     if expense_request:
-        # Clear pending field dan update workflow state
-        # Status akan auto-update via query
-        request_links = get_expense_request_links(expense_request, include_pending=True)
-        updates = {}
-        
-        if request_links.get("pending_purchase_invoice") == doc.name:
-            updates["pending_purchase_invoice"] = None
+        if frappe.db.exists("Expense Request", expense_request):
+            # Clear BOTH linked and pending fields to break the link
+            request_links = get_expense_request_links(expense_request, include_pending=True)
+            updates = {}
+            
+            # Clear pending_purchase_invoice if it matches
+            if request_links.get("pending_purchase_invoice") == doc.name:
+                updates["pending_purchase_invoice"] = None
+            
+            # Clear linked_purchase_invoice if it matches (THIS IS THE FIX)
+            # This field is what causes LinkExistsError
+            current_linked = frappe.db.get_value("Expense Request", expense_request, "linked_purchase_invoice")
+            if current_linked == doc.name:
+                updates["linked_purchase_invoice"] = None
 
-        if updates or True:  # Always update workflow state
-            # Re-query untuk get status terbaru
-            current_links = get_expense_request_links(expense_request)
-            next_status = get_expense_request_status(current_links)
-            updates["workflow_state"] = next_status
-            frappe.db.set_value("Expense Request", expense_request, updates)
+            if updates or True:  # Always update workflow state
+                # Re-query untuk get status terbaru (after clearing links)
+                current_links = get_expense_request_links(expense_request)
+                next_status = get_expense_request_status(current_links)
+                updates["workflow_state"] = next_status
+                
+                frappe.db.set_value("Expense Request", expense_request, updates)
+                frappe.db.commit()  # Commit immediately to ensure link is cleared
     
     # Handle Branch Expense Request
     if branch_request:
@@ -341,3 +361,4 @@ def on_trash(doc, method=None):
             linked_pi = frappe.db.get_value("Branch Expense Request", branch_request, "linked_purchase_invoice")
             if linked_pi == doc.name:
                 frappe.db.set_value("Branch Expense Request", branch_request, "linked_purchase_invoice", None)
+                frappe.db.commit()  # Commit immediately
