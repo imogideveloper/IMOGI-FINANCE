@@ -223,30 +223,51 @@ bench restart
 - Look for "Connections" tab
 - Should show linked Purchase Invoices, Payment Entries, etc.
 
-## 📝 Code Cleanup Opportunities
+## 📝 Code Cleanup - COMPLETED ✅
 
-Now that native connections are implemented, you can **remove** manual connection management code:
+Now that native connections are implemented, manual connection management code has been cleaned up:
 
-### Python Code to Remove
-```python
-# In expense_request.py or similar
-def update_connections(self):  # DELETE THIS
-    ...
+### ✅ Changes Completed (January 17, 2026)
 
-def set_linked_documents(self):  # DELETE THIS
-    ...
-```
-
-### JavaScript Code to Remove
+#### 1. Removed Custom Buttons (internal_charge_request.js)
 ```javascript
-// In expense_request.js or similar
-frm.add_custom_button('View Linked Docs', ...);  // DELETE THIS
+// ✅ REMOVED - Replaced by native connections
+function addExpenseRequestButton(frm) {
+  frm.add_custom_button(__('View Expense Request'), ...);  // DELETED
+  frm.add_custom_button(__('View Budget Entries'), ...);   // DELETED
+}
 ```
 
-### Custom Fields to Remove
-- `linked_purchase_invoices` (Small Text)
-- `linked_payment_entries` (Small Text)
-- Any other custom connection display fields
+#### 2. Removed Dashboard Indicators (internal_charge_request.js)
+```javascript
+// ✅ REMOVED - Redundant with connections tab
+function addStatusIndicators(frm) {
+  frm.dashboard.add_indicator(...);  // DELETED
+}
+```
+
+#### 3. Hidden Display Fields (expense_request.json)
+- `links_section` - Hidden from form (kept in DB for business logic)
+- `linked_purchase_invoice` - Hidden from form (kept in DB for business logic)
+- `linked_payment_entry` - Hidden from form (kept in DB for business logic)
+- `pending_purchase_invoice` - Hidden from form (kept in DB for business logic)
+- `column_break_links` - Hidden from form
+
+**Note**: Fields remain in database and are still used by business logic in `accounting.py` and `events/utils.py`
+
+### ⚠️ What Was NOT Removed (Still Required)
+
+#### Python Business Logic - KEEP
+```python
+# imogi_finance/accounting.py
+def _update_request_purchase_invoice_links(...)  # ✅ KEEP - Business logic
+
+# imogi_finance/events/utils.py  
+def get_expense_request_status(...)              # ✅ KEEP - Status determination
+def get_expense_request_links(...)               # ✅ KEEP - Link retrieval
+```
+
+These functions manage workflow state, not UI display, so they remain necessary.
 
 ## 🎨 Best Practices
 
@@ -339,3 +360,25 @@ For any custom DocType, add `links` property:
 | Maintenance | High | Zero |
 
 **Recommendation**: Always use native connections instead of manual connection management for cleaner, maintainable code!
+
+---
+
+## ✅ Cleanup Status
+
+**Completed**: January 17, 2026
+
+- ✅ Removed redundant custom buttons from Internal Charge Request
+- ✅ Removed redundant dashboard indicators
+- ✅ Hidden display-only link fields from Expense Request form
+- ✅ Verified business logic fields remain intact
+- ✅ Documentation updated
+
+**Files Modified**:
+1. [internal_charge_request.js](../imogi_finance/imogi_finance/doctype/internal_charge_request/internal_charge_request.js) - Removed 2 functions
+2. [expense_request.json](../imogi_finance/imogi_finance/doctype/expense_request/expense_request.json) - Hidden 5 display fields
+
+**Next Steps**:
+1. Reload doctypes: `bench --site [site] reload-doc imogi_finance "DocType" "Expense Request"`
+2. Clear cache: `bench --site [site] clear-cache`
+3. Test connections tab displays correctly
+4. Verify business logic (PI creation, status updates) still works

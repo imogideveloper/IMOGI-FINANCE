@@ -640,32 +640,37 @@
       "fieldname": "links_section",
       "fieldtype": "Section Break",
       "label": "Related Documents",
-      "description": "Links to documents created from this expense request"
+      "description": "Links to documents created from this expense request",
+      "hidden": 1
     },
     {
       "fieldname": "linked_purchase_invoice",
       "fieldtype": "Link",
       "label": "Purchase Invoice",
       "options": "Purchase Invoice",
-      "read_only": 1
+      "read_only": 1,
+      "hidden": 1
     },
     {
       "fieldname": "pending_purchase_invoice",
       "fieldtype": "Link",
       "label": "Draft PI",
       "options": "Purchase Invoice",
-      "read_only": 1
+      "read_only": 1,
+      "hidden": 1
     },
     {
       "fieldname": "column_break_links",
-      "fieldtype": "Column Break"
+      "fieldtype": "Column Break",
+      "hidden": 1
     },
     {
       "fieldname": "linked_payment_entry",
       "fieldtype": "Link",
       "label": "Payment Entry",
       "options": "Payment Entry",
-      "read_only": 1
+      "read_only": 1,
+      "hidden": 1
     },
     {
       "fieldname": "internal_charge_request",

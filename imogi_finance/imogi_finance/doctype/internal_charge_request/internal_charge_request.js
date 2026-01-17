@@ -4,8 +4,6 @@
 frappe.ui.form.on('Internal Charge Request', {
   refresh: function(frm) {
     // Add custom indicators and buttons
-    addStatusIndicators(frm);
-    addExpenseRequestButton(frm);
     calculateLineTotals(frm);
     
     // Refresh after workflow action
@@ -132,40 +130,6 @@ frappe.ui.form.on('Internal Charge Line', {
 });
 
 // Helper Functions
-
-function addStatusIndicators(frm) {
-  if (!frm.doc.expense_request) {
-    frm.dashboard.add_indicator(__('No Expense Request Linked'), 'red');
-    return;
-  }
-  
-  // Show link to ER
-  frm.dashboard.add_indicator(
-    __('Expense Request: {0}', [`<a href="/app/expense-request/${frm.doc.expense_request}">${frm.doc.expense_request}</a>`]),
-    'blue'
-  );
-}
-
-function addExpenseRequestButton(frm) {
-  if (!frm.doc.expense_request) {
-    return;
-  }
-  
-  // Add button to view Expense Request
-  frm.add_custom_button(__('View Expense Request'), () => {
-    frappe.set_route('Form', 'Expense Request', frm.doc.expense_request);
-  }, __('Actions'));
-  
-  // Add button to view Budget Control Entries if submitted
-  if (frm.doc.docstatus === 1) {
-    frm.add_custom_button(__('View Budget Entries'), () => {
-      frappe.set_route('List', 'Budget Control Entry', {
-        ref_doctype: 'Expense Request',
-        ref_name: frm.doc.expense_request,
-      });
-    }, __('Actions'));
-  }
-}
 
 function calculateLineTotals(frm) {
   if (!frm.doc.internal_charge_lines || frm.doc.internal_charge_lines.length === 0) {
