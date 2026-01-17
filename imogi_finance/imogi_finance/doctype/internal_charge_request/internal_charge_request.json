@@ -167,6 +167,18 @@
       "no_copy": 1
     }
   ],
+  "links": [
+    {
+      "group": "Reference",
+      "link_doctype": "Expense Request",
+      "link_fieldname": "internal_charge_request"
+    },
+    {
+      "group": "Budget",
+      "link_doctype": "Budget Control Ledger Entry",
+      "link_fieldname": "source_document"
+    }
+  ],
   "permissions": [
     {
       "role": "System Manager"

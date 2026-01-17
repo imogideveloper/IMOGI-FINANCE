@@ -112,6 +112,18 @@
     "name": "Printed",
     "workflow_state_name": "Printed",
     "style": "Success"
+  },
+  {
+    "doctype": "Workflow State",
+    "name": "Issued",
+    "workflow_state_name": "Issued",
+    "style": "Info"
+  },
+  {
+    "doctype": "Workflow State",
+    "name": "Partially Paid",
+    "workflow_state_name": "Partially Paid",
+    "style": "Warning"
   }
 ]
 

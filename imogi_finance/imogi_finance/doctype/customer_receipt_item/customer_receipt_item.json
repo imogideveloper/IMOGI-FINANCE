@@ -20,7 +20,8 @@
       "options": "Sales Invoice",
       "in_list_view": 1,
       "columns": 2,
-      "depends_on": "eval:parent.receipt_purpose=='Billing (Sales Invoice)'"
+      "depends_on": "eval:parent.receipt_purpose=='Billing (Sales Invoice)'",
+      "mandatory_depends_on": "eval:parent.receipt_purpose=='Billing (Sales Invoice)'"
     },
     {
       "fieldname": "sales_order",
@@ -29,7 +30,8 @@
       "options": "Sales Order",
       "in_list_view": 1,
       "columns": 2,
-      "depends_on": "eval:parent.receipt_purpose=='Before Billing (Sales Order)'"
+      "depends_on": "eval:parent.receipt_purpose=='Before Billing (Sales Order)'",
+      "mandatory_depends_on": "eval:parent.receipt_purpose=='Before Billing (Sales Order)'"
     },
     {
       "fieldname": "reference_date",

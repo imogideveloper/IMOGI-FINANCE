@@ -629,7 +629,23 @@
   "index_web_pages_for_search": 1,
   "is_submittable": 1,
   "istable": 0,
-  "links": [],
+  "links": [
+    {
+      "group": "Invoice",
+      "link_doctype": "Purchase Invoice",
+      "link_fieldname": "branch_expense_request"
+    },
+    {
+      "group": "Payment",
+      "link_doctype": "Payment Entry",
+      "link_fieldname": "branch_expense_request"
+    },
+    {
+      "group": "Tax",
+      "link_doctype": "Tax Invoice OCR Upload",
+      "link_fieldname": "branch_expense_request"
+    }
+  ],
   "module": "Imogi Finance",
   "name": "Branch Expense Request",
   "naming_rule": "By fieldname",

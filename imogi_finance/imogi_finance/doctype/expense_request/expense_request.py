@@ -370,19 +370,17 @@ class ExpenseRequest(Document):
         warnings = []
 
         # 1. Validate NPWP matches supplier
-        supplier = getattr(self, "supplier", None)
-        if supplier:
-            supplier_npwp = frappe.db.get_value("Supplier", supplier, "tax_id")
-            if supplier_npwp:
-                supplier_npwp = normalize_npwp(supplier_npwp)
-                ocr_npwp = normalize_npwp(getattr(self, "ti_fp_npwp", None))
-                
-                if ocr_npwp and supplier_npwp and ocr_npwp != supplier_npwp:
-                    errors.append(
-                        _("NPWP dari OCR ({0}) tidak sesuai dengan NPWP Supplier ({1})").format(
-                            getattr(self, "ti_fp_npwp", ""), supplier_npwp
-                        )
+        supplier_npwp = getattr(self, "supplier_tax_id", None)
+        if supplier_npwp:
+            supplier_npwp_normalized = normalize_npwp(supplier_npwp)
+            ocr_npwp = normalize_npwp(getattr(self, "ti_fp_npwp", None))
+            
+            if ocr_npwp and supplier_npwp_normalized and ocr_npwp != supplier_npwp_normalized:
+                errors.append(
+                    _("NPWP dari OCR ({0}) tidak sesuai dengan NPWP Supplier ({1})").format(
+                        getattr(self, "ti_fp_npwp", ""), supplier_npwp
                     )
+                )
 
         # 2. Validate DPP, PPN, PPnBM with tolerance
         # Get tolerance from settings (both fixed IDR and percentage)

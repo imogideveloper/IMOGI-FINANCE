@@ -151,5 +151,33 @@
 			{"action": "Print & Lock", "allow_self_approval": 1, "allowed": "All", "state": "Approved", "next_state": "Printed"}
 		],
 		"workflow_state_field": "workflow_state"
+	},
+	{
+		"actions": [
+			{"action": "Issue", "allowed": "All"},
+			{"action": "Cancel", "allowed": "All"}
+		],
+		"docstatus": 0,
+		"doctype": "Workflow",
+		"document_type": "Customer Receipt",
+		"is_active": 1,
+		"module": "Imogi Finance",
+		"name": "Customer Receipt Workflow",
+		"workflow_name": "Customer Receipt Workflow",
+		"notes": "Customer Receipt workflow: Draft → Issued → Partially Paid → Paid. Issue action submits the receipt (docstatus=1), making items immutable. Payment status is automatically updated by Payment Entry hooks. Cancel is allowed only if no submitted Payment Entry is linked. Created/Issued/Paid timestamps are tracked automatically.",
+		"override_status": 1,
+		"states": [
+			{"state": "Draft", "doc_status": "0", "allow_edit": "All"},
+			{"state": "Issued", "doc_status": "1", "allow_edit": "Accounts Manager"},
+			{"state": "Partially Paid", "doc_status": "1", "allow_edit": "Accounts Manager"},
+			{"state": "Paid", "doc_status": "1", "allow_edit": "Accounts Manager"},
+			{"state": "Cancelled", "doc_status": "2", "allow_edit": "Accounts Manager"}
+		],
+		"transitions": [
+			{"action": "Issue", "allow_self_approval": 1, "allowed": "All", "state": "Draft", "next_state": "Issued"},
+			{"action": "Cancel", "allow_self_approval": 0, "allowed": "All", "state": "Issued", "next_state": "Cancelled"},
+			{"action": "Cancel", "allow_self_approval": 0, "allowed": "All", "state": "Partially Paid", "next_state": "Cancelled"}
+		],
+		"workflow_state_field": "workflow_state"
 	}
 ]

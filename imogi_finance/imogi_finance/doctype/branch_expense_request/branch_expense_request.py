@@ -260,22 +260,10 @@ class BranchExpenseRequest(Document):
         errors = []
         warnings = []
 
-        # 1. Validate NPWP matches supplier
-        supplier = getattr(self, "supplier", None)
-        if supplier:
-            supplier_npwp = frappe.db.get_value("Supplier", supplier, "tax_id")
-            if supplier_npwp:
-                supplier_npwp = normalize_npwp(supplier_npwp)
-                ocr_npwp = normalize_npwp(getattr(self, "ti_fp_npwp", None))
-                
-                if ocr_npwp and supplier_npwp and ocr_npwp != supplier_npwp:
-                    errors.append(
-                        _("NPWP dari OCR ({0}) tidak sesuai dengan NPWP Supplier ({1})").format(
-                            getattr(self, "ti_fp_npwp", ""), supplier_npwp
-                        )
-                    )
-
-        # 2. Validate DPP, PPN, PPnBM with tolerance
+        # Note: Branch Expense Request does not have supplier field,
+        # so NPWP validation against supplier is not applicable
+        
+        # 1. Validate DPP, PPN, PPnBM with tolerance
         # Get tolerance from settings (both fixed IDR and percentage)
         tolerance = flt(settings.get("tolerance_idr", 10000))  # Default Rp 10,000
         tolerance_pct = flt(settings.get("tolerance_percentage", 1.0))  # Default 1%

@@ -22,6 +22,7 @@ class CustomerReceipt(Document):
 
     def validate(self):
         self.apply_defaults()
+        self.track_creation()
         self.validate_items()
         self.compute_totals()
         self.enforce_item_lock()
@@ -29,8 +30,15 @@ class CustomerReceipt(Document):
 
     def on_submit(self):
         self.status = "Issued"
+        self.workflow_state = "Issued"
+        self.track_issuance()
         self.compute_totals()
-        self.db_set("status", self.status)
+        self.db_set({
+            "status": self.status,
+            "workflow_state": self.workflow_state,
+            "issued_by_user": self.issued_by_user,
+            "issued_on": self.issued_on
+        })
 
     def before_cancel(self):
         active_payments = [row.payment_entry for row in self.get("payments") or []]
@@ -45,7 +53,11 @@ class CustomerReceipt(Document):
 
     def on_cancel(self):
         self.status = "Cancelled"
-        self.db_set("status", self.status)
+        self.workflow_state = "Cancelled"
+        self.db_set({
+            "status": self.status,
+            "workflow_state": self.workflow_state
+        })
 
     def apply_defaults(self):
         settings = get_receipt_control_settings()
@@ -82,6 +94,18 @@ class CustomerReceipt(Document):
         allowed_doctype = self.allowed_reference_doctype
         branch_settings = get_branch_settings()
         for row in self.get("items"):
+            # Validate that only one reference type is filled based on receipt_purpose
+            if self.receipt_purpose == "Billing (Sales Invoice)":
+                if row.sales_order:
+                    frappe.throw(_("Row #{0}: Sales Order should not be filled when Receipt Purpose is 'Billing (Sales Invoice)'. Only Sales Invoice is allowed.").format(row.idx))
+                if not row.sales_invoice:
+                    frappe.throw(_("Row #{0}: Sales Invoice is required when Receipt Purpose is 'Billing (Sales Invoice)'.").format(row.idx))
+            elif self.receipt_purpose == "Before Billing (Sales Order)":
+                if row.sales_invoice:
+                    frappe.throw(_("Row #{0}: Sales Invoice should not be filled when Receipt Purpose is 'Before Billing (Sales Order)'. Only Sales Order is allowed.").format(row.idx))
+                if not row.sales_order:
+                    frappe.throw(_("Row #{0}: Sales Order is required when Receipt Purpose is 'Before Billing (Sales Order)'.").format(row.idx))
+            
             reference = row.sales_invoice if allowed_doctype == "Sales Invoice" else row.sales_order
             if not reference:
                 frappe.throw(_("Receipt items must have a reference document."))
@@ -154,22 +178,36 @@ class CustomerReceipt(Document):
         self.paid_amount = float(paid)
         self.outstanding_amount = float(outstanding)
 
+        previous_status = self.status
         if self.docstatus == 1:
             if outstanding == 0:
                 self.status = "Paid"
+                self.workflow_state = "Paid"
+                # Track when it became fully paid
+                if previous_status != "Paid" and not self.paid_on:
+                    self.paid_on = frappe.utils.now_datetime()
             elif paid > 0:
                 self.status = "Partially Paid"
+                self.workflow_state = "Partially Paid"
             else:
                 self.status = "Issued"
+                self.workflow_state = "Issued"
 
     def recompute_payment_state(self):
         self.compute_totals()
         if self.docstatus == 1:
-            self.db_set({
+            update_dict = {
                 "paid_amount": self.paid_amount,
                 "outstanding_amount": self.outstanding_amount,
                 "status": self.status,
-            })
+                "workflow_state": self.workflow_state,
+                "last_payment_entry": self.get_last_payment_entry(),
+            }
+            # Track when it became fully paid
+            if self.paid_on:
+                update_dict["paid_on"] = self.paid_on
+            
+            self.db_set(update_dict)
 
     def apply_stamp_policy(self):
         settings = get_receipt_control_settings()
@@ -297,3 +335,33 @@ class CustomerReceipt(Document):
             remaining -= allocation
 
         return pe.insert(ignore_permissions=True)
+
+    def track_creation(self):
+        """Track creation timestamp and user"""
+        if self.is_new() and not self.created_on:
+            self.created_on = frappe.utils.now_datetime()
+            self.created_by_user = frappe.session.user
+
+    def track_issuance(self):
+        """Track when receipt is issued (submitted)"""
+        if not self.issued_on:
+            self.issued_on = frappe.utils.now_datetime()
+            self.issued_by_user = frappe.session.user
+
+    def get_last_payment_entry(self):
+        """Get the last payment entry linked to this receipt"""
+        payment_entries = [row.payment_entry for row in self.get("payments") or []]
+        if payment_entries:
+            return payment_entries[-1]
+        return None
+
+    @frappe.whitelist()
+    def track_print(self):
+        """Track first print timestamp and user"""
+        if not self.first_printed_on:
+            self.db_set({
+                "first_printed_on": frappe.utils.now_datetime(),
+                "first_printed_by": frappe.session.user
+            })
+            return {"message": _("Print tracked successfully")}
+        return {"message": _("Already tracked")}

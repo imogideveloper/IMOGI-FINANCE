@@ -19,6 +19,7 @@
     "supplier_section",
     "supplier",
     "supplier_invoice_no",
+    "supplier_tax_id",
     "column_break_supplier",
     "supplier_invoice_date",
     "currency",
@@ -177,6 +178,15 @@
       "fieldtype": "Data",
       "label": "Invoice Number",
       "description": "Supplier invoice reference number"
+    },
+    {
+      "fieldname": "supplier_tax_id",
+      "fieldtype": "Data",
+      "label": "Supplier NPWP",
+      "fetch_from": "supplier.tax_id",
+      "fetch_if_empty": 1,
+      "read_only": 1,
+      "description": "Supplier's tax identification number (NPWP)"
     },
     {
       "fieldname": "column_break_supplier",
@@ -771,7 +781,33 @@
   "index_web_pages_for_search": 1,
   "is_submittable": 1,
   "istable": 0,
-  "links": [],
+  "links": [
+    {
+      "group": "Invoice",
+      "link_doctype": "Purchase Invoice",
+      "link_fieldname": "imogi_expense_request"
+    },
+    {
+      "group": "Payment",
+      "link_doctype": "Payment Entry",
+      "link_fieldname": "imogi_expense_request"
+    },
+    {
+      "group": "Allocation",
+      "link_doctype": "Internal Charge Request",
+      "link_fieldname": "expense_request"
+    },
+    {
+      "group": "Tax",
+      "link_doctype": "Tax Invoice OCR Upload",
+      "link_fieldname": "expense_request"
+    },
+    {
+      "group": "Budget",
+      "link_doctype": "Budget Control Ledger Entry",
+      "link_fieldname": "source_document"
+    }
+  ],
   "module": "Imogi Finance",
   "name": "Expense Request",
   "naming_rule": "Expression",
