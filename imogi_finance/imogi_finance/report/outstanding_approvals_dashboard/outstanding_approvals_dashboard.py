@@ -18,6 +18,13 @@ def execute(filters=None):
 	if not filters.get("user"):
 		filters["user"] = frappe.session.user
 	
+	# Default date range to last 30 days if not provided
+	if not filters.get("from_date"):
+		filters["from_date"] = frappe.utils.add_days(frappe.utils.nowdate(), -30)
+	
+	if not filters.get("to_date"):
+		filters["to_date"] = frappe.utils.nowdate()
+	
 	columns = get_columns()
 	data = get_data(filters)
 	chart = get_chart_data(data)

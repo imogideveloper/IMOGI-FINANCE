@@ -14,24 +14,21 @@
    "label": "User",
    "mandatory": 0,
    "options": "User",
-   "wildcard_filter": 0,
-   "default": "frappe.session.user"
+   "wildcard_filter": 0
   },
   {
    "fieldname": "from_date",
    "fieldtype": "Date",
    "label": "From Date",
    "mandatory": 0,
-   "wildcard_filter": 0,
-   "default": "frappe.datetime.add_days(frappe.utils.nowdate(), -30)"
+   "wildcard_filter": 0
   },
   {
    "fieldname": "to_date",
    "fieldtype": "Date",
    "label": "To Date",
    "mandatory": 0,
-   "wildcard_filter": 0,
-   "default": "frappe.utils.nowdate()"
+   "wildcard_filter": 0
   },
   {
    "fieldname": "doctype",

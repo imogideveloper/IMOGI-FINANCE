@@ -8,7 +8,7 @@ from frappe import _
 from frappe.model.document import Document
 
 
-class TaxProfilePphAccount(Document):
+class TaxProfilePPhAccount(Document):
     """Child table to map PPh types to payable accounts.
     
     Used in Tax Profile to configure which accounts are used to record
