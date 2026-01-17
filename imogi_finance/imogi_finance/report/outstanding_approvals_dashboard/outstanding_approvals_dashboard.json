@@ -9,14 +9,6 @@
  "doctype": "Report",
  "filters": [
   {
-   "fieldname": "user",
-   "fieldtype": "Link",
-   "label": "User",
-   "mandatory": 0,
-   "options": "User",
-   "wildcard_filter": 0
-  },
-  {
    "fieldname": "from_date",
    "fieldtype": "Date",
    "label": "From Date",

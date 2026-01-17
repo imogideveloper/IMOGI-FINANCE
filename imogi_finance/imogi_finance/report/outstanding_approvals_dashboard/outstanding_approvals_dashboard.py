@@ -14,9 +14,18 @@ def execute(filters=None):
 	if not filters:
 		filters = {}
 	
-	# Default user to current session user if not provided
-	if not filters.get("user"):
-		filters["user"] = frappe.session.user
+	# Security: Enforce user can only see their own approvals
+	# Only System Manager can view other users' approvals
+	current_user = frappe.session.user
+	is_system_manager = "System Manager" in frappe.get_roles(current_user)
+	
+	if not is_system_manager:
+		# Force filter to current user - prevent viewing other users' approvals
+		filters["user"] = current_user
+	else:
+		# System Manager can view any user, but default to self
+		if not filters.get("user"):
+			filters["user"] = current_user
 	
 	columns = get_columns()
 	data = get_data(filters)
@@ -228,10 +237,12 @@ def get_data(filters):
 				level_user_field: user
 			}
 			
-			# Add date filters
-			if from_date:
+			# Add date filters only if both are provided
+			if from_date and to_date:
+				filter_conditions["modified"] = ["between", [from_date, to_date]]
+			elif from_date:
 				filter_conditions["modified"] = [">=", from_date]
-			if to_date:
+			elif to_date:
 				filter_conditions["modified"] = ["<=", to_date]
 			
 			# Add cost center filter if applicable
