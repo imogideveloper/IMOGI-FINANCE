@@ -11,255 +11,342 @@
   * {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
   }
   
-  body { font-size: 10px; color: var(--text); margin: 0; padding: 0; }
+  body { 
+    font-size: 11pt; 
+    color: var(--text); 
+    margin: 0; 
+    padding: 0;
+    line-height: 1.4;
+  }
   
-  /* A4 Page Setup */
-  .container { 
-    width: 210mm;
-    min-height: 297mm;
-    margin: 0 auto; 
-    padding: 15mm 20mm;
+  /* Container - full width for Frappe */
+  .er-container { 
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
     background: white;
   }
   
   /* Header */
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 10px;
-    border-bottom: 2px solid var(--primary);
-    margin-bottom: 12px;
+  .er-header {
+    display: table;
+    width: 100%;
+    padding-bottom: 8pt;
+    border-bottom: 2pt solid var(--primary);
+    margin-bottom: 12pt;
   }
   
-  .header h1 {
-    font-size: 16px;
-    font-weight: 600;
-    margin: 0;
+  .er-header-left {
+    display: table-cell;
+    vertical-align: middle;
+  }
+  
+  .er-header-right {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: right;
+  }
+  
+  .er-header h1 {
+    font-size: 16pt;
+    font-weight: 700;
+    margin: 0 0 2pt 0;
     color: var(--primary);
   }
   
-  .header .doc-id {
-    font-size: 11px;
+  .er-header .doc-id {
+    font-size: 10pt;
     color: var(--text-light);
   }
   
   .badge {
     display: inline-block;
-    padding: 4px 12px;
-    font-size: 9px;
+    padding: 4pt 12pt;
+    font-size: 8pt;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-radius: 4px;
+    letter-spacing: 0.5pt;
+    border-radius: 3pt;
     background: var(--bg-light);
     color: var(--secondary);
-    border: 1px solid var(--border);
+    border: 1pt solid var(--border);
   }
   
   .badge-approved { background: var(--primary); color: white; border-color: var(--primary); }
   .badge-pending { background: #fef3c7; color: #92400e; border-color: #fde68a; }
   .badge-rejected { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
   
-  /* Grid */
-  .grid { display: grid; gap: 12px; margin-bottom: 12px; }
-  .grid-2 { grid-template-columns: repeat(2, 1fr); }
-  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  /* Info Grid using table */
+  .info-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 8pt;
+    margin-bottom: 12pt;
+  }
+  
+  .info-table td {
+    width: 50%;
+    vertical-align: top;
+    padding: 0;
+  }
   
   /* Card */
   .card {
     background: white;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 10px 12px;
+    border: 1pt solid var(--border);
+    border-radius: 4pt;
+    padding: 10pt 12pt;
   }
   
   .card-title {
-    font-size: 9px;
+    font-size: 9pt;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.5pt;
     color: var(--text-light);
-    margin: 0 0 8px 0;
-    padding-bottom: 5px;
-    border-bottom: 1px solid var(--border);
+    margin: 0 0 8pt 0;
+    padding-bottom: 5pt;
+    border-bottom: 1pt solid var(--border);
   }
   
-  .row {
-    display: flex;
-    justify-content: space-between;
-    padding: 3px 0;
-    font-size: 10px;
+  .info-row {
+    display: table;
+    width: 100%;
+    padding: 3pt 0;
+    font-size: 10pt;
   }
   
-  .row-label { color: var(--text-light); }
-  .row-value { font-weight: 500; color: var(--primary); text-align: right; }
+  .info-label { 
+    display: table-cell;
+    color: var(--text-light); 
+    width: 40%;
+  }
   
-  /* Table */
-  table {
+  .info-value { 
+    display: table-cell;
+    font-weight: 500; 
+    color: var(--primary); 
+    text-align: right; 
+  }
+  
+  /* Main Table */
+  .items-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 9px;
-    margin-bottom: 12px;
+    font-size: 10pt;
+    margin-bottom: 12pt;
   }
   
-  thead { background: var(--primary); color: white; }
+  .items-table thead { 
+    background: var(--primary); 
+    color: white; 
+  }
   
-  th {
-    padding: 6px 10px;
+  .items-table th {
+    padding: 8pt 10pt;
     text-align: left;
     font-weight: 600;
-    font-size: 8px;
+    font-size: 9pt;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3pt;
   }
   
-  th.right { text-align: right; }
+  .items-table th.right { text-align: right; }
   
-  td {
-    padding: 6px 10px;
-    border-bottom: 1px solid var(--border);
+  .items-table td {
+    padding: 8pt 10pt;
+    border-bottom: 1pt solid var(--border);
     color: var(--text);
   }
   
-  td.right { text-align: right; font-weight: 500; }
+  .items-table td.right { text-align: right; font-weight: 500; }
   
-  tr:nth-child(even) { background: var(--bg-light); }
+  .items-table tbody tr:nth-child(even) { background: var(--bg-light); }
   
-  tfoot { background: var(--bg-light); border-top: 2px solid var(--primary); }
-  tfoot th { color: var(--primary); }
+  .items-table tfoot { 
+    background: var(--bg-light); 
+  }
+  
+  .items-table tfoot th { 
+    color: var(--primary); 
+    padding: 8pt 10pt;
+    border-top: 2pt solid var(--primary);
+  }
   
   /* Notes */
   .notes {
     background: var(--bg-light);
-    border-left: 3px solid var(--secondary);
-    padding: 8px 12px;
-    margin-bottom: 12px;
+    border-left: 3pt solid var(--secondary);
+    padding: 8pt 12pt;
+    margin-bottom: 12pt;
   }
   
   .notes-title {
-    font-size: 8px;
+    font-size: 8pt;
     font-weight: 600;
     text-transform: uppercase;
     color: var(--text-light);
-    margin-bottom: 3px;
+    margin-bottom: 4pt;
   }
   
   .notes-content {
-    font-size: 9px;
+    font-size: 10pt;
     color: var(--text);
     line-height: 1.4;
   }
   
   /* Signature Section */
   .signature-section {
-    margin-top: 30px;
+    margin-top: 25pt;
     page-break-inside: avoid;
   }
   
-  .signature-section-title {
-    font-size: 10px;
+  .signature-title {
+    font-size: 10pt;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.5pt;
     color: var(--primary);
-    margin-bottom: 15px;
-    padding-bottom: 5px;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 15pt;
+    padding-bottom: 5pt;
+    border-bottom: 1pt solid var(--border);
   }
   
-  .signature-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 15px;
+  .signature-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 10pt 0;
   }
   
-  .signature-box {
+  .signature-table td {
+    width: 25%;
+    vertical-align: top;
     text-align: center;
-    padding: 10px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: white;
+    padding: 0;
   }
   
-  .signature-role {
-    font-size: 9px;
+  .sig-box {
+    border: 1pt solid var(--border);
+    border-radius: 4pt;
+    padding: 10pt 8pt;
+    background: white;
+    min-height: 120pt;
+  }
+  
+  .sig-role {
+    font-size: 8pt;
     font-weight: 600;
     text-transform: uppercase;
     color: var(--text-light);
-    margin-bottom: 8px;
+    margin-bottom: 6pt;
+    letter-spacing: 0.3pt;
   }
   
-  .signature-line {
-    height: 50px;
-    border-bottom: 1px solid var(--primary);
-    margin: 0 10px 8px 10px;
+  .sig-area {
+    height: 45pt;
+    margin: 0 5pt;
+    border-bottom: 1pt solid var(--primary);
   }
   
-  .signature-name {
-    font-size: 10px;
+  .sig-name {
+    font-size: 9pt;
     font-weight: 600;
     color: var(--primary);
-    margin-bottom: 2px;
-    min-height: 14px;
+    margin-top: 6pt;
+    min-height: 12pt;
+    word-break: break-all;
   }
   
-  .signature-date {
-    font-size: 8px;
+  .sig-date {
+    font-size: 8pt;
     color: var(--text-light);
-    min-height: 12px;
+    margin-top: 2pt;
+    min-height: 10pt;
   }
   
-  .signature-status {
-    font-size: 7px;
+  .sig-status {
+    font-size: 7pt;
     font-weight: 600;
     text-transform: uppercase;
-    margin-top: 4px;
-    padding: 2px 6px;
-    border-radius: 3px;
+    margin-top: 4pt;
+    padding: 2pt 6pt;
+    border-radius: 2pt;
     display: inline-block;
   }
   
-  .signature-status.approved {
+  .sig-status.approved {
     background: #dcfce7;
     color: #166534;
   }
   
-  .signature-status.pending {
+  .sig-status.pending {
     background: #fef3c7;
     color: #92400e;
   }
-  
-  .signature-status.rejected {
-    background: #fee2e2;
-    color: #991b1b;
+
+  /* Footer Credit */
+  .print-footer {
+    margin-top: 30pt;
+    padding-top: 10pt;
+    border-top: 1pt solid var(--border);
+    text-align: center;
   }
-  
-  /* Print */
+
+  .print-footer-text {
+    font-size: 8pt;
+    color: var(--text-light);
+    font-style: italic;
+    line-height: 1.6;
+  }
+
+  .print-footer-date {
+    font-size: 7pt;
+    color: var(--text-light);
+    margin-top: 4pt;
+  }
+
+  /* Print Styles */
   @media print {
     @page { 
-      size: A4;
-      margin: 10mm; 
+      size: A4 portrait;
+      margin: 15mm 12mm; 
     }
     
     body { 
-      margin: 0; 
-      padding: 0; 
+      font-size: 10pt;
     }
     
-    .container {
-      width: 100%;
-      min-height: auto;
-      padding: 5mm;
+    .er-container {
+      padding: 0;
     }
     
-    thead { background: var(--primary) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .badge-approved { background: var(--primary) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .signature-status.approved { background: #dcfce7 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .signature-status.pending { background: #fef3c7 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .signature-status.rejected { background: #fee2e2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .items-table thead { 
+      background: var(--primary) !important; 
+      -webkit-print-color-adjust: exact; 
+      print-color-adjust: exact; 
+    }
+    
+    .badge-approved { 
+      background: var(--primary) !important; 
+      -webkit-print-color-adjust: exact; 
+      print-color-adjust: exact; 
+    }
+    
+    .sig-status.approved { 
+      background: #dcfce7 !important; 
+      -webkit-print-color-adjust: exact; 
+      print-color-adjust: exact; 
+    }
+    
+    .sig-status.pending { 
+      background: #fef3c7 !important; 
+      -webkit-print-color-adjust: exact; 
+      print-color-adjust: exact; 
+    }
     
     .signature-section {
       page-break-inside: avoid;
@@ -267,67 +354,76 @@
   }
 </style>
 
-<div class="container">
-  <div class="header">
-    <div>
+<div class="er-container">
+  <!-- Header -->
+  <div class="er-header">
+    <div class="er-header-left">
       <h1>{{ _("Expense Request") }}</h1>
       <div class="doc-id">{{ doc.name }}</div>
     </div>
-    {% set status_class = {
-      'Approved': 'approved',
-      'Pending Review': 'pending',
-      'Rejected': 'rejected'
-    }.get(doc.status, '') %}
-    <span class="badge badge-{{ status_class }}">{{ doc.status or doc.workflow_state or 'Draft' }}</span>
-  </div>
-
-  <div class="grid grid-2">
-    <div class="card">
-      <div class="card-title">{{ _("Request Details") }}</div>
-      <div class="row">
-        <span class="row-label">{{ _("Date") }}</span>
-        <span class="row-value">{{ frappe.utils.formatdate(doc.request_date) }}</span>
-      </div>
-      <div class="row">
-        <span class="row-label">{{ _("Type") }}</span>
-        <span class="row-value">{{ doc.request_type }}</span>
-      </div>
-      <div class="row">
-        <span class="row-label">{{ _("Cost Center") }}</span>
-        <span class="row-value">{{ doc.cost_center }}</span>
-      </div>
-      {% if doc.project %}
-      <div class="row">
-        <span class="row-label">{{ _("Project") }}</span>
-        <span class="row-value">{{ doc.project }}</span>
-      </div>
-      {% endif %}
-    </div>
-
-    <div class="card">
-      <div class="card-title">{{ _("Supplier") }}</div>
-      <div class="row">
-        <span class="row-label">{{ _("Name") }}</span>
-        <span class="row-value">{{ doc.supplier }}</span>
-      </div>
-      {% if doc.supplier_invoice_no %}
-      <div class="row">
-        <span class="row-label">{{ _("Invoice No") }}</span>
-        <span class="row-value">{{ doc.supplier_invoice_no }}</span>
-      </div>
-      {% endif %}
-      {% if doc.supplier_invoice_date %}
-      <div class="row">
-        <span class="row-label">{{ _("Invoice Date") }}</span>
-        <span class="row-value">{{ frappe.utils.formatdate(doc.supplier_invoice_date) }}</span>
-      </div>
-      {% endif %}
-      <div class="row">
-        <span class="row-label">{{ _("Currency") }}</span>
-        <span class="row-value">{{ doc.currency }}</span>
-      </div>
+    <div class="er-header-right">
+      {% set status_class = {
+        'Approved': 'approved',
+        'Pending Review': 'pending',
+        'Rejected': 'rejected'
+      }.get(doc.status, '') %}
+      <span class="badge badge-{{ status_class }}">{{ doc.status or doc.workflow_state or 'Draft' }}</span>
     </div>
   </div>
+
+  <!-- Info Cards -->
+  <table class="info-table">
+    <tr>
+      <td>
+        <div class="card">
+          <div class="card-title">{{ _("Request Details") }}</div>
+          <div class="info-row">
+            <span class="info-label">{{ _("Date") }}</span>
+            <span class="info-value">{{ frappe.utils.formatdate(doc.request_date) }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">{{ _("Type") }}</span>
+            <span class="info-value">{{ doc.request_type }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">{{ _("Cost Center") }}</span>
+            <span class="info-value">{{ doc.cost_center }}</span>
+          </div>
+          {% if doc.project %}
+          <div class="info-row">
+            <span class="info-label">{{ _("Project") }}</span>
+            <span class="info-value">{{ doc.project }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </td>
+      <td>
+        <div class="card">
+          <div class="card-title">{{ _("Supplier") }}</div>
+          <div class="info-row">
+            <span class="info-label">{{ _("Name") }}</span>
+            <span class="info-value">{{ doc.supplier }}</span>
+          </div>
+          {% if doc.supplier_invoice_no %}
+          <div class="info-row">
+            <span class="info-label">{{ _("Invoice No") }}</span>
+            <span class="info-value">{{ doc.supplier_invoice_no }}</span>
+          </div>
+          {% endif %}
+          {% if doc.supplier_invoice_date %}
+          <div class="info-row">
+            <span class="info-label">{{ _("Invoice Date") }}</span>
+            <span class="info-value">{{ frappe.utils.formatdate(doc.supplier_invoice_date) }}</span>
+          </div>
+          {% endif %}
+          <div class="info-row">
+            <span class="info-label">{{ _("Currency") }}</span>
+            <span class="info-value">{{ doc.currency }}</span>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </table>
 
   {% if doc.description %}
   <div class="notes">
@@ -336,7 +432,8 @@
   </div>
   {% endif %}
 
-  <table>
+  <!-- Items Table -->
+  <table class="items-table">
     <thead>
       <tr>
         <th style="width: 40%">{{ _("Account") }}</th>
@@ -363,88 +460,121 @@
     </tfoot>
   </table>
 
-  <div class="grid grid-2">
-    <div class="card">
-      <div class="card-title">{{ _("Tax Summary") }}</div>
-      <div class="row">
-        <span class="row-label">{{ _("PPN") }}</span>
-        <span class="row-value">{{ frappe.utils.fmt_money(doc.total_ppn or 0, currency=doc.currency) }}</span>
-      </div>
-      <div class="row">
-        <span class="row-label">{{ _("PPh") }}</span>
-        <span class="row-value" style="color: #dc2626;">-{{ frappe.utils.fmt_money(doc.total_pph or 0, currency=doc.currency) }}</span>
-      </div>
-      <div class="row" style="border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px;">
-        <span class="row-label" style="font-weight: 600;">{{ _("Total") }}</span>
-        <span class="row-value" style="font-size: 12px;">{{ frappe.utils.fmt_money(doc.total_amount or 0, currency=doc.currency) }}</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">{{ _("Payment Info") }}</div>
-      <div class="row">
-        <span class="row-label">{{ _("Payment Status") }}</span>
-        <span class="row-value">{{ doc.payment_status or 'Unpaid' }}</span>
-      </div>
-      {% if doc.payment_entry %}
-      <div class="row">
-        <span class="row-label">{{ _("Payment Entry") }}</span>
-        <span class="row-value">{{ doc.payment_entry }}</span>
-      </div>
-      {% endif %}
-    </div>
-  </div>
+  <!-- Tax & Payment Summary -->
+  <table class="info-table">
+    <tr>
+      <td>
+        <div class="card">
+          <div class="card-title">{{ _("Tax Summary") }}</div>
+          <div class="info-row">
+            <span class="info-label">{{ _("PPN") }}</span>
+            <span class="info-value">{{ frappe.utils.fmt_money(doc.total_ppn or 0, currency=doc.currency) }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">{{ _("PPh") }}</span>
+            <span class="info-value" style="color: #dc2626;">-{{ frappe.utils.fmt_money(doc.total_pph or 0, currency=doc.currency) }}</span>
+          </div>
+          <div class="info-row" style="border-top: 1pt solid var(--border); padding-top: 6pt; margin-top: 4pt;">
+            <span class="info-label" style="font-weight: 600;">{{ _("Total") }}</span>
+            <span class="info-value" style="font-size: 12pt; font-weight: 700;">{{ frappe.utils.fmt_money(doc.total_amount or 0, currency=doc.currency) }}</span>
+          </div>
+        </div>
+      </td>
+      <td>
+        <div class="card">
+          <div class="card-title">{{ _("Payment Info") }}</div>
+          <div class="info-row">
+            <span class="info-label">{{ _("Payment Status") }}</span>
+            <span class="info-value">{{ doc.payment_status or 'Unpaid' }}</span>
+          </div>
+          {% if doc.payment_entry %}
+          <div class="info-row">
+            <span class="info-label">{{ _("Payment Entry") }}</span>
+            <span class="info-value">{{ doc.payment_entry }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </td>
+    </tr>
+  </table>
 
   <!-- Signature Section -->
   <div class="signature-section">
-    <div class="signature-section-title">{{ _("Signatures") }}</div>
-    <div class="signature-grid">
-      <!-- Created By -->
-      <div class="signature-box">
-        <div class="signature-role">{{ _("Created By") }}</div>
-        <div class="signature-line"></div>
-        <div class="signature-name">{{ doc.owner | replace("@", " ") if doc.owner else '' }}</div>
-        <div class="signature-date">{{ frappe.utils.formatdate(doc.creation) if doc.creation else '' }}</div>
-      </div>
-      
-      <!-- Level 1 Approval -->
-      <div class="signature-box">
-        <div class="signature-role">{{ _("Approved By (L1)") }}</div>
-        <div class="signature-line"></div>
-        <div class="signature-name">{{ doc.level_1_user or '' }}</div>
-        <div class="signature-date">{{ frappe.utils.formatdate(doc.level_1_approved_on) if doc.level_1_approved_on else '' }}</div>
-        {% if doc.level_1_approved_on %}
-        <span class="signature-status approved">{{ _("Approved") }}</span>
-        {% elif doc.level_1_user %}
-        <span class="signature-status pending">{{ _("Pending") }}</span>
+    <div class="signature-title">{{ _("Signatures") }}</div>
+    <table class="signature-table">
+      <tr>
+        <!-- Created By -->
+        <td>
+          <div class="sig-box">
+            <div class="sig-role">{{ _("Created By") }}</div>
+            <div class="sig-area"></div>
+            <div class="sig-name">{{ doc.owner.split('@')[0] if doc.owner else '' }}</div>
+            <div class="sig-date">{{ frappe.utils.formatdate(doc.creation) if doc.creation else '' }}</div>
+          </div>
+        </td>
+        
+        {% if doc.level_1_user %}
+        <!-- Level 1 Approval -->
+        <td>
+          <div class="sig-box">
+            <div class="sig-role">{{ _("Approved By (L1)") }}</div>
+            <div class="sig-area"></div>
+            <div class="sig-name">{{ doc.level_1_user.split('@')[0] }}</div>
+            <div class="sig-date">{{ frappe.utils.formatdate(doc.level_1_approved_on) if doc.level_1_approved_on else '' }}</div>
+            {% if doc.level_1_approved_on %}
+            <span class="sig-status approved">{{ _("Approved") }}</span>
+            {% else %}
+            <span class="sig-status pending">{{ _("Pending") }}</span>
+            {% endif %}
+          </div>
+        </td>
         {% endif %}
-      </div>
-      
-      <!-- Level 2 Approval -->
-      <div class="signature-box">
-        <div class="signature-role">{{ _("Approved By (L2)") }}</div>
-        <div class="signature-line"></div>
-        <div class="signature-name">{{ doc.level_2_user or '' }}</div>
-        <div class="signature-date">{{ frappe.utils.formatdate(doc.level_2_approved_on) if doc.level_2_approved_on else '' }}</div>
-        {% if doc.level_2_approved_on %}
-        <span class="signature-status approved">{{ _("Approved") }}</span>
-        {% elif doc.level_2_user %}
-        <span class="signature-status pending">{{ _("Pending") }}</span>
+        
+        {% if doc.level_2_user %}
+        <!-- Level 2 Approval -->
+        <td>
+          <div class="sig-box">
+            <div class="sig-role">{{ _("Approved By (L2)") }}</div>
+            <div class="sig-area"></div>
+            <div class="sig-name">{{ doc.level_2_user.split('@')[0] }}</div>
+            <div class="sig-date">{{ frappe.utils.formatdate(doc.level_2_approved_on) if doc.level_2_approved_on else '' }}</div>
+            {% if doc.level_2_approved_on %}
+            <span class="sig-status approved">{{ _("Approved") }}</span>
+            {% else %}
+            <span class="sig-status pending">{{ _("Pending") }}</span>
+            {% endif %}
+          </div>
+        </td>
         {% endif %}
-      </div>
-      
-      <!-- Level 3 Approval -->
-      <div class="signature-box">
-        <div class="signature-role">{{ _("Approved By (L3)") }}</div>
-        <div class="signature-line"></div>
-        <div class="signature-name">{{ doc.level_3_user or '' }}</div>
-        <div class="signature-date">{{ frappe.utils.formatdate(doc.level_3_approved_on) if doc.level_3_approved_on else '' }}</div>
-        {% if doc.level_3_approved_on %}
-        <span class="signature-status approved">{{ _("Approved") }}</span>
-        {% elif doc.level_3_user %}
-        <span class="signature-status pending">{{ _("Pending") }}</span>
+        
+        {% if doc.level_3_user %}
+        <!-- Level 3 Approval -->
+        <td>
+          <div class="sig-box">
+            <div class="sig-role">{{ _("Approved By (L3)") }}</div>
+            <div class="sig-area"></div>
+            <div class="sig-name">{{ doc.level_3_user.split('@')[0] }}</div>
+            <div class="sig-date">{{ frappe.utils.formatdate(doc.level_3_approved_on) if doc.level_3_approved_on else '' }}</div>
+            {% if doc.level_3_approved_on %}
+            <span class="sig-status approved">{{ _("Approved") }}</span>
+            {% else %}
+            <span class="sig-status pending">{{ _("Pending") }}</span>
+            {% endif %}
+          </div>
+        </td>
         {% endif %}
-      </div>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Footer Credit -->
+  <div class="print-footer">
+    <div class="print-footer-text">
+      Form ini di print melalui modul IMOGI Finance - Expense Request<br>
+      by IMOGI - PT. Inovasi Terbaik Bangsa
+    </div>
+    <div class="print-footer-date">
+      Printed on: {{ frappe.utils.formatdate(frappe.utils.nowdate()) }} {{ frappe.utils.nowtime()[:5] }}
     </div>
   </div>
 </div>
