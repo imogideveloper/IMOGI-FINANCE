@@ -1,166 +1,307 @@
+{#- Design & Template Setup -#}
 {% set design = frappe.get_doc("Receipt Design", doc.receipt_design) if doc.receipt_design else frappe._dict({
   "custom_wording_title": "KUITANSI",
-  "custom_wording_body": "Telah diterima dari {{ doc.customer }} sejumlah {{ frappe.utils.fmt_money(doc.total_amount) }}.",
   "show_detail_table": 1,
-  "compact_layout": 0,
   "stamp_mode_default": "Physical",
-  "stamp_position": "Top Right",
-  "stamp_width_mm": 40,
-  "stamp_height_mm": 50,
+  "stamp_position": "Bottom Right",
+  "stamp_width_mm": 35,
+  "stamp_height_mm": 40,
   "digital_stamp_opacity_pct": 100,
-  "digital_stamp_scale_pct": 100,
   "show_qr": 0,
   "custom_logo": None,
   "logo_mode": "Company Default"
 }) %}
 {% set template = frappe.get_doc("Digital Stamp Template", doc.digital_stamp_template) if doc.digital_stamp_template else None %}
 {% set stamp_image = doc.digital_stamp_image or (template.stamp_image if template else None) or design.digital_stamp_image %}
-{% set verification_url = build_verification_url((template.verification_url_pattern if template else design.digital_stamp_url_pattern), doc.digital_stamp_reference) %}
-{% set stamp_class = (design.stamp_position or "Top Right").lower().replace(" ", "-") %}
-{% set stamp_style = "width:%smm;height:%smm;" % (design.stamp_width_mm or 40, design.stamp_height_mm or 50) %}
-{% if design.stamp_position == "Custom Absolute" %}
-  {% set stamp_style = stamp_style + "position:absolute;top:%smm;left:%smm;" % (design.stamp_custom_top_mm or 0, design.stamp_custom_left_mm or 0) %}
-{% endif %}
+{% set verification_url = build_verification_url((template.verification_url_pattern if template else design.digital_stamp_url_pattern), doc.digital_stamp_reference) if doc.digital_stamp_reference else None %}
 {% set company_logo = frappe.db.get_value("Company", doc.company, "company_logo") if doc.company else None %}
-{% set logo_mode = design.logo_mode or "Company Default" %}
-{% set receipt_logo = design.custom_logo if logo_mode == "Custom" and design.custom_logo else company_logo %}
+{% set receipt_logo = design.custom_logo if design.logo_mode == "Custom" and design.custom_logo else company_logo %}
 
 <style>
-  .receipt-container { position: relative; font-size: 8pt; }
-  .receipt-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
-  .receipt-title { font-size: 12pt; font-weight: bold; letter-spacing: 0.6px; }
-  .receipt-brand { display: flex; align-items: flex-start; gap: 8px; }
-  .receipt-logo { max-height: 40px; max-width: 110px; object-fit: contain; }
-  .receipt-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
-  .receipt-table th, .receipt-table td { border: 1px solid #ccc; padding: 3px; }
-  .stamp-box { border: 1px dashed #777; text-align: center; font-size: 7pt; color: #555; position: absolute; }
-  .stamp-top-right { top: 0; right: 0; }
-  .stamp-top-left { top: 0; left: 0; }
-  .stamp-bottom-right { bottom: 0; right: 0; }
-  .stamp-bottom-left { bottom: 0; left: 0; }
-  .stamp-watermark { position: absolute; top: 40%; left: 10%; right: 10%; text-align: center; font-size: 18pt; color: rgba(180,0,0,0.35); transform: rotate(-18deg); font-weight: bold; }
-  .signature-block { margin-top: 10px; text-align: right; }
-  .signature-line { margin-top: 24px; border-top: 1px solid #555; display: inline-block; min-width: 120px; }
+  * {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .cr-container { 
+    width: 100%;
+    padding: 0;
+    font-size: 10pt;
+    color: #333;
+    position: relative;
+  }
+  
+  .cr-header {
+    display: table;
+    width: 100%;
+    margin-bottom: 20pt;
+  }
+  
+  .cr-header-left {
+    display: table-cell;
+    vertical-align: top;
+    width: 50%;
+  }
+  
+  .cr-header-right {
+    display: table-cell;
+    vertical-align: top;
+    text-align: right;
+    width: 50%;
+  }
+  
+  .cr-logo { max-height: 45px; max-width: 120px; }
+  .cr-company { font-size: 11pt; font-weight: 600; margin-top: 4pt; }
+  
+  .cr-title {
+    font-size: 16pt;
+    font-weight: 700;
+    letter-spacing: 2pt;
+    margin-bottom: 6pt;
+  }
+  
+  .cr-meta { font-size: 9pt; color: #666; line-height: 1.5; }
+  
+  .cr-divider {
+    border-top: 1pt solid #1a1a1a;
+    margin: 15pt 0;
+  }
+  
+  .cr-info {
+    display: table;
+    width: 100%;
+    margin-bottom: 15pt;
+  }
+  
+  .cr-info-row {
+    display: table-row;
+  }
+  
+  .cr-info-label {
+    display: table-cell;
+    width: 100pt;
+    padding: 3pt 0;
+    color: #666;
+  }
+  
+  .cr-info-value {
+    display: table-cell;
+    padding: 3pt 0;
+    font-weight: 500;
+  }
+  
+  .cr-amount-box {
+    background: #f5f5f5;
+    padding: 12pt 15pt;
+    margin: 15pt 0;
+    text-align: center;
+  }
+  
+  .cr-amount { font-size: 18pt; font-weight: 700; }
+  .cr-terbilang { font-size: 9pt; font-style: italic; color: #555; margin-top: 4pt; }
+  
+  .cr-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15pt 0;
+    font-size: 9pt;
+  }
+  
+  .cr-table th {
+    background: #1a1a1a;
+    color: white;
+    padding: 6pt 8pt;
+    text-align: left;
+    font-weight: 600;
+  }
+  
+  .cr-table th.right { text-align: right; }
+  
+  .cr-table td {
+    padding: 6pt 8pt;
+    border-bottom: 1pt solid #ddd;
+  }
+  
+  .cr-table td.right { text-align: right; }
+  
+  .cr-table tfoot th {
+    background: #f5f5f5;
+    color: #1a1a1a;
+    border-top: 2pt solid #1a1a1a;
+  }
+  
+  .cr-footer {
+    margin-top: 30pt;
+    text-align: right;
+  }
+  
+  .cr-sign-stamp-box {
+    display: inline-block;
+    text-align: center;
+    position: relative;
+    min-width: 150pt;
+  }
+  
+  .cr-stamp-box {
+    border: 1pt dashed #999;
+    text-align: center;
+    font-size: 7pt;
+    color: #888;
+    padding: 4pt;
+    margin: 0 auto;
+  }
+  
+  .cr-sig-line {
+    width: 100%;
+    border-top: 1pt solid #333;
+    margin-top: 8pt;
+    padding-top: 4pt;
+    text-align: center;
+  }
+  
+  .cr-sig-name { font-weight: 600; font-size: 9pt; }
+  .cr-sig-role { font-size: 8pt; color: #666; }
+  
+  .cr-sig-image {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+  }
+  
+  .cr-watermark {
+    position: absolute;
+    top: 35%;
+    left: 15%;
+    right: 15%;
+    text-align: center;
+    font-size: 16pt;
+    color: rgba(200,0,0,0.2);
+    transform: rotate(-20deg);
+    font-weight: bold;
+    pointer-events: none;
+  }
+  
+  .cr-print-info {
+    margin-top: 20pt;
+    padding-top: 8pt;
+    border-top: 1pt solid #eee;
+    font-size: 7pt;
+    color: #999;
+    text-align: center;
+  }
+  
   @media print {
-    @page { margin: 10mm 8mm; }
+    @page { size: A4; margin: 15mm; }
+    .cr-table th { background: #1a1a1a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 </style>
 
-<div class="receipt-container">
+<div class="cr-container">
   {% if doc.stamp_mode == "Digital" and doc.digital_stamp_status != "Issued" %}
-    <div class="stamp-watermark">MATERAI DIGITAL BELUM TERBIT</div>
+    <div class="cr-watermark">MATERAI BELUM TERBIT</div>
   {% endif %}
-  <div class="receipt-header">
-    <div class="receipt-brand">
-      {% if receipt_logo %}
-        <div><img class="receipt-logo" src="{{ receipt_logo }}"></div>
-      {% endif %}
-      <div>
-        <div class="receipt-title">{{ design.custom_wording_title or "KUITANSI" }}</div>
-        <div><strong>No:</strong> {{ doc.name }}</div>
-        <div><strong>Tanggal:</strong> {{ frappe.utils.format_date(doc.posting_date) }}</div>
-        <div><strong>Pelanggan:</strong> {{ doc.customer }}</div>
-        {% if doc.customer_reference_no %}<div><strong>Customer Ref:</strong> {{ doc.customer_reference_no }}</div>{% endif %}
+
+  {#- Header -#}
+  <div class="cr-header">
+    <div class="cr-header-left">
+      {% if receipt_logo %}<img class="cr-logo" src="{{ receipt_logo }}">{% endif %}
+      {% if doc.company %}<div class="cr-company">{{ doc.company }}</div>{% endif %}
+    </div>
+    <div class="cr-header-right">
+      <div class="cr-title">{{ design.custom_wording_title or "KUITANSI" }}</div>
+      <div class="cr-meta">
+        No: {{ doc.name }}<br>
+        Tanggal: {{ frappe.utils.formatdate(doc.posting_date) }}
       </div>
     </div>
-    <div style="text-align:right">
-      {% if doc.company %}<div><strong>{{ doc.company }}</strong></div>{% endif %}
-      <div><strong>Total:</strong> {{ frappe.utils.fmt_money(doc.total_amount) }}</div>
-      <div><strong>Terbilang:</strong> {{ terbilang_id(doc.total_amount) }}</div>
+  </div>
+
+  <div class="cr-divider"></div>
+
+  {#- Customer Info -#}
+  <div class="cr-info">
+    <div class="cr-info-row">
+      <span class="cr-info-label">Diterima dari</span>
+      <span class="cr-info-value">: {{ doc.customer }}</span>
     </div>
+    {% if doc.customer_reference_no %}
+    <div class="cr-info-row">
+      <span class="cr-info-label">No. Referensi</span>
+      <span class="cr-info-value">: {{ doc.customer_reference_no }}</span>
+    </div>
+    {% endif %}
   </div>
 
-  <div>
-    {{ frappe.render_template(design.custom_wording_body or "", {'doc': doc, 'frappe': frappe}) if design.custom_wording_body else '' }}
+  {#- Amount -#}
+  <div class="cr-amount-box">
+    <div class="cr-amount">{{ frappe.utils.fmt_money(doc.total_amount, currency=doc.currency or 'IDR') }}</div>
+    <div class="cr-terbilang">{{ terbilang_id(doc.total_amount) }}</div>
   </div>
 
-  {% if design.show_detail_table %}
-  <table class="receipt-table">
+  {#- Items Table -#}
+  {% if design.show_detail_table and doc.items %}
+  <table class="cr-table">
     <thead>
       <tr>
-        <th style="width:40%">Referensi</th>
-        <th style="width:20%">Tanggal</th>
-        <th style="width:20%">Jumlah Ditagih</th>
-        <th style="width:20%">Outstanding</th>
+        <th style="width:5%">No</th>
+        <th style="width:55%">Keterangan</th>
+        <th class="right" style="width:40%">Jumlah</th>
       </tr>
     </thead>
     <tbody>
       {% for row in doc.items %}
       <tr>
-        <td>{{ row.sales_invoice or row.sales_order }}</td>
-        <td>{{ frappe.utils.format_date(row.reference_date) }}</td>
-        <td style="text-align:right">{{ frappe.utils.fmt_money(row.amount_to_collect) }}</td>
-        <td style="text-align:right">{{ frappe.utils.fmt_money(row.reference_outstanding) }}</td>
+        <td>{{ loop.index }}</td>
+        <td>{{ row.sales_invoice or row.sales_order or row.reference_name or doc.remarks or '-' }}</td>
+        <td class="right">{{ frappe.utils.fmt_money(row.amount_to_collect or row.amount or 0, currency=doc.currency or 'IDR') }}</td>
       </tr>
       {% endfor %}
     </tbody>
+    <tfoot>
+      <tr>
+        <th colspan="2" class="right">Total</th>
+        <th class="right">{{ frappe.utils.fmt_money(doc.total_amount, currency=doc.currency or 'IDR') }}</th>
+      </tr>
+    </tfoot>
   </table>
   {% endif %}
 
-  <table class="receipt-table" style="margin-top:12px;">
-    <tbody>
-      <tr>
-        <th style="width:70%">Keterangan</th>
-        <th style="width:30%">Jumlah</th>
-      </tr>
-      <tr>
-        <td>{{ doc.remarks or "Pembayaran sesuai referensi." }}</td>
-        <td style="text-align:right">{{ frappe.utils.fmt_money(doc.total_amount) }}</td>
-      </tr>
-      <tr>
-        <td><strong>Total Dibayar</strong></td>
-        <td style="text-align:right">{{ frappe.utils.fmt_money(doc.paid_amount) }}</td>
-      </tr>
-      <tr>
-        <td><strong>Sisa Outstanding</strong></td>
-        <td style="text-align:right">{{ frappe.utils.fmt_money(doc.outstanding_amount) }}</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div class="signature-block">
-    {% if design.signature_image %}
-      <div><img src="{{ design.signature_image }}" style="max-height:80px"></div>
-    {% endif %}
-    <div class="signature-line"></div>
-    {% if design.signer_name %}<div>{{ design.signer_name }}</div>{% endif %}
-    {% if design.signer_role %}<div style="color:#777">{{ design.signer_role }}</div>{% endif %}
-  </div>
-
-  {% if doc.stamp_mode != "None" %}
-    <div class="stamp-box stamp-{{ stamp_class }}" style="{{ stamp_style }}">
-      {% if doc.stamp_mode == "Physical" %}
-        <div style="margin-top:40%">Area Materai Fisik</div>
-      {% elif design.show_qr or design.stamp_mode_default == "Digital QR" %}
-        {% set qr_code_image = None %}
-        {% if verification_url and frappe.utils.get_qr_code is defined %}
-          {% set qr_code_image = frappe.utils.get_qr_code(verification_url, 200) %}
-        {% endif %}
-        {% if qr_code_image %}
-          <img src="{{ qr_code_image }}" style="width:100%;height:100%;object-fit:contain;opacity:{{ (design.digital_stamp_opacity_pct or 100)/100 }};">
-        {% endif %}
-        <div style="font-size:8pt;word-break:break-all;">{{ verification_url or doc.digital_stamp_reference }}</div>
-      {% else %}
-        {% if stamp_image %}
-          <img src="{{ stamp_image }}" style="width:100%;height:100%;object-fit:contain;opacity:{{ (design.digital_stamp_opacity_pct or 100)/100 }};">
-        {% else %}
-          <div style="margin-top:30%">Materai Digital</div>
-        {% endif %}
-        {% if verification_url %}
-          <div style="font-size:8pt;word-break:break-all;">{{ verification_url }}</div>
-        {% endif %}
+  {#- Footer: Signature over Stamp -#}
+  <div class="cr-footer">
+    <div class="cr-sign-stamp-box">
+      {#- Signature image overlapping stamp -#}
+      {% if design.signature_image %}
+        <img class="cr-sig-image" src="{{ design.signature_image }}" style="max-height:45pt;">
       {% endif %}
+      
+      {#- Stamp area -#}
+      {% if doc.stamp_mode and doc.stamp_mode != "None" %}
+        {% set sw = design.stamp_width_mm or 35 %}
+        {% set sh = design.stamp_height_mm or 40 %}
+        <div class="cr-stamp-box" style="width:{{ sw }}mm;height:{{ sh }}mm;">
+          {% if doc.stamp_mode == "Physical" %}
+            <div style="margin-top:40%">Materai</div>
+          {% elif stamp_image %}
+            <img src="{{ stamp_image }}" style="width:100%;height:100%;object-fit:contain;opacity:{{ (design.digital_stamp_opacity_pct or 100)/100 }};">
+          {% else %}
+            <div style="margin-top:35%">e-Materai</div>
+          {% endif %}
+        </div>
+      {% endif %}
+      
+      {#- Signature line -#}
+      <div class="cr-sig-line">
+        <div class="cr-sig-name">{{ design.signer_name or '' }}</div>
+        {% if design.signer_role %}<div class="cr-sig-role">{{ design.signer_role }}</div>{% endif %}
+      </div>
     </div>
-  {% endif %}
-
-  {% if doc.created_by_user or doc.submit_on %}
-  <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #e5e5e5; font-size: 7pt; color: #666;">
-    {% if doc.created_by_user %}
-    <div><strong>{{ _("Created By") }}:</strong> {{ doc.created_by_user }}</div>
-    {% endif %}
-    {% if doc.submit_on %}
-    <div><strong>{{ _("Submit On") }}:</strong> {{ frappe.utils.format_datetime(doc.submit_on) }}</div>
-    {% endif %}
   </div>
-  {% endif %}
+
+  <div class="cr-print-info">
+    Dicetak: {{ frappe.utils.formatdate(frappe.utils.nowdate()) }} | IMOGI Finance
+  </div>
 </div>
