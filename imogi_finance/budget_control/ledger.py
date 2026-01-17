@@ -37,11 +37,26 @@ def _entry_filters(dims: Dimensions, entry_types: list[str]):
 
 
 def get_reserved_total(dims: Dimensions, from_date: date | None = None, to_date: date | None = None) -> float:
+    """Calculate total reserved budget from Budget Control Entries.
+    
+    Reserved = RESERVATION (OUT) - CONSUMPTION (IN) + REVERSAL (OUT)
+    
+    Logic:
+    - RESERVATION: Budget yang di-hold untuk Expense Request
+    - CONSUMPTION: Mengurangi reserved saat PI submit (consume dari reservation)
+    - REVERSAL: Mengembalikan reserved saat PI cancel (restore reservation)
+    - RELEASE: TIDAK DIPAKAI LAGI (simplified flow)
+    
+    Contoh:
+    - ER submit: RESERVATION +100 → Reserved = 100
+    - PI submit: CONSUMPTION +100 → Reserved = 100 - 100 = 0
+    - PI cancel: REVERSAL +100 → Reserved = 100 - 100 + 100 = 100
+    """
     try:
         rows = frappe.get_all(
             "Budget Control Entry",
             filters={
-                **_entry_filters(dims, ["RESERVATION", "RELEASE", "CONSUMPTION"]),
+                **_entry_filters(dims, ["RESERVATION", "CONSUMPTION", "REVERSAL"]),
                 **(
                     {"posting_date": ["between", [from_date, to_date]]}
                     if from_date and to_date
@@ -60,11 +75,11 @@ def get_reserved_total(dims: Dimensions, from_date: date | None = None, to_date:
         amount = float(row.get("amount") or 0.0)
 
         if entry_type == "RESERVATION" and direction == "OUT":
-            total += amount
-        elif entry_type == "RELEASE" and direction == "IN":
-            total -= amount
+            total += amount  # Reserve budget
         elif entry_type == "CONSUMPTION" and direction == "IN":
-            total -= amount
+            total -= amount  # Consume reserved budget
+        elif entry_type == "REVERSAL" and direction == "OUT":
+            total += amount  # Restore reserved budget (after PI cancel)
 
     return total
 
@@ -127,7 +142,7 @@ def post_entry(
     remarks: str | None = None,
 ) -> str | None:
     settings = get_settings()
-    if entry_type in {"RESERVATION", "CONSUMPTION", "RELEASE"} and not settings.get("enable_budget_lock"):
+    if entry_type in {"RESERVATION", "CONSUMPTION", "REVERSAL"} and not settings.get("enable_budget_lock"):
         return None
     if entry_type == "RECLASS" and not settings.get("enable_budget_reclass"):
         return None

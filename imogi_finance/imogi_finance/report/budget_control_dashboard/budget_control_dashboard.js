@@ -81,6 +81,76 @@ frappe.query_reports["Budget Control Dashboard"] = {
 		}
 	],
 	
+	"onload": function(report) {
+		// Add help button with detailed guide
+		report.page.add_inner_button(__('📖 Panduan Dashboard'), function() {
+			frappe.msgprint({
+				title: __('Cara Membaca Budget Control Dashboard'),
+				indicator: 'blue',
+				message: `
+					<div style="font-size: 13px; line-height: 1.7;">
+						<h4 style="margin-top: 0; color: #2e7d32;">📊 Formula Perhitungan</h4>
+						<div style="background: #f5f5f5; padding: 12px; border-radius: 4px; margin-bottom: 15px; font-family: monospace;">
+							<strong>Net Reserved</strong> = Reservation - Consumption + Reversal<br>
+							<strong>Committed</strong> = Actual (GL) + Net Reserved<br>
+							<strong>Available</strong> = Allocated - Committed
+						</div>
+						
+						<h4 style="color: #1976d2;">💡 Arti Kolom Budget Control Entries</h4>
+						<ul style="margin-bottom: 15px;">
+							<li><strong style="color: #ff9800;">Reservation (+)</strong>: Budget di-lock saat Expense Request approved<br>
+							    <small>Entry OUT - Mengurangi available</small></li>
+							<li><strong style="color: #2196f3;">Consumption (-)</strong>: Budget dikonsumsi saat Purchase Invoice submit<br>
+							    <small>Entry IN - Mengurangi reservation (bukan available!)</small></li>
+							<li><strong style="color: #4caf50;">Reversal (+)</strong>: Budget dikembalikan saat Purchase Invoice cancel<br>
+							    <small>Entry OUT - Menambah kembali reservation</small></li>
+						</ul>
+						
+						<h4 style="color: #e91e63;">🎯 Contoh Skenario</h4>
+						<div style="background: #fff3e0; padding: 12px; border-radius: 4px; margin-bottom: 15px;">
+							<strong>Allocated: 100jt</strong><br><br>
+							
+							<strong>1. ER Submit (30jt)</strong><br>
+							• Reservation: +30jt<br>
+							• Net Reserved: 30jt<br>
+							• Available: 70jt<br><br>
+							
+							<strong>2. PI Submit (30jt)</strong><br>
+							• Consumption: -30jt (mengurangi reservation!)<br>
+							• Actual: 30jt (dari GL Entry)<br>
+							• Net Reserved: 30jt - 30jt = 0jt<br>
+							• Available: 100jt - 30jt - 0jt = 70jt ✅ (tetap!)<br><br>
+							
+							<strong>3. PI Cancel</strong><br>
+							• Reversal: +30jt<br>
+							• Actual: 0jt (GL reversed)<br>
+							• Net Reserved: 30jt - 30jt + 30jt = 30jt<br>
+							• Available: 70jt ✅ (kembali!)
+						</div>
+						
+						<h4 style="color: #9c27b0;">📈 Status Budget</h4>
+						<ul style="list-style: none; padding-left: 0;">
+							<li><span class="indicator-pill grey">Unused</span> - Budget belum dipakai</li>
+							<li><span class="indicator-pill blue">In Use</span> - Normal, <75% committed</li>
+							<li><span class="indicator-pill yellow">Warning</span> - Perhatian, 75-90% committed</li>
+							<li><span class="indicator-pill orange">Critical</span> - Kritis, >90% committed</li>
+							<li><span class="indicator-pill red">Over Budget</span> - Sudah melebihi alokasi!</li>
+						</ul>
+						
+						<div style="background: #e3f2fd; padding: 12px; border-radius: 4px; margin-top: 15px;">
+							<strong>💡 Tips Monitoring:</strong>
+							<ul>
+								<li>Available > 20% = Budget aman ✅</li>
+								<li>Net Reserved > 50% = Banyak ER pending, percepat proses PI 🔄</li>
+								<li>Committed > 90% = Stop approve ER baru ⛔</li>
+							</ul>
+						</div>
+					</div>
+				`
+			});
+		}, __('Help'));
+	},
+	
 	"formatter": function(value, row, column, data, default_formatter) {
 		value = default_formatter(value, row, column, data);
 		
@@ -90,20 +160,22 @@ frappe.query_reports["Budget Control Dashboard"] = {
 		}
 		
 		// Color code Budget Control Entry types
-		if (column.fieldname == "reservation" && data.reservation !== undefined && data.reservation < 0) {
-			value = `<span style="color: #d9534f; font-weight: bold;">${frappe.format(data.reservation, {fieldtype: 'Currency'})}</span>`;
+		// Reservation: Orange (positive = mengurangi available)
+		if (column.fieldname == "reservation" && data.reservation !== undefined && data.reservation !== 0) {
+			const color = data.reservation > 0 ? "#ff9800" : "#d9534f";
+			value = `<span style="color: ${color}; font-weight: bold;">${frappe.format(data.reservation, {fieldtype: 'Currency'})}</span>`;
 		}
 		
-		if (column.fieldname == "consumption" && data.consumption !== undefined && data.consumption > 0) {
-			value = `<span style="color: #5cb85c;">${frappe.format(data.consumption, {fieldtype: 'Currency'})}</span>`;
+		// Consumption: Blue when negative (consuming reservation), Red when positive
+		if (column.fieldname == "consumption" && data.consumption !== undefined && data.consumption !== 0) {
+			const color = data.consumption < 0 ? "#2196f3" : "#d9534f";
+			value = `<span style="color: ${color}; font-weight: bold;">${frappe.format(data.consumption, {fieldtype: 'Currency'})}</span>`;
 		}
 		
-		if (column.fieldname == "release" && data.release !== undefined && data.release > 0) {
-			value = `<span style="color: #5cb85c;">${frappe.format(data.release, {fieldtype: 'Currency'})}</span>`;
-		}
-		
+		// Reversal: Green (positive = restoring reservation)
 		if (column.fieldname == "reversal" && data.reversal !== undefined && data.reversal !== 0) {
-			value = `<span style="color: #f0ad4e;">${frappe.format(data.reversal, {fieldtype: 'Currency'})}</span>`;
+			const color = data.reversal > 0 ? "#4caf50" : "#d9534f";
+			value = `<span style="color: ${color}; font-weight: bold;">${frappe.format(data.reversal, {fieldtype: 'Currency'})}</span>`;
 		}
 		
 		if (column.fieldname == "reclass" && data.reclass !== undefined && data.reclass !== 0) {

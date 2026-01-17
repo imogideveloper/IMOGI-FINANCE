@@ -368,13 +368,17 @@
       {% endif %}
       {% if doc.company %}
         <div class="cr-company">{{ doc.company }}</div>
-        {% set company_address = frappe.db.get_value("Company", doc.company, ["address_line1", "city", "state", "country"], as_dict=1) %}
-        {% if company_address %}
+        {% set company_address_name = frappe.db.get_value("Dynamic Link", {"link_doctype": "Company", "link_name": doc.company, "parenttype": "Address"}, "parent") %}
+        {% if company_address_name %}
+          {% set company_address = frappe.get_doc("Address", company_address_name) %}
+          {% if company_address %}
           <div class="cr-company-info">
-            {% if company_address.address_line1 %}{{ company_address.address_line1 }}<br>{% endif %}
-            {% if company_address.city %}{{ company_address.city }}{% endif %}
+            {% if company_address.address_line1 %}{{ company_address.address_line1 }}{% endif %}
+            {% if company_address.address_line2 %}, {{ company_address.address_line2 }}{% endif %}
+            {% if company_address.city %}<br>{{ company_address.city }}{% endif %}
             {% if company_address.state %}, {{ company_address.state }}{% endif %}
           </div>
+          {% endif %}
         {% endif %}
       {% endif %}
     </div>
@@ -394,17 +398,19 @@
       <div class="cr-info-label">Diterima dari</div>
       <div class="cr-info-value">: {{ doc.customer }}</div>
       
-      {% set customer_address = frappe.db.get_value("Customer", doc.customer, ["customer_primary_address"], as_dict=1) if doc.customer else None %}
-      {% if customer_address and customer_address.customer_primary_address %}
-        {% set address_doc = frappe.get_doc("Address", customer_address.customer_primary_address) %}
-        {% if address_doc %}
-        <div class="cr-info-label">Alamat</div>
-        <div class="cr-info-value">: 
-          {% if address_doc.address_line1 %}{{ address_doc.address_line1 }}{% endif %}
-          {% if address_doc.address_line2 %}, {{ address_doc.address_line2 }}{% endif %}
-          {% if address_doc.city %}, {{ address_doc.city }}{% endif %}
-          {% if address_doc.state %} - {{ address_doc.state }}{% endif %}
-        </div>
+      {% if doc.customer %}
+        {% set customer_address_name = frappe.db.get_value("Dynamic Link", {"link_doctype": "Customer", "link_name": doc.customer, "parenttype": "Address"}, "parent") %}
+        {% if customer_address_name %}
+          {% set address_doc = frappe.get_doc("Address", customer_address_name) %}
+          {% if address_doc %}
+          <div class="cr-info-label">Alamat</div>
+          <div class="cr-info-value">: 
+            {% if address_doc.address_line1 %}{{ address_doc.address_line1 }}{% endif %}
+            {% if address_doc.address_line2 %}, {{ address_doc.address_line2 }}{% endif %}
+            {% if address_doc.city %}, {{ address_doc.city }}{% endif %}
+            {% if address_doc.state %} - {{ address_doc.state }}{% endif %}
+          </div>
+          {% endif %}
         {% endif %}
       {% endif %}
       

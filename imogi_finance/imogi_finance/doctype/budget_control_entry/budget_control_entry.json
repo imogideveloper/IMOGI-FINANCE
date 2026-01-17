@@ -38,7 +38,7 @@
       "fieldname": "entry_type",
       "label": "Tipe Entry",
       "fieldtype": "Select",
-      "options": "RESERVATION\nCONSUMPTION\nRELEASE\nRECLASS\nSUPPLEMENT\nREVERSAL",
+      "options": "RESERVATION\nCONSUMPTION\nREVERSAL\nRECLASS\nSUPPLEMENT",
       "reqd": 1,
       "in_list_view": 1,
       "in_standard_filter": 1,

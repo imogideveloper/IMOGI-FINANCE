@@ -424,7 +424,8 @@ def reserve_budget_for_request(expense_request, *, trigger_action: str | None = 
     allow_role = settings.get("allow_budget_overrun_role")
     allow_overrun = bool(allow_role and allow_role in frappe.get_roles())
 
-    _reverse_reservations(expense_request)
+    # Note: Tidak perlu _reverse_reservations lagi karena CONSUMPTION akan mengurangi reserved
+    # Reservation entry tetap ada, hanya di-offset oleh CONSUMPTION saat PI submit
 
     any_overrun = False
     for dims, amount in slices:
@@ -565,6 +566,17 @@ def release_budget_for_request(expense_request, *, reason: str | None = None):
 
 
 def handle_expense_request_workflow(expense_request, action: str | None, next_state: str | None):
+    """Handle budget workflow state changes for Expense Request.
+    
+    Simplified flow (no RELEASE needed):
+    - Submit: Create RESERVATION
+    - Reject/Reopen: Keep RESERVATION (user dapat re-submit, reservation tetap valid)
+    - Cancel: Keep RESERVATION (no need to release, will be consumed or expired)
+    
+    RESERVATION entries remain in database and are only offset by:
+    - CONSUMPTION when PI is submitted
+    - REVERSAL when PI is cancelled
+    """
     settings = utils.get_settings()
     if not settings.get("enable_budget_lock"):
         return
@@ -572,9 +584,18 @@ def handle_expense_request_workflow(expense_request, action: str | None, next_st
     target_state = settings.get("lock_on_workflow_state") or "Approved"
     _record_budget_workflow_event(expense_request, action, next_state, target_state)
 
-    # Release budget on rejection or reopen
+    # No need to release on rejection/reopen - RESERVATION stays
+    # Reserved budget calculation will still show correctly:
+    # Reserved = RESERVATION - CONSUMPTION + REVERSAL
     if action in {"Reject", "Reopen"}:
-        release_budget_for_request(expense_request, reason=action)
+        # Just update status, keep RESERVATION entries
+        if hasattr(expense_request, "db_set"):
+            expense_request.db_set("budget_lock_status", "Draft" if action == "Reopen" else "Rejected")
+        _set_budget_workflow_state(
+            expense_request,
+            "Draft" if action == "Reopen" else "Rejected",
+            reason=_("Workflow action: {0}").format(action),
+        )
         return
 
     # Reserve budget saat Submit (bukan saat Approve)
@@ -651,6 +672,9 @@ def consume_budget_for_purchase_invoice(purchase_invoice, expense_request=None):
 
     frappe.logger().info(f"consume_budget_for_purchase_invoice: Creating {len(slices)} consumption entries for PI {getattr(purchase_invoice, 'name', None)}")
 
+    # Create consumption entries
+    # Note: CONSUMPTION akan mengurangi Reserved (dari RESERVATION yang sudah ada)
+    # Tidak perlu RELEASE lagi - CONSUMPTION langsung "consume" dari RESERVATION
     for dims, amount in slices:
         try:
             entry_name = ledger.post_entry(
@@ -701,6 +725,9 @@ def reverse_consumption_for_purchase_invoice(purchase_invoice, expense_request=N
             except Exception:
                 request = None
 
+    # Reverse consumption entries
+    # Note: REVERSAL akan menambah Reserved kembali (restore RESERVATION yang sudah di-consume)
+    # Tidak perlu re-create RESERVATION - RESERVATION asli masih ada di database
     entries = _get_entries_for_ref("Purchase Invoice", getattr(purchase_invoice, "name", None), "CONSUMPTION")
     if not entries:
         return
@@ -724,6 +751,7 @@ def reverse_consumption_for_purchase_invoice(purchase_invoice, expense_request=N
             remarks=_("Reverse consumption on Purchase Invoice cancel"),
         )
 
+    # Update status back to Locked (from Consumed)
     if request:
         if hasattr(request, "db_set"):
             request.db_set("budget_lock_status", "Locked")

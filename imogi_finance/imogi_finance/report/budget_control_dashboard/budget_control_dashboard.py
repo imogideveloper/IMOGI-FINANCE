@@ -42,8 +42,9 @@ def execute(filters=None):
     data = get_data(filters)
     chart = get_chart_data(data, filters)
     summary = get_summary(data)
+    message = get_info_message()
     
-    return columns, data, None, chart, summary
+    return columns, data, message, chart, summary
 
 
 def validate_filters(filters):
@@ -68,6 +69,37 @@ def validate_filters(filters):
         
         if not filters.get("fiscal_year"):
             frappe.throw(_("Please select a Fiscal Year"))
+
+
+def get_info_message():
+    """Display information banner about how to read the dashboard."""
+    return """
+        <div style="padding: 12px; background: #e8f5e9; border-left: 4px solid #4caf50; margin-bottom: 15px; border-radius: 4px;">
+            <h4 style="margin: 0 0 10px 0; color: #2e7d32;">📊 Cara Membaca Budget Control Dashboard</h4>
+            <div style="font-size: 13px; line-height: 1.6; color: #1b5e20;">
+                <p style="margin: 5px 0;"><strong>Formula Perhitungan:</strong></p>
+                <ul style="margin: 5px 0 10px 20px;">
+                    <li><strong>Net Reserved</strong> = Reservation - Consumption + Reversal</li>
+                    <li><strong>Committed</strong> = Actual (GL) + Net Reserved</li>
+                    <li><strong>Available</strong> = Allocated - Committed</li>
+                </ul>
+                <p style="margin: 5px 0;"><strong>Arti Kolom:</strong></p>
+                <ul style="margin: 5px 0 10px 20px;">
+                    <li><strong>Reservation (+)</strong>: Budget di-lock untuk Expense Request yang approved</li>
+                    <li><strong>Consumption (-)</strong>: Budget yang dikonsumsi oleh Purchase Invoice yang submitted</li>
+                    <li><strong>Reversal (+)</strong>: Budget yang dikembalikan saat Purchase Invoice di-cancel</li>
+                    <li><strong>Net Reserved</strong>: Budget yang masih di-hold untuk ER yang belum jadi PI</li>
+                    <li><strong>Committed</strong>: Total budget terpakai (actual + reserved)</li>
+                    <li><strong>Available</strong>: Budget yang masih bisa digunakan untuk ER baru</li>
+                </ul>
+                <p style="margin: 5px 0;"><strong>Status Budget:</strong> 
+                    <span style="color: #4caf50;">✓ In Use (<75%)</span> | 
+                    <span style="color: #ff9800;">⚠ Warning (75-90%)</span> | 
+                    <span style="color: #f44336;">✗ Critical (>90%)</span>
+                </p>
+            </div>
+        </div>
+    """
 
 
 def get_columns():
@@ -105,37 +137,36 @@ def get_columns():
             "fieldname": "allocated",
             "label": _("Allocated"),
             "fieldtype": "Currency",
-            "width": 120
+            "width": 120,
+            "description": _("Total budget yang dialokasikan dari ERPNext Budget")
         },
         {
             "fieldname": "actual",
             "label": _("Actual (GL)"),
             "fieldtype": "Currency",
-            "width": 120
+            "width": 120,
+            "description": _("Pengeluaran aktual yang sudah di-posting ke General Ledger (PI, Payment)")
         },
         {
             "fieldname": "reservation",
-            "label": _("Reservation"),
+            "label": _("Reservation (+)"),
             "fieldtype": "Currency",
-            "width": 120
+            "width": 120,
+            "description": _("Budget yang di-lock untuk Expense Request yang approved (entry OUT)")
         },
         {
             "fieldname": "consumption",
-            "label": _("Consumption"),
+            "label": _("Consumption (-)"),
             "fieldtype": "Currency",
-            "width": 120
-        },
-        {
-            "fieldname": "release",
-            "label": _("Release"),
-            "fieldtype": "Currency",
-            "width": 120
+            "width": 120,
+            "description": _("Budget yang dikonsumsi saat Purchase Invoice submit (entry IN, mengurangi reservation)")
         },
         {
             "fieldname": "reversal",
-            "label": _("Reversal"),
+            "label": _("Reversal (+)"),
             "fieldtype": "Currency",
-            "width": 120
+            "width": 120,
+            "description": _("Budget yang dikembalikan saat Purchase Invoice di-cancel (entry OUT, restore reservation)")
         },
         {
             "fieldname": "reclass",
@@ -153,31 +184,36 @@ def get_columns():
             "fieldname": "net_reserved",
             "label": _("Net Reserved"),
             "fieldtype": "Currency",
-            "width": 120
+            "width": 120,
+            "description": _("Reservation - Consumption + Reversal = Budget masih di-hold untuk ER belum jadi PI")
         },
         {
             "fieldname": "committed",
             "label": _("Committed"),
             "fieldtype": "Currency",
-            "width": 120
+            "width": 120,
+            "description": _("Actual + Net Reserved = Total budget yang sudah terpakai atau akan terpakai")
         },
         {
             "fieldname": "committed_pct",
             "label": _("Committed %"),
             "fieldtype": "Percent",
-            "width": 100
+            "width": 100,
+            "description": _("Persentase committed dari allocated (target <75% = aman, >90% = kritis)")
         },
         {
             "fieldname": "available",
             "label": _("Available"),
             "fieldtype": "Currency",
-            "width": 120
+            "width": 120,
+            "description": _("Allocated - Committed = Budget yang masih bisa digunakan untuk ER baru")
         },
         {
             "fieldname": "status",
             "label": _("Status"),
             "fieldtype": "Data",
-            "width": 120
+            "width": 120,
+            "description": _("Status budget: Unused/In Use/Warning/Critical/Over Budget")
         }
     ]
 
@@ -185,7 +221,17 @@ def get_columns():
 def get_budget_control_breakdown(dims, from_date=None, to_date=None):
     """
     Get breakdown of Budget Control Entry by entry_type.
-    Returns dict with keys: reservation, consumption, release, reversal, reclass, supplement
+    
+    New Simplified Flow (No RELEASE):
+    - RESERVATION: Budget locked for Expense Request (OUT)
+    - CONSUMPTION: Consumes reserved budget when PI submit (IN)
+    - REVERSAL: Restores reserved budget when PI cancel (OUT)
+    - RECLASS: Budget movement between accounts
+    - SUPPLEMENT: Additional budget allocation
+    
+    Reserved = RESERVATION - CONSUMPTION + REVERSAL
+    
+    Returns dict with keys: reservation, consumption, reversal, reclass, supplement
     """
     filters = {
         "company": dims.company,
@@ -214,7 +260,6 @@ def get_budget_control_breakdown(dims, from_date=None, to_date=None):
     breakdown = {
         "reservation": 0.0,
         "consumption": 0.0,
-        "release": 0.0,
         "reversal": 0.0,
         "reclass": 0.0,
         "supplement": 0.0
@@ -226,11 +271,11 @@ def get_budget_control_breakdown(dims, from_date=None, to_date=None):
         amount = float(entry.get("amount") or 0.0)
         
         if entry_type in breakdown:
-            # OUT = pengurang, IN = penambah
+            # Signed amount based on direction
             if direction == "OUT":
-                breakdown[entry_type] -= amount
+                breakdown[entry_type] += amount  # OUT = positive (reserve/restore)
             elif direction == "IN":
-                breakdown[entry_type] += amount
+                breakdown[entry_type] -= amount  # IN = negative (consume)
     
     return breakdown
 
@@ -305,9 +350,12 @@ def get_data(filters):
             # Get Budget Control Entry breakdown by entry_type
             breakdown = get_budget_control_breakdown(dims, from_date=from_date, to_date=to_date)
             
-            # Net reserved = reservation - release - consumption
-            # (reservation locks budget OUT, release/consumption frees it back IN)
-            net_reserved = breakdown["reservation"] + breakdown["release"] + breakdown["consumption"]
+            # Net reserved = RESERVATION - CONSUMPTION + REVERSAL
+            # Simplified flow: no RELEASE needed
+            # - RESERVATION: +100 (locked for ER)
+            # - CONSUMPTION: -100 (consumed by PI)
+            # - REVERSAL: +100 (restored on PI cancel)
+            net_reserved = breakdown["reservation"] + breakdown["consumption"] + breakdown["reversal"]
             
             # Calculate committed = actual + net reserved
             committed = actual + net_reserved
@@ -326,8 +374,7 @@ def get_data(filters):
                 "project": dims.project or "",
                 "branch": dims.branch or "",
                 "allocated": allocated or 0,
-                "actual": actual or 0,
-                "reservation": breakdown["reservation"] or 0,
+                "acservation": breakdown["reservation"] or 0,
                 "consumption": breakdown["consumption"] or 0,
                 "release": breakdown["release"] or 0,
                 "reversal": breakdown["reversal"] or 0,
