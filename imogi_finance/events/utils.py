@@ -26,10 +26,59 @@ def get_approved_expense_request(
 
 
 def get_expense_request_links(request_name: str, *, include_pending: bool = False):
-    fields = EXPENSE_REQUEST_LINK_FIELDS + (EXPENSE_REQUEST_PENDING_FIELDS if include_pending else ())
-    return frappe.db.get_value(
-        "Expense Request", request_name, fields, as_dict=True
-    ) or {}
+    """Get linked Purchase Invoice and Payment Entry by querying database.
+    
+    Uses native connections to find submitted PI and paid PE linked to this Expense Request.
+    
+    Note: 1 ER can have:
+    - 1 submitted PI (or 0 if none/cancelled)
+    - Multiple submitted PE (1 PI can have multiple payments)
+    
+    For status determination, we only need to know if ANY PE exists.
+    Returns the latest PE for backward compatibility with existing code.
+    
+    Returns dict with:
+    - linked_purchase_invoice: Latest submitted PI (or None)
+    - linked_payment_entry: Latest submitted PE (or None) 
+    - has_payment_entries: True if any PE exists (for status check)
+    """
+    # Query Purchase Invoice yang linked dan submitted (max 1)
+    linked_pi = frappe.db.get_value(
+        "Purchase Invoice",
+        {
+            "imogi_expense_request": request_name,
+            "docstatus": 1  # Only submitted PI
+        },
+        "name",
+        order_by="creation desc"
+    )
+    
+    # Query Payment Entry yang linked dan submitted (bisa multiple)
+    # Return latest PE untuk backward compatibility
+    linked_pe = frappe.db.get_value(
+        "Payment Entry",
+        {
+            "imogi_expense_request": request_name,
+            "docstatus": 1  # Only submitted PE
+        },
+        "name",
+        order_by="creation desc"
+    )
+    
+    result = {
+        "linked_purchase_invoice": linked_pi,
+        "linked_payment_entry": linked_pe,
+        "has_payment_entries": bool(linked_pe)  # True if any PE exists
+    }
+    
+    # Include pending field if requested (for backward compatibility)
+    if include_pending:
+        pending = frappe.db.get_value(
+            "Expense Request", request_name, "pending_purchase_invoice"
+        )
+        result["pending_purchase_invoice"] = pending
+    
+    return result
 
 
 def has_active_links(request_links, exclude: frozenset[str] | None = None):
@@ -46,23 +95,18 @@ def get_expense_request_status(request_links: dict, *, check_pi_docstatus: bool 
     
     Args:
         request_links: Dict with linked_payment_entry, linked_purchase_invoice
-        check_pi_docstatus: If True, verify PI is submitted before returning PI Created
+        check_pi_docstatus: Deprecated - query now automatically filters submitted docs
+    
+    Returns:
+        - "Paid" if Payment Entry exists (submitted)
+        - "PI Created" if Purchase Invoice exists (submitted)
+        - "Approved" otherwise
     """
+    # Status priority: Paid > PI Created > Approved
     if request_links.get("linked_payment_entry"):
         return "Paid"
     
-    linked_pi = request_links.get("linked_purchase_invoice")
-    
-    if linked_pi and check_pi_docstatus:
-        # Only return PI Created if PI is actually submitted
-        import frappe
-        pi_docstatus = frappe.db.get_value("Purchase Invoice", linked_pi, "docstatus")
-        if pi_docstatus == 1:
-            return "PI Created"
-        # PI is draft or cancelled - status should be Approved
-        return "Approved"
-    
-    if linked_pi:
+    if request_links.get("linked_purchase_invoice"):
         return "PI Created"
     
     return "Approved"

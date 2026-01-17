@@ -684,3 +684,61 @@ def test_create_purchase_invoice_does_not_require_verification_for_non_ppn(monke
     pi_name = accounting.create_purchase_invoice_from_request("ER-NON-PPN")
 
     assert pi_name == "PI-NON-PPN"
+
+
+def test_create_purchase_invoice_calculates_taxes_after_insert(monkeypatch):
+    """Test that calculate_taxes_and_totals is called after PI insert to ensure PPN and PPh are calculated."""
+    request = _make_expense_request(
+        name="ER-TAX-CALC",
+        is_ppn_applicable=1,
+        ppn_template="PPN-11",
+        is_pph_applicable=1,
+        pph_type="PPh 23",
+        pph_base_amount=1000,
+    )
+
+    created_pi = _doc_with_defaults(frappe._dict(), linked_purchase_invoice=None, docstatus=0)
+    
+    # Track method calls
+    created_pi.calculate_taxes_called = False
+    created_pi.save_called = False
+
+    def fake_get_doc(doctype, name):
+        assert doctype == "Expense Request"
+        return request
+
+    def fake_get_value(doctype, name, fieldname, *args, **kwargs):
+        if doctype == "Cost Center":
+            return "Test Company"
+        return None
+
+    def fake_new_doc(doctype):
+        assert doctype == "Purchase Invoice"
+        return created_pi
+
+    def fake_insert(ignore_permissions=False):
+        created_pi.name = "PI-TAX-CALC"
+
+    def fake_calculate_taxes_and_totals():
+        created_pi.calculate_taxes_called = True
+
+    def fake_save(ignore_permissions=False):
+        created_pi.save_called = True
+
+    created_pi.insert = fake_insert
+    created_pi.append = lambda *args, **kwargs: None
+    created_pi.set_taxes = lambda: None
+    created_pi.calculate_taxes_and_totals = fake_calculate_taxes_and_totals
+    created_pi.save = fake_save
+
+    request.db_set = lambda values: setattr(created_pi, "db_set_called_with", values)
+
+    monkeypatch.setattr(frappe, "get_doc", fake_get_doc)
+    monkeypatch.setattr(frappe, "new_doc", fake_new_doc)
+    monkeypatch.setattr(frappe.db, "get_value", fake_get_value)
+
+    pi_name = accounting.create_purchase_invoice_from_request("ER-TAX-CALC")
+
+    assert pi_name == "PI-TAX-CALC"
+    assert created_pi.calculate_taxes_called is True, "calculate_taxes_and_totals should be called after insert"
+    assert created_pi.save_called is True, "save should be called after calculate_taxes_and_totals"

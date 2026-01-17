@@ -129,15 +129,22 @@ def _validate_request_type(
 
 
 def _validate_no_existing_purchase_invoice(request: frappe.model.document.Document) -> None:
-    if request.linked_purchase_invoice:
-        # Check if linked PI still exists and is not cancelled
-        pi_docstatus = frappe.db.get_value("Purchase Invoice", request.linked_purchase_invoice, "docstatus")
-        if pi_docstatus is not None and pi_docstatus != 2:
-            frappe.throw(
-                _("Expense Request is already linked to Purchase Invoice {0}.").format(
-                    request.linked_purchase_invoice
-                )
+    # Query untuk cek apakah sudah ada PI yang submitted untuk ER ini
+    existing_pi = frappe.db.get_value(
+        "Purchase Invoice",
+        {
+            "imogi_expense_request": request.name,
+            "docstatus": ["!=", 2]  # Not cancelled
+        },
+        "name"
+    )
+    
+    if existing_pi:
+        frappe.throw(
+            _("Expense Request is already linked to Purchase Invoice {0}.").format(
+                existing_pi
             )
+        )
 
 
 def _update_request_purchase_invoice_links(
@@ -145,18 +152,18 @@ def _update_request_purchase_invoice_links(
     purchase_invoice: frappe.model.document.Document,
     mark_pending: bool = True,
 ) -> None:
-    # Always set linked_purchase_invoice immediately, even for draft PI
-    # Status remains "Approved" - will change to "PI Created" on PI submit
-    updates = {
-        "linked_purchase_invoice": purchase_invoice.name,
-        "pending_purchase_invoice": None,
-    }
-
+    """Legacy function - kept for backward compatibility.
+    
+    With native connections, PI link is established via imogi_expense_request field
+    on Purchase Invoice. Status is determined by querying submitted documents.
+    
+    This function now only clears pending_purchase_invoice field.
+    """
+    # Clear pending field only - actual link is via PI.imogi_expense_request
     if hasattr(request, "db_set"):
-        request.db_set(updates)
-
-    for field, value in updates.items():
-        setattr(request, field, value)
+        request.db_set("pending_purchase_invoice", None)
+    else:
+        setattr(request, "pending_purchase_invoice", None)
 
 
 @frappe.whitelist()
@@ -292,6 +299,26 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
             if base_amount is not None:
                 item_wise_pph_detail[str(idx)] = float(base_amount)
 
+    # Add DPP variance as additional line item if exists
+    dpp_variance = flt(getattr(request, "ti_dpp_variance", 0) or 0)
+    if dpp_variance != 0:
+        from imogi_finance.tax_invoice_ocr import get_settings
+        settings = get_settings()
+        variance_account = settings.get("dpp_variance_account")
+        
+        if variance_account:
+            variance_item = {
+                "item_name": "DPP Variance Adjustment" if dpp_variance > 0 else "DPP Variance Reduction",
+                "description": f"Tax invoice variance adjustment (OCR vs Expected): {flt(dpp_variance):,.2f}",
+                "expense_account": variance_account,
+                "cost_center": request.cost_center,
+                "project": request.project,
+                "qty": 1,
+                "rate": dpp_variance,  # Can be positive or negative
+                "amount": dpp_variance,
+            }
+            pi.append("items", variance_item)
+
     if item_wise_pph_detail:
         pi.item_wise_tax_detail = item_wise_pph_detail
 
@@ -312,9 +339,22 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     pi.ti_verification_notes = getattr(request, "ti_verification_notes", None)
     pi.ti_duplicate_flag = getattr(request, "ti_duplicate_flag", None)
     pi.ti_npwp_match = getattr(request, "ti_npwp_match", None)
+    # Copy variance fields for reference and audit trail
+    pi.ti_dpp_variance = getattr(request, "ti_dpp_variance", None)
+    pi.ti_ppn_variance = getattr(request, "ti_ppn_variance", None)
     apply_branch(pi, branch)
 
     pi.insert(ignore_permissions=True)
+    
+    # Recalculate taxes and totals after insert to ensure PPN and PPh are properly calculated
+    # This is necessary because withholding tax (PPh) is calculated by Frappe's controller
+    # after the document is saved and taxes need to be recalculated
+    if hasattr(pi, "calculate_taxes_and_totals"):
+        pi.calculate_taxes_and_totals()
+        pi.save(ignore_permissions=True)
+    else:
+        # Fallback: reload document to get calculated taxes
+        pi.reload()
 
     _update_request_purchase_invoice_links(request, pi)
 

@@ -31,6 +31,9 @@ def validate_before_submit(doc, method=None):
     # Validate NPWP match between OCR and Supplier
     _validate_npwp_match(doc)
     
+    # Validate 1 ER = 1 PI (only submitted PI, cancelled are ignored)
+    _validate_one_pi_per_request(doc)
+    
     settings = get_settings()
     require_verified = cint(settings.get("enable_tax_invoice_ocr")) and cint(
         settings.get("require_verification_before_submit_pi")
@@ -57,6 +60,53 @@ def validate_before_submit(doc, method=None):
         if marker:
             raise marker(message)
         raise Exception(message)
+
+
+def _validate_one_pi_per_request(doc):
+    """Validate 1 Expense Request = 1 Purchase Invoice (submitted only).
+    
+    Cancelled PI are ignored - allow creating new PI if old one is cancelled.
+    """
+    expense_request = doc.get("imogi_expense_request")
+    branch_request = doc.get("branch_expense_request")
+    
+    if expense_request:
+        existing_pi = frappe.db.get_value(
+            "Purchase Invoice",
+            {
+                "imogi_expense_request": expense_request,
+                "docstatus": 1,  # Only submitted
+                "name": ["!=", doc.name]
+            },
+            "name"
+        )
+        
+        if existing_pi:
+            frappe.throw(
+                _("Expense Request {0} is already linked to submitted Purchase Invoice {1}. Please cancel that PI first.").format(
+                    expense_request, existing_pi
+                ),
+                title=_("Duplicate Purchase Invoice")
+            )
+    
+    if branch_request:
+        existing_pi = frappe.db.get_value(
+            "Purchase Invoice",
+            {
+                "branch_expense_request": branch_request,
+                "docstatus": 1,  # Only submitted
+                "name": ["!=", doc.name]
+            },
+            "name"
+        )
+        
+        if existing_pi:
+            frappe.throw(
+                _("Branch Expense Request {0} is already linked to submitted Purchase Invoice {1}. Please cancel that PI first.").format(
+                    branch_request, existing_pi
+                ),
+                title=_("Duplicate Purchase Invoice")
+            )
 
 
 def _validate_npwp_match(doc):
@@ -108,11 +158,21 @@ def _handle_expense_request_submit(doc, request_name):
         request_name, _("Purchase Invoice"), allowed_statuses=PURCHASE_INVOICE_ALLOWED_STATUSES | {"PI Created"}
     )
 
-    # Validate linked_purchase_invoice matches this PI
-    if request.linked_purchase_invoice and request.linked_purchase_invoice != doc.name:
+    # Validate tidak ada PI lain yang sudah linked (query dari DB)
+    existing_pi = frappe.db.get_value(
+        "Purchase Invoice",
+        {
+            "imogi_expense_request": request.name,
+            "docstatus": 1,
+            "name": ["!=", doc.name]
+        },
+        "name"
+    )
+    
+    if existing_pi:
         frappe.throw(
             _("Expense Request is already linked to a different Purchase Invoice {0}.").format(
-                request.linked_purchase_invoice
+                existing_pi
             )
         )
 
@@ -131,11 +191,12 @@ def _handle_expense_request_submit(doc, request_name):
             label=_("Purchase Invoice"),
         )
 
-    # Update status to PI Created now that PI is submitted
+    # Update workflow state to PI Created
+    # Status akan auto-update via query karena PI.imogi_expense_request sudah set
     frappe.db.set_value(
         "Expense Request",
         request.name,
-        {"status": "PI Created", "workflow_state": "PI Created", "pending_purchase_invoice": None},
+        {"workflow_state": "PI Created", "pending_purchase_invoice": None},
     )
     
     # Budget consumption MUST succeed or PI submit fails
@@ -204,16 +265,19 @@ def on_cancel(doc, method=None):
     When PI is cancelled:
     1. Check for active Payment Entry (must be cancelled first)
     2. Reverse budget consumption
-    3. Clear linked_purchase_invoice from Request
-    4. Update status appropriately
+    3. Update workflow state (status auto-updated via query)
     """
     expense_request_name = doc.get("imogi_expense_request")
     branch_request_name = doc.get("branch_expense_request")
     
-    # Check for active Payment Entry
+    # Check for active Payment Entry via query
     if expense_request_name:
-        pe = frappe.db.get_value("Expense Request", expense_request_name, "linked_payment_entry")
-        if pe and frappe.db.get_value("Payment Entry", pe, "docstatus") == 1:
+        pe = frappe.db.get_value(
+            "Payment Entry",
+            {"imogi_expense_request": expense_request_name, "docstatus": 1},
+            "name"
+        )
+        if pe:
             frappe.throw(
                 _("Cannot cancel Purchase Invoice. Payment Entry {0} must be cancelled first.").format(pe),
                 title=_("Active Payment Exists")
@@ -232,11 +296,16 @@ def on_cancel(doc, method=None):
             title=_("Budget Reversal Error")
         )
     
-    # Update Expense Request status
+    # Update Expense Request workflow state
+    # Status akan auto-update via query (tidak ada PI submitted lagi)
     if expense_request_name:
-        updates = get_cancel_updates(expense_request_name, "linked_purchase_invoice")
-        updates["pending_purchase_invoice"] = None
-        frappe.db.set_value("Expense Request", expense_request_name, updates)
+        request_links = get_expense_request_links(expense_request_name)
+        next_status = get_expense_request_status(request_links)
+        frappe.db.set_value(
+            "Expense Request",
+            expense_request_name,
+            {"workflow_state": next_status, "pending_purchase_invoice": None}
+        )
     
     # Update Branch Expense Request
     if branch_request_name:
@@ -251,19 +320,18 @@ def on_trash(doc, method=None):
     
     # Handle Expense Request
     if expense_request:
+        # Clear pending field dan update workflow state
+        # Status akan auto-update via query
         request_links = get_expense_request_links(expense_request, include_pending=True)
         updates = {}
+        
         if request_links.get("pending_purchase_invoice") == doc.name:
             updates["pending_purchase_invoice"] = None
-        if request_links.get("linked_purchase_invoice") == doc.name:
-            updates["linked_purchase_invoice"] = None
 
-        if updates:
-            remaining_links = dict(request_links)
-            for field in updates:
-                remaining_links[field] = None
-            next_status = get_expense_request_status(remaining_links)
-            updates["status"] = next_status
+        if updates or True:  # Always update workflow state
+            # Re-query untuk get status terbaru
+            current_links = get_expense_request_links(expense_request)
+            next_status = get_expense_request_status(current_links)
             updates["workflow_state"] = next_status
             frappe.db.set_value("Expense Request", expense_request, updates)
     

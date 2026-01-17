@@ -69,32 +69,15 @@ def _ensure_expense_request_reference(doc, expense_request: str | None, branch_r
 
 
 def _validate_expense_request_link(doc, request, request_name: str) -> None:
-    linked_payment_entry = getattr(request, "linked_payment_entry", None)
-    if linked_payment_entry and linked_payment_entry != doc.name:
-        # Check if the linked PE is cancelled - if so, allow new PE
-        old_pe_docstatus = frappe.db.get_value("Payment Entry", linked_payment_entry, "docstatus")
-        if old_pe_docstatus == 1:  # Still submitted
-            frappe.throw(
-                _("Expense Request already linked to Payment Entry {0}").format(
-                    linked_payment_entry
-                )
-            )
-        # Old PE is cancelled/draft, allow new PE to be linked
-
-    existing_payment_entry = frappe.db.exists(
-        "Payment Entry",
-        {
-            "imogi_expense_request": request.name,
-            "docstatus": ["!=", 2],
-            "name": ["!=", doc.name],
-        },
-    )
-    if existing_payment_entry:
-        frappe.throw(
-            _("An active Payment Entry {0} already exists for Expense Request {1}").format(
-                existing_payment_entry, request.name
-            )
-        )
+    """Validate Payment Entry link to Expense Request.
+    
+    Note: Multiple PE per ER is allowed (1 PI can have multiple payments).
+    This function is kept for future validation needs.
+    """
+    # ✅ Multiple PE per ER is ALLOWED
+    # 1 PI can be paid via multiple Payment Entries
+    # No validation needed here
+    pass
 
 
 def _sync_expense_request_link(
@@ -113,14 +96,10 @@ def _sync_expense_request_link(
         request = get_approved_expense_request(
             expense_request, _("Payment Entry"), allowed_statuses=allowed_statuses
         )
-        _validate_expense_request_link(doc, request, expense_request)
-        # Always update to latest PE (auto-update from cancelled to new PE)
-        frappe.db.set_value(
-            "Expense Request",
-            request.name,
-            {"linked_payment_entry": doc.name},
-        )
-        frappe.logger().info(f"[_sync_expense_request_link] Successfully linked PE {doc.name} to ER {expense_request}")
+        # ✅ Multiple PE per ER is allowed - no validation needed
+        # Link established via doc.imogi_expense_request field
+        # Status akan auto-update via query saat PE di-submit
+        frappe.logger().info(f"[_sync_expense_request_link] Successfully synced PE {doc.name} to ER {expense_request}")
         return request
     
     if branch_request:
@@ -275,32 +254,16 @@ def _handle_expense_request_submit(doc, expense_request):
     if not request:
         return
 
-    # Check if ER has another ACTIVE (submitted) PE
-    linked_payment_entry = getattr(request, "linked_payment_entry", None)
-    if linked_payment_entry and linked_payment_entry != doc.name:
-        # Allow if old PE is cancelled (docstatus=2)
-        old_pe_docstatus = frappe.db.get_value("Payment Entry", linked_payment_entry, "docstatus")
-        if old_pe_docstatus == 1:  # Still submitted
-            frappe.throw(
-                _("Expense Request already linked to an active Payment Entry {0}. Cancel it first.").format(
-                    linked_payment_entry
-                )
-            )
-        # Old PE is cancelled/draft, proceed with linking new PE
-        frappe.logger().info(f"[PE on_submit] Old PE {linked_payment_entry} is cancelled, linking to new PE {doc.name}")
-
-    has_purchase_invoice = getattr(request, "linked_purchase_invoice", None)
-    if has_purchase_invoice:
-        pi_docstatus = frappe.db.get_value("Purchase Invoice", has_purchase_invoice, "docstatus")
-        if pi_docstatus != 1:
-            frappe.throw(
-                _("Linked Purchase Invoice {0} must be submitted before creating Payment Entry.").format(
-                    has_purchase_invoice
-                )
-            )
+    # Validate ada PI yang submitted (query dari DB)
+    has_purchase_invoice = frappe.db.get_value(
+        "Purchase Invoice",
+        {"imogi_expense_request": request.name, "docstatus": 1},
+        "name"
+    )
+    
     if not has_purchase_invoice:
         frappe.throw(
-            _("Expense Request must be linked to a Purchase Invoice before submitting Payment Entry.")
+            _("Expense Request must be linked to a submitted Purchase Invoice before submitting Payment Entry.")
         )
 
     branch_settings = get_branch_settings()
@@ -311,11 +274,12 @@ def _handle_expense_request_submit(doc, expense_request):
             label=_("Payment Entry"),
         )
 
-    # Update status to Paid now that PE is submitted
+    # Update workflow state to Paid
+    # Status akan auto-update via query karena PE.imogi_expense_request sudah set
     frappe.db.set_value(
         "Expense Request",
         request.name,
-        {"status": "Paid", "workflow_state": "Paid"},
+        {"workflow_state": "Paid"},
     )
 
 
@@ -379,6 +343,11 @@ def before_cancel(doc, method=None):
 def on_cancel(doc, method=None):
     """Handle Payment Entry cancellation.
     
+    With multiple PE support:
+    - If OTHER submitted PE still exist → Status remains "Paid"
+    - If NO OTHER submitted PE exist → Status back to "PI Created"
+    - Cancelled PE (docstatus=2) are automatically excluded by query
+    
     Payment Entry is the endpoint of the payment flow and can be freely cancelled,
     EXCEPT when already included in printed Cash/Bank Daily Reports.
     
@@ -391,12 +360,75 @@ def on_cancel(doc, method=None):
     When PE is cancelled:
     1. Check if linked to any printed daily reports (done in before_cancel)
     2. If yes, BLOCK cancellation and suggest reversal
-    3. If no, allow cancellation without touching ER/PI status
+    3. If no, allow cancellation
+    4. Status auto-updated via query:
+       - Query filters docstatus=1 (only submitted)
+       - Cancelled PE (docstatus=2) automatically excluded
+       - If other PE exist → "Paid"
+       - If no PE exist → "PI Created"
     """
+    expense_request_name = doc.get("imogi_expense_request")
+    branch_request_name = doc.get("branch_expense_request")
     
-    # That's it! No need to rollback ER status or clear links
-    # ER stays "Paid", links stay intact, PI remains valid
-    frappe.logger().info(f"[Payment Entry on_cancel] PE {doc.name} cancelled successfully (ER/PI unchanged)")
+    # Update Expense Request workflow state
+    # Query will automatically exclude this cancelled PE (docstatus=2)
+    if expense_request_name:
+        # Query untuk cek apakah masih ada PE lain yang submitted
+        other_pes = frappe.db.get_all(
+            "Payment Entry",
+            filters={
+                "imogi_expense_request": expense_request_name,
+                "docstatus": 1,  # Only submitted
+                "name": ["!=", doc.name]  # Exclude current (being cancelled)
+            },
+            pluck="name"
+        )
+        
+        # Determine status based on remaining PEs
+        if other_pes:
+            # Masih ada PE lain yang submitted → status tetap "Paid"
+            next_status = "Paid"
+            frappe.logger().info(
+                f"[PE on_cancel] PE {doc.name} cancelled, "
+                f"but {len(other_pes)} other PE(s) still active: {other_pes}. "
+                f"ER status remains 'Paid'"
+            )
+        else:
+            # Tidak ada PE lain → status kembali ke "PI Created" (atau "Approved" jika PI juga cancelled)
+            request_links = get_expense_request_links(expense_request_name)
+            next_status = get_expense_request_status(request_links)
+            frappe.logger().info(
+                f"[PE on_cancel] PE {doc.name} cancelled, "
+                f"no other active PE. ER status: {next_status}"
+            )
+        
+        frappe.db.set_value(
+            "Expense Request",
+            expense_request_name,
+            {"workflow_state": next_status}
+        )
+    
+    # Update Branch Expense Request
+    if branch_request_name:
+        if frappe.db.exists("Branch Expense Request", branch_request_name):
+            # Check if other PEs exist
+            other_pes = frappe.db.get_all(
+                "Payment Entry",
+                filters={
+                    "branch_expense_request": branch_request_name,
+                    "docstatus": 1,
+                    "name": ["!=", doc.name]
+                },
+                pluck="name"
+            )
+            
+            # Update status based on remaining PEs
+            if not other_pes:
+                frappe.db.set_value(
+                    "Branch Expense Request",
+                    branch_request_name,
+                    {"linked_payment_entry": None}
+                )
 
 
 def _check_linked_to_printed_report(payment_entry) -> bool:
@@ -535,12 +567,48 @@ def reverse_payment_entry(payment_entry_name: str, reversal_date: str | None = N
         "reversal_entry": reversal_pe.name
     })
     
-    # Update Expense Request status back to PI Created
+    # Update Expense Request workflow state
+    # Check if other submitted PEs still exist
     expense_request, branch_request = _resolve_expense_request(original_pe)
     
     if expense_request:
-        updates = get_cancel_updates(expense_request, "linked_payment_entry")
-        frappe.db.set_value("Expense Request", expense_request, updates)
+        # Query untuk cek apakah masih ada PE lain yang submitted
+        # Note: original PE belum di-cancel, masih docstatus=1
+        # Tapi sudah di-mark is_reversed=1
+        other_pes = frappe.db.get_all(
+            "Payment Entry",
+            filters={
+                "imogi_expense_request": expense_request,
+                "docstatus": 1,  # Only submitted
+                "name": ["!=", payment_entry_name],  # Exclude reversed PE
+                "is_reversed": ["!=", 1]  # Exclude reversed PEs
+            },
+            pluck="name"
+        )
+        
+        # Determine status based on remaining PEs
+        if other_pes:
+            # Masih ada PE lain yang active → status tetap "Paid"
+            next_status = "Paid"
+            frappe.logger().info(
+                f"[PE reversal] PE {payment_entry_name} reversed, "
+                f"but {len(other_pes)} other PE(s) still active: {other_pes}. "
+                f"ER status remains 'Paid'"
+            )
+        else:
+            # Tidak ada PE lain → status kembali ke "PI Created"
+            request_links = get_expense_request_links(expense_request)
+            next_status = get_expense_request_status(request_links)
+            frappe.logger().info(
+                f"[PE reversal] PE {payment_entry_name} reversed, "
+                f"no other active PE. ER status: {next_status}"
+            )
+        
+        frappe.db.set_value(
+            "Expense Request",
+            expense_request,
+            {"workflow_state": next_status}
+        )
     
     if branch_request:
         if frappe.db.exists("Branch Expense Request", branch_request):
@@ -550,24 +618,19 @@ def reverse_payment_entry(payment_entry_name: str, reversal_date: str | None = N
 
 
 def on_trash(doc, method=None):
-    """Clear linked_payment_entry when Payment Entry is deleted."""
+    """Update workflow state when Payment Entry is deleted."""
     expense_request, branch_request = _resolve_expense_request(doc)
     
-    # Handle Expense Request
+    # Handle Expense Request - update workflow state
+    # Status akan auto-update via query
     if expense_request:
         request_links = get_expense_request_links(expense_request)
-        
-        # Only clear if this PE is the linked one
-        if request_links.get("linked_payment_entry") == doc.name:
-            remaining_links = dict(request_links)
-            remaining_links["linked_payment_entry"] = None
-            next_status = get_expense_request_status(remaining_links)
-
-            frappe.db.set_value(
-                "Expense Request",
-                expense_request,
-                {"linked_payment_entry": None, "status": next_status, "workflow_state": next_status},
-            )
+        next_status = get_expense_request_status(request_links)
+        frappe.db.set_value(
+            "Expense Request",
+            expense_request,
+            {"workflow_state": next_status}
+        )
     
     # Handle Branch Expense Request
     if branch_request:
