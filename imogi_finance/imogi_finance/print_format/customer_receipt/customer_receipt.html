@@ -1,5 +1,5 @@
 {#- Design & Template Setup -#}
-{% set design = frappe.get_doc("Receipt Design", doc.receipt_design) if doc.receipt_design else frappe._dict({
+{% set design = frappe.get_doc("Receipt Design", doc.receipt_design) if doc.receipt_design else {
   "custom_wording_title": "KUITANSI",
   "show_detail_table": 1,
   "stamp_mode_default": "Physical",
@@ -10,7 +10,7 @@
   "show_qr": 0,
   "custom_logo": None,
   "logo_mode": "Company Default"
-}) %}
+} %}
 {% set template = frappe.get_doc("Digital Stamp Template", doc.digital_stamp_template) if doc.digital_stamp_template else None %}
 {% set stamp_image = doc.digital_stamp_image or (template.stamp_image if template else None) or design.digital_stamp_image %}
 {% set verification_url = build_verification_url((template.verification_url_pattern if template else design.digital_stamp_url_pattern), doc.digital_stamp_reference) if doc.digital_stamp_reference else None %}

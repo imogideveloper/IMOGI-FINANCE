@@ -260,7 +260,8 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     pi.apply_tds = 1 if is_pph_applicable else 0
     # withholding_tax_base_amount will be set after all items are added
 
-    item_wise_pph_detail = {}
+    # Collect per-item PPh details during item creation
+    temp_pph_items = []
 
     for idx, item in enumerate(request_items, start=1):
         expense_account = getattr(item, "expense_account", None)
@@ -294,12 +295,16 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
         
         pi.append("items", pi_item)
 
+        # Track which items have PPh for later index mapping
         if getattr(item, "is_pph_applicable", 0):
             base_amount = getattr(item, "pph_base_amount", None)
             if base_amount is not None:
-                item_wise_pph_detail[str(idx)] = float(base_amount)
+                temp_pph_items.append({
+                    "er_index": idx,
+                    "base_amount": float(base_amount)
+                })
 
-    # Add DPP variance as additional line item if exists
+    # Add DPP variance as additional line item at the end (NOT subject to withholding tax)
     dpp_variance = flt(getattr(request, "ti_dpp_variance", 0) or 0)
     if dpp_variance != 0:
         variance_account = settings.get("dpp_variance_account")
@@ -317,15 +322,28 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
             }
             pi.append("items", variance_item)
 
-    # Calculate withholding tax base amount from actual PI items (not ER)
-    # This ensures PPh is calculated correctly even if variance is added
+    # Build item_wise_tax_detail with correct indices AFTER all items are added
+    # This ensures index mapping is accurate regardless of variance items
+    item_wise_pph_detail = {}
+    if temp_pph_items:
+        for pph_item in temp_pph_items:
+            # Use ER index directly since items are added in order
+            pi_idx = pph_item["er_index"]
+            item_wise_pph_detail[str(pi_idx)] = pph_item["base_amount"]
+
+    # Calculate withholding tax base amount
+    # IMPORTANT: Exclude variance item from PPh calculation
     if is_pph_applicable:
         if item_wise_pph_detail:
             # If per-item PPh, sum from item_wise_pph_detail
             pi.withholding_tax_base_amount = sum(float(v) for v in item_wise_pph_detail.values())
         else:
-            # If header-level PPh, use total of all PI items
-            pi.withholding_tax_base_amount = sum(flt(item.get("amount", 0)) for item in pi.items)
+            # If header-level PPh, use total of expense items only (exclude variance)
+            # Variance item is always last if it exists
+            items_count = len(request_items)  # Original items without variance
+            pi.withholding_tax_base_amount = sum(
+                flt(pi.items[i].get("amount", 0)) for i in range(items_count)
+            )
 
     # Set PPh details after all items are added
     if item_wise_pph_detail:
