@@ -125,6 +125,22 @@ def test_pi_creation():
     
     issues = []
     
+    # Check if variance was handled
+    dpp_variance = flt(er.ti_dpp_variance or 0)
+    if dpp_variance != 0:
+        variance_items = [item for item in (pi.items or []) 
+                          if "variance" in (item.item_name or "").lower()]
+        if variance_items:
+            print(f"✅ DPP variance {dpp_variance:,.2f} added as line item")
+            # Verify amount matches
+            variance_total = sum(flt(item.amount) for item in variance_items)
+            if abs(variance_total - dpp_variance) < 1:  # Allow 1 IDR tolerance for rounding
+                print(f"✅ Variance amount matches: {variance_total:,.2f}")
+            else:
+                issues.append(f"❌ Variance amount mismatch: Expected {dpp_variance:,.2f}, got {variance_total:,.2f}")
+        else:
+            issues.append(f"❌ DPP variance {dpp_variance:,.2f} exists but not added as line item")
+    
     # Check if PPN is calculated
     if er.is_ppn_applicable and ppn_total == 0:
         issues.append("❌ PPN is not calculated (should be > 0)")
@@ -141,23 +157,7 @@ def test_pi_creation():
     if er.is_pph_applicable and not pi.apply_tds:
         issues.append("❌ apply_tds is not set (should be 1)")
     elif er.is_pph_applicable:
-        print(fvariance was handled
-    dpp_variance = flt(er.ti_dpp_variance or 0)
-    if dpp_variance != 0:
-        variance_items = [item for item in (pi.items or []) 
-                          if "variance" in (item.item_name or "").lower()]
-        if variance_items:
-            print(f"✅ DPP variance {dpp_variance:,.2f} added as line item")
-            # Verify amount matches
-            variance_total = sum(flt(item.amount) for item in variance_items)
-            if abs(variance_total - dpp_variance) < 1:  # Allow 1 IDR tolerance for rounding
-                print(f"✅ Variance amount matches: {variance_total:,.2f}")
-            else:
-                issues.append(f"❌ Variance amount mismatch: Expected {dpp_variance:,.2f}, got {variance_total:,.2f}")
-        else:
-            issues.append(f"❌ DPP variance {dpp_variance:,.2f} exists but not added as line item")
-    
-    # Check if "✅ apply_tds is set")
+        print(f"✅ apply_tds is set")
     
     # Check tax_withholding_category
     if er.is_pph_applicable and not pi.tax_withholding_category:
@@ -176,4 +176,9 @@ def test_pi_creation():
 
 
 if __name__ == "__main__":
+    test_pi_creation()
+
+
+def main():
+    """Alias for bench execute command."""
     test_pi_creation()
