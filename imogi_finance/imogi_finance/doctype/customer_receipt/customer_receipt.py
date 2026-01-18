@@ -313,6 +313,12 @@ class CustomerReceipt(Document):
         pe.customer_receipt = self.name
         pe.received_amount = float(paid_amount)
         pe.paid_amount = float(paid_amount)
+        
+        # Set exchange rates to avoid validation errors
+        # This triggers ERPNext's auto-calculation of exchange rates based on currencies
+        pe.source_exchange_rate = 1.0
+        pe.target_exchange_rate = 1.0
+        
         branch = resolve_branch(
             company=self.company,
             explicit_branch=getattr(self, "branch", None),
