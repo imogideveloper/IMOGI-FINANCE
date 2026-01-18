@@ -8,7 +8,7 @@ def get_data():
             "category": "Modules",
             "label": "Imogi Finance",
             "color": "#2490EF",
-            "icon": "bank",
+            "icon": "briefcase",
             "type": "module",
             "hidden": 0,
             "items": [

@@ -4,9 +4,8 @@ app_publisher = "Imogi"
 app_description = "App for Manage Expense IMOGI"
 app_email = "imogi.indonesia@gmail.com"
 app_license = "mit"
-app_logo_url = "/assets/imogi_finance/images/imogi-finance-logo.svg"
+# app_logo_url = "/private/files/logo polt.svg"  # Set via Workspace Settings after upload
 app_color = "#2490EF"
-app_icon = "bank"
 
 from imogi_finance.api.payroll_sync import is_payroll_installed
 
