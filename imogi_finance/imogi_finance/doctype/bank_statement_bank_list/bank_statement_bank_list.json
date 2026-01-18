@@ -1,0 +1,122 @@
+{
+  "actions": [],
+  "allow_rename": 1,
+  "creation": "2026-01-18T00:00:00.000000",
+  "docstatus": 0,
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "bank",
+    "csv_dialect",
+    "section_parsing",
+    "skip_markers",
+    "date_format",
+    "amount_markers",
+    "section_headers",
+    "header_aliases",
+    "enabled"
+  ],
+  "fields": [
+    {
+      "fieldname": "bank",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Bank",
+      "options": "Bank",
+      "reqd": 1,
+      "unique": 1
+    },
+    {
+      "default": "comma",
+      "fieldname": "csv_dialect",
+      "fieldtype": "Select",
+      "label": "CSV Dialect",
+      "options": "comma\nsemicolon\ntab",
+      "reqd": 1
+    },
+    {
+      "fieldname": "section_parsing",
+      "fieldtype": "Section Break",
+      "label": "Parsing Rules"
+    },
+    {
+      "fieldname": "skip_markers",
+      "fieldtype": "Small Text",
+      "help": "Comma-separated text markers to skip (e.g., 'pend,pending,saldo awal,saldo akhir')",
+      "label": "Skip Markers"
+    },
+    {
+      "default": "dd-mm-yyyy",
+      "fieldname": "date_format",
+      "fieldtype": "Select",
+      "label": "Date Format",
+      "options": "dd-mm-yyyy\nmm-dd-yyyy\nyyyy-mm-dd\ndd/mm/yyyy"
+    },
+    {
+      "fieldname": "amount_markers",
+      "fieldtype": "Small Text",
+      "help": "Markers indicating debit/credit type in amounts (e.g., 'dr,cr,db,debit,credit')",
+      "label": "Amount Markers (Optional)"
+    },
+    {
+      "fieldname": "section_headers",
+      "fieldtype": "Section Break",
+      "label": "Header Field Mapping"
+    },
+    {
+      "fieldname": "header_aliases",
+      "fieldtype": "Table",
+      "label": "Field Aliases",
+      "options": "Bank Statement Field Alias",
+      "help": "Map each required field to possible CSV header names"
+    },
+    {
+      "default": 1,
+      "fieldname": "enabled",
+      "fieldtype": "Check",
+      "in_list_view": 1,
+      "label": "Enabled"
+    }
+  ],
+  "idx": 0,
+  "links": [],
+  "modified": "2026-01-18T00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Imogi Finance",
+  "name": "Bank Statement Bank List",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "read": 1,
+      "report": 1,
+      "role": "Accounts User"
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "track_changes": 1
+}

@@ -6,7 +6,7 @@ from __future__ import annotations
 from frappe.model.document import Document
 
 
-class BCABankStatementRow(Document):
-    """Child table storing parsed CSV rows before conversion to Bank Transaction."""
+class BankStatementBankList(Document):
+    """Stores bank-specific CSV parsing configuration."""
 
     pass

@@ -1,0 +1,54 @@
+[
+  {
+    "doctype": "Bank Statement Bank List",
+    "name": "BCA",
+    "bank": "BCA",
+    "csv_dialect": "comma",
+    "date_format": "dd-mm-yyyy",
+    "skip_markers": "pend,pending,saldo awal,saldo akhir,mutasi debet,mutasi debit,mutasi kredit",
+    "amount_markers": "dr,cr,db,debit,credit",
+    "enabled": 1,
+    "header_aliases": [
+      {
+        "doctype": "Bank Statement Field Alias",
+        "fieldname": "posting_date",
+        "aliases": "Tanggal Transaksi,Tanggal,Tgl,Transaction Date,Posting Date,tgl transaksi,tanggal"
+      },
+      {
+        "doctype": "Bank Statement Field Alias",
+        "fieldname": "description",
+        "aliases": "Keterangan,Keterangan Transaksi,Uraian,Description,Transaction Description,deskripsi,details"
+      },
+      {
+        "doctype": "Bank Statement Field Alias",
+        "fieldname": "reference_number",
+        "aliases": "No. Referensi,Nomor Referensi,Reference Number,No Referensi,ref,reference"
+      },
+      {
+        "doctype": "Bank Statement Field Alias",
+        "fieldname": "debit",
+        "aliases": "Mutasi Debet,Mutasi Debit,Debet,Debit,Withdrawal,DB,db,Penarikan"
+      },
+      {
+        "doctype": "Bank Statement Field Alias",
+        "fieldname": "credit",
+        "aliases": "Mutasi Kredit,Kredit,Credit,Deposit,CR,cr,Setoran"
+      },
+      {
+        "doctype": "Bank Statement Field Alias",
+        "fieldname": "balance",
+        "aliases": "Saldo Akhir,Saldo,Balance,Saldo Mutasi,Ending Balance,Closing Balance,saldo akhir"
+      },
+      {
+        "doctype": "Bank Statement Field Alias",
+        "fieldname": "currency",
+        "aliases": "Currency,Mata Uang,currency"
+      },
+      {
+        "doctype": "Bank Statement Field Alias",
+        "fieldname": "amount",
+        "aliases": "Jumlah,Nominal,Amount,amount,nominal"
+      }
+    ]
+  }
+]

@@ -195,6 +195,10 @@ override_doctype_class = {
 # Hook on document methods and events
 
 doc_events = {
+    "Bank Statement Import": {
+        "before_insert": "imogi_finance.imogi_finance.events.bank_statement_import_handler.bank_statement_import_on_before_insert",
+        "before_submit": "imogi_finance.imogi_finance.events.bank_statement_import_handler.bank_statement_import_before_submit",
+    },
     "Purchase Invoice": {
         "validate": [
             "imogi_finance.tax_operations.validate_tax_period_lock",
