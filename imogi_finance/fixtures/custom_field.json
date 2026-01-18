@@ -595,7 +595,7 @@
     "fieldtype": "Link",
     "insert_after": "bank_account",
     "label": "Bank",
-    "options": "Bank",
+    "options": "Bank Statement Bank List",
     "reqd": 1,
     "in_list_view": 1,
     "in_standard_filter": 1,
