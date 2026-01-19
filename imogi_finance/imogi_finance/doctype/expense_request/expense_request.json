@@ -18,9 +18,9 @@
     "tab_details",
     "supplier_section",
     "supplier",
-    "supplier_invoice_no",
     "supplier_tax_id",
     "column_break_supplier",
+    "supplier_invoice_no",
     "supplier_invoice_date",
     "currency",
     "allocation_section",
@@ -29,13 +29,13 @@
     "column_break_allocation",
     "branch",
     "allocation_mode",
+    "internal_charge_request",
     "tab_items",
     "items",
     "totals_section",
     "amount",
-    "expense_account",
-    "column_break_totals",
     "total_ppn",
+    "column_break_totals",
     "total_pph",
     "total_amount",
     "items_totals_html",
@@ -71,9 +71,9 @@
     "tab_approval",
     "approval_section",
     "current_approval_level",
+    "budget_workflow_state",
     "column_break_approval",
     "budget_lock_status",
-    "budget_workflow_state",
     "approvers_section",
     "level_1_user",
     "level_1_approved_on",
@@ -92,8 +92,8 @@
     "pending_purchase_invoice",
     "column_break_links",
     "linked_payment_entry",
-    "internal_charge_request",
     "hidden_section",
+    "expense_account",
     "total_expense",
     "total_ppnbm",
     "approval_route_snapshot",
@@ -142,7 +142,8 @@
       "fieldtype": "Data",
       "in_list_view": 1,
       "label": "Status",
-      "read_only": 1
+      "read_only": 1,
+      "description": "Current approval and processing status"
     },
     {
       "allow_on_submit": 1,
@@ -174,12 +175,6 @@
       "description": "Select the vendor who issued the invoice"
     },
     {
-      "fieldname": "supplier_invoice_no",
-      "fieldtype": "Data",
-      "label": "Invoice Number",
-      "description": "Supplier invoice reference number"
-    },
-    {
       "fieldname": "supplier_tax_id",
       "fieldtype": "Data",
       "label": "Supplier NPWP",
@@ -191,6 +186,12 @@
     {
       "fieldname": "column_break_supplier",
       "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "supplier_invoice_no",
+      "fieldtype": "Data",
+      "label": "Invoice Number",
+      "description": "Supplier invoice reference number"
     },
     {
       "fieldname": "supplier_invoice_date",
@@ -250,6 +251,16 @@
       "description": "Direct: allocate to primary cost center. Internal Charge: split across multiple cost centers"
     },
     {
+      "fieldname": "internal_charge_request",
+      "fieldtype": "Link",
+      "label": "Internal Charge Request",
+      "options": "Internal Charge Request",
+      "read_only": 1,
+      "depends_on": "eval:doc.allocation_mode=='Allocated via Internal Charge'",
+      "bold": 1,
+      "description": "Link to Internal Charge Request for multi-cost center budget allocation"
+    },
+    {
       "fieldname": "tab_items",
       "fieldtype": "Tab Break",
       "label": "Items"
@@ -263,6 +274,7 @@
       "description": "Line items with account and amount details"
     },
     {
+      "collapsible": 0,
       "fieldname": "totals_section",
       "fieldtype": "Section Break",
       "label": "Summary",
@@ -273,46 +285,44 @@
       "fieldname": "amount",
       "fieldtype": "Currency",
       "in_list_view": 1,
-      "label": "Subtotal",
+      "label": "Subtotal (DPP)",
       "options": "currency",
-      "read_only": 1
+      "read_only": 1,
+      "description": "Base amount before taxes"
     },
     {
-      "fieldname": "expense_account",
-      "fieldtype": "Link",
-      "label": "Account",
-      "options": "Account",
-      "read_only": 1
+      "fieldname": "total_ppn",
+      "fieldtype": "Currency",
+      "label": "PPN (VAT)",
+      "options": "currency",
+      "read_only": 1,
+      "description": "Value Added Tax amount"
     },
     {
       "fieldname": "column_break_totals",
       "fieldtype": "Column Break"
     },
     {
-      "fieldname": "total_ppn",
-      "fieldtype": "Currency",
-      "label": "PPN",
-      "options": "currency",
-      "read_only": 1
-    },
-    {
       "fieldname": "total_pph",
       "fieldtype": "Currency",
-      "label": "PPh",
+      "label": "PPh (WHT)",
       "options": "currency",
-      "read_only": 1
+      "read_only": 1,
+      "description": "Withholding Tax amount (deducted)"
     },
     {
       "bold": 1,
       "fieldname": "total_amount",
       "fieldtype": "Currency",
-      "label": "Total",
+      "label": "Grand Total",
       "options": "currency",
-      "read_only": 1
+      "read_only": 1,
+      "description": "Final amount = Subtotal + PPN + PPnBM - PPh"
     },
     {
       "fieldname": "items_totals_html",
-      "fieldtype": "HTML"
+      "fieldtype": "HTML",
+      "label": "Breakdown"
     },
     {
       "fieldname": "tab_taxes",
@@ -322,23 +332,24 @@
     {
       "fieldname": "ppn_section",
       "fieldtype": "Section Break",
-      "label": "Value Added Tax (VAT)",
-      "description": "VAT configuration and tax invoice details"
+      "label": "PPN (Value Added Tax)",
+      "description": "Configure VAT and tax invoice details"
     },
     {
       "default": "0",
       "fieldname": "is_ppn_applicable",
       "fieldtype": "Check",
-      "label": "Apply VAT",
-      "description": "Enable if this transaction is subject to VAT"
+      "label": "Subject to PPN",
+      "description": "Check if this transaction is subject to Value Added Tax"
     },
     {
       "depends_on": "is_ppn_applicable",
       "fieldname": "ppn_template",
       "fieldtype": "Link",
-      "label": "Template",
+      "label": "PPN Template",
       "mandatory_depends_on": "is_ppn_applicable",
-      "options": "Purchase Taxes and Charges Template"
+      "options": "Purchase Taxes and Charges Template",
+      "description": "Select VAT template (usually 11% PPN)"
     },
     {
       "fieldname": "column_break_ppn",
@@ -365,23 +376,24 @@
     {
       "fieldname": "pph_section",
       "fieldtype": "Section Break",
-      "label": "Withholding Tax (WHT)",
-      "description": "Income tax withholding configuration"
+      "label": "PPh (Withholding Tax)",
+      "description": "Configure income tax withholding (PPh 21/23/4(2), etc.)"
     },
     {
       "default": "0",
       "fieldname": "is_pph_applicable",
       "fieldtype": "Check",
-      "label": "Apply WHT",
-      "description": "Enable if this transaction requires withholding tax"
+      "label": "Subject to PPh",
+      "description": "Check if this transaction requires withholding tax"
     },
     {
       "depends_on": "is_pph_applicable",
       "fieldname": "pph_type",
       "fieldtype": "Link",
-      "label": "Type",
+      "label": "PPh Type",
       "mandatory_depends_on": "is_pph_applicable",
-      "options": "Tax Withholding Category"
+      "options": "Tax Withholding Category",
+      "description": "Select withholding tax category (e.g., PPh 23 - Jasa)"
     },
     {
       "fieldname": "column_break_pph",
@@ -400,8 +412,8 @@
       "depends_on": "is_ppn_applicable",
       "fieldname": "ocr_section",
       "fieldtype": "Section Break",
-      "label": "OCR Tax Invoice Data",
-      "description": "Automatically scanned tax invoice information (if OCR enabled)"
+      "label": "Tax Invoice OCR Data",
+      "description": "Automatically scanned tax invoice information (if OCR is enabled)"
     },
     {
       "allow_on_submit": 1,
@@ -537,8 +549,18 @@
       "default": "0",
       "fieldname": "current_approval_level",
       "fieldtype": "Int",
-      "label": "Current Level",
-      "read_only": 1
+      "label": "Approval Level",
+      "read_only": 1,
+      "description": "Current approval level in workflow (0-3)"
+    },
+    {
+      "default": "Draft",
+      "fieldname": "budget_workflow_state",
+      "fieldtype": "Select",
+      "label": "Budget State",
+      "options": "Draft\nSubmitted\nUnder Review\nApproved\nRejected\nCompleted",
+      "read_only": 1,
+      "description": "Budget approval workflow state"
     },
     {
       "fieldname": "column_break_approval",
@@ -547,23 +569,17 @@
     {
       "fieldname": "budget_lock_status",
       "fieldtype": "Select",
-      "label": "Budget Lock",
+      "label": "Budget Lock Status",
       "options": "\nNot Locked\nLocked\nReleased\nConsumed\nOverrun Allowed",
-      "read_only": 1
+      "read_only": 1,
+      "description": "Budget reservation status"
     },
     {
-      "default": "Draft",
-      "fieldname": "budget_workflow_state",
-      "fieldtype": "Select",
-      "label": "Budget State",
-      "options": "Draft\nSubmitted\nUnder Review\nApproved\nRejected\nCompleted",
-      "read_only": 1
-    },
-    {
+      "collapsible": 1,
       "fieldname": "approvers_section",
       "fieldtype": "Section Break",
       "label": "Approval History",
-      "description": "Approvers and approval timestamps for each level"
+      "description": "Approvers and timestamps for each approval level"
     },
     {
       "fieldname": "level_1_user",
@@ -673,19 +689,16 @@
       "hidden": 1
     },
     {
-      "fieldname": "internal_charge_request",
-      "fieldtype": "Link",
-      "label": "Internal Charge Request",
-      "options": "Internal Charge Request",
-      "read_only": 1,
-      "depends_on": "eval:doc.allocation_mode=='Allocated via Internal Charge'",
-      "bold": 1,
-      "in_list_view": 1,
-      "description": "Link to Internal Charge Request for multi-cost center budget allocation"
-    },
-    {
       "fieldname": "hidden_section",
       "fieldtype": "Section Break",
+      "hidden": 1
+    },
+    {
+      "fieldname": "expense_account",
+      "fieldtype": "Link",
+      "label": "Default Expense Account",
+      "options": "Account",
+      "read_only": 1,
       "hidden": 1
     },
     {
