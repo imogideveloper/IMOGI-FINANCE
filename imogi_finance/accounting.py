@@ -374,6 +374,13 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
         pi.taxes_and_charges = request.ppn_template
         pi.set_taxes()
         pi.save(ignore_permissions=True)
+
+    # Ensure withholding tax (PPh) rows are generated for net total calculation
+    if is_pph_applicable:
+        set_tax_withholding = getattr(pi, "set_tax_withholding", None)
+        if callable(set_tax_withholding):
+            set_tax_withholding()
+            pi.save(ignore_permissions=True)
     
     # Recalculate taxes and totals after insert to ensure PPN and PPh are properly calculated
     # This is critical because:

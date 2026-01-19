@@ -742,3 +742,56 @@ def test_create_purchase_invoice_calculates_taxes_after_insert(monkeypatch):
     assert pi_name == "PI-TAX-CALC"
     assert created_pi.calculate_taxes_called is True, "calculate_taxes_and_totals should be called after insert"
     assert created_pi.save_called is True, "save should be called after calculate_taxes_and_totals"
+
+
+def test_create_purchase_invoice_sets_withholding_tax_when_pph_applicable(monkeypatch):
+    request = _make_expense_request(
+        name="ER-TDS",
+        is_pph_applicable=1,
+        pph_type="PPh 23",
+        pph_base_amount=500,
+    )
+
+    created_pi = _doc_with_defaults(frappe._dict(), linked_purchase_invoice=None, docstatus=0)
+    created_pi.set_tax_withholding_called = False
+    created_pi.save_called = False
+
+    def fake_get_doc(doctype, name):
+        assert doctype == "Expense Request"
+        return request
+
+    def fake_get_value(doctype, name, fieldname, *args, **kwargs):
+        if doctype == "Cost Center":
+            return "Test Company"
+        return None
+
+    def fake_new_doc(doctype):
+        assert doctype == "Purchase Invoice"
+        return created_pi
+
+    def fake_insert(ignore_permissions=False):
+        created_pi.name = "PI-TDS"
+
+    def fake_set_tax_withholding():
+        created_pi.set_tax_withholding_called = True
+
+    def fake_save(ignore_permissions=False):
+        created_pi.save_called = True
+
+    created_pi.insert = fake_insert
+    created_pi.append = lambda *args, **kwargs: None
+    created_pi.set_tax_withholding = fake_set_tax_withholding
+    created_pi.calculate_taxes_and_totals = lambda: None
+    created_pi.save = fake_save
+
+    request.db_set = lambda values: setattr(created_pi, "db_set_called_with", values)
+
+    monkeypatch.setattr(frappe, "get_doc", fake_get_doc)
+    monkeypatch.setattr(frappe, "new_doc", fake_new_doc)
+    monkeypatch.setattr(frappe.db, "get_value", fake_get_value)
+
+    pi_name = accounting.create_purchase_invoice_from_request("ER-TDS")
+
+    assert pi_name == "PI-TDS"
+    assert created_pi.set_tax_withholding_called is True
+    assert created_pi.save_called is True
