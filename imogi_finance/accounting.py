@@ -250,7 +250,9 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     is_ppn_applicable = bool(getattr(request, "is_ppn_applicable", 0))
     is_pph_applicable = bool(getattr(request, "is_pph_applicable", 0) or pph_items)
     apply_ppn = is_ppn_applicable and not use_net_total
-    apply_pph = is_pph_applicable and not use_net_total
+    # Withholding tax (PPh) should still be applied even when the ER total is net
+    # to avoid skipping TDS rows on PI creation.
+    apply_pph = is_pph_applicable
 
     pi = frappe.new_doc("Purchase Invoice")
     pi.company = company
