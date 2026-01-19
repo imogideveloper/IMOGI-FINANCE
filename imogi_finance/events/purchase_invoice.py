@@ -196,7 +196,7 @@ def _handle_expense_request_submit(doc, request_name):
     frappe.db.set_value(
         "Expense Request",
         request.name,
-        {"workflow_state": "PI Created", "pending_purchase_invoice": None},
+        {"workflow_state": "PI Created", "status": "PI Created", "pending_purchase_invoice": None},
     )
     
     # Budget consumption MUST succeed or PI submit fails

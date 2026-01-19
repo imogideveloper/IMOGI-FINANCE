@@ -279,7 +279,7 @@ def _handle_expense_request_submit(doc, expense_request):
     frappe.db.set_value(
         "Expense Request",
         request.name,
-        {"workflow_state": "Paid"},
+        {"workflow_state": "Paid", "status": "Paid"},
     )
 
 
