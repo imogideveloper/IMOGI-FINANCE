@@ -189,11 +189,6 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
 
     total_amount, expense_accounts = summarize_request_items(request_items, skip_invalid_items=True)
     _sync_request_amounts(request, total_amount, expense_accounts)
-    request_total_amount = flt(getattr(request, "total_amount", None) or 0)
-    # If ER total_amount already includes PPN/PPh adjustments, use it directly for PI item totals
-    # and skip re-applying tax rows to avoid double counting.
-    use_net_total = bool(request_total_amount and abs(request_total_amount - total_amount) > 0.0001)
-    amount_ratio = request_total_amount / total_amount if use_net_total and total_amount else 1
 
     settings = get_settings()
     sync_tax_invoice_upload(request, "Expense Request", save=False)
@@ -216,7 +211,6 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
             if ic_status != "Approved":
                 frappe.throw(_("Internal Charge Request {0} must be Approved.").format(ic_name))
 
-    has_tax_invoice_upload = bool(getattr(request, "ti_tax_invoice_upload", None))
     require_verified = (
         cint(settings.get("enable_tax_invoice_ocr"))
         and cint(settings.get("require_verification_before_create_pi_from_expense_request"))
@@ -250,9 +244,8 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     has_item_level_pph = bool(pph_items)
     is_ppn_applicable = bool(getattr(request, "is_ppn_applicable", 0))
     is_pph_applicable = bool(getattr(request, "is_pph_applicable", 0) or pph_items)
-    apply_ppn = is_ppn_applicable and not use_net_total
-    # Withholding tax (PPh) should still be applied even when the ER total is net
-    # to avoid skipping TDS rows on PI creation.
+    # PPN and PPh are always calculated in PI based on item amounts (DPP)
+    apply_ppn = is_ppn_applicable
     apply_pph = is_pph_applicable
 
     pi = frappe.new_doc("Purchase Invoice")
@@ -284,8 +277,6 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
         
         qty = getattr(item, "qty", 1) or 1
         item_amount = flt(getattr(item, "amount", 0))
-        if use_net_total:
-            item_amount *= amount_ratio
         
         pi_item = {
             "item_name": getattr(item, "asset_name", None)
