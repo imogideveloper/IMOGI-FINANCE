@@ -688,7 +688,14 @@ function maybeRenderInternalChargeButton(frm) {
   }
 
   if (hasInternalCharge) {
-    frm.dashboard.add_indicator(__('Internal Charge {0}', [frm.doc.internal_charge_request]), 'green');
+    // Show more detailed status with link
+    frm.dashboard.add_indicator(__('Internal Charge: {0}', [frm.doc.internal_charge_request]), 'green');
+    
+    // Add button to view/edit ICR
+    frm.add_custom_button(__('View Internal Charge'), () => {
+      frappe.set_route('Form', 'Internal Charge Request', frm.doc.internal_charge_request);
+    }, __('Actions'));
+    
     return;
   }
 
@@ -704,7 +711,10 @@ function maybeRenderInternalChargeButton(frm) {
       });
 
       if (message) {
-        frappe.show_alert({ message: __('Internal Charge Request {0} created.', [message]), indicator: 'green' });
+        frappe.show_alert({ 
+          message: __('Internal Charge Request {0} created with {1} line items.', [message, frm.doc.items?.length || 0]), 
+          indicator: 'green' 
+        });
         await frm.reload_doc();
       }
     } catch (error) {

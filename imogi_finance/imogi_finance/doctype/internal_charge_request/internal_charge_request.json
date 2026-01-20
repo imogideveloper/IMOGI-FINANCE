@@ -6,8 +6,9 @@
   "istable": 0,
   "is_submittable": 1,
   "track_changes": 1,
-  "editable_grid": 0,
+  "editable_grid": 1,
   "autoname": "ICR-.YYYY.-.#####",
+  "description": "Request to allocate an Expense Request across multiple cost centers with detailed expense item breakdown.",
   "field_order": [
     "naming_series",
     "expense_request",

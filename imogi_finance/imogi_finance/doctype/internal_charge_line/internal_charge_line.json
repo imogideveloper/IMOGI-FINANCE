@@ -5,8 +5,12 @@
   "custom": 0,
   "istable": 1,
   "track_changes": 1,
+  "editable_grid": 1,
+  "description": "Child table for Internal Charge Request with expense item details and per-cost-center allocation.",
   "field_order": [
     "target_cost_center",
+    "expense_account",
+    "description",
     "amount",
     "line_status",
     "current_approval_level",
@@ -28,6 +32,22 @@
       "options": "Cost Center",
       "reqd": 1,
       "in_list_view": 1
+    },
+    {
+      "fieldname": "expense_account",
+      "label": "Expense Account",
+      "fieldtype": "Link",
+      "options": "Account",
+      "reqd": 1,
+      "in_list_view": 1,
+      "columns": 2
+    },
+    {
+      "fieldname": "description",
+      "label": "Description",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "columns": 2
     },
     {
       "fieldname": "amount",

@@ -19,5 +19,8 @@ class InternalChargeLine(Document):
     """Child table capturing per-cost-center approvals for internal charge."""
 
     def validate(self):
+        if not getattr(self, "expense_account", None):
+            frappe.throw(_("Expense Account is required."))
+        
         if getattr(self, "amount", 0) is None or float(self.amount) <= 0:
             frappe.throw(_("Line amount must be greater than zero."))

@@ -15,6 +15,7 @@ from imogi_finance.transfer_application.settings import get_reference_doctype_op
 class TransferApplication(Document):
     def validate(self):
         self.apply_defaults()
+        self.calculate_totals()
         self.validate_reference_fields()
         self.update_amount_in_words()
         self.sync_payment_details()
@@ -39,11 +40,20 @@ class TransferApplication(Document):
                 company_currency = frappe.db.get_value("Company", self.company, "default_currency")
             self.currency = company_currency or frappe.db.get_default("currency")
 
-        if self.amount and not self.expected_amount:
-            self.expected_amount = self.amount
-
         if not self.workflow_state:
             self.workflow_state = self.status or "Draft"
+
+    def calculate_totals(self):
+        """Calculate total amount and expected amount from items"""
+        total_amount = 0.0
+        total_expected = 0.0
+        
+        for item in self.items or []:
+            total_amount += flt(item.amount)
+            total_expected += flt(item.expected_amount or item.amount)
+        
+        self.amount = total_amount
+        self.expected_amount = total_expected
 
     def validate_reference_fields(self):
         if self.reference_name and not self.reference_doctype:

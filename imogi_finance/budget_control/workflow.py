@@ -262,18 +262,24 @@ def _build_allocation_slices(expense_request, *, settings=None, ic_doc=None):
     if not total_amount:
         return []
 
+    # New logic: Use direct line amounts (no proportion calculation)
+    # Each line specifies exact account and amount
     for line in _iter_internal_charge_lines(ic_doc):
-        ratio = float(getattr(line, "amount", 0) or 0) / float(total_amount or 1)
-        for account, account_amount in account_totals.items():
-            dims = service.resolve_dims(
-                company=company,
-                fiscal_year=fiscal_year,
-                cost_center=getattr(line, "target_cost_center", None),
-                account=account,
-                project=getattr(expense_request, "project", None),
-                branch=getattr(expense_request, "branch", None),
-            )
-            slices.append((dims, float(account_amount) * ratio))
+        account = getattr(line, "expense_account", None)
+        amount = float(getattr(line, "amount", 0) or 0)
+        
+        if not account or not amount:
+            continue
+        
+        dims = service.resolve_dims(
+            company=company,
+            fiscal_year=fiscal_year,
+            cost_center=getattr(line, "target_cost_center", None),
+            account=account,
+            project=getattr(expense_request, "project", None),
+            branch=getattr(expense_request, "branch", None),
+        )
+        slices.append((dims, amount))
 
     return slices
 
@@ -894,14 +900,23 @@ def create_internal_charge_from_expense_request(er_name: str) -> str:
     ic.total_amount = total
     ic.allocation_mode = "Allocated via Internal Charge"
 
-    # auto-suggest a single line to the source cost center as a starting point
-    ic.append(
-        "internal_charge_lines",
-        {
-            "target_cost_center": getattr(request, "cost_center", None),
-            "amount": total,
-        },
-    )
+    # Auto-populate lines from ER items - one line per item to source cost center
+    items = getattr(request, "items", []) or []
+    for item in items:
+        expense_account = getattr(item, "expense_account", None)
+        amount = float(getattr(item, "amount", 0) or 0)
+        description = getattr(item, "description", None)
+        
+        if expense_account and amount:
+            ic.append(
+                "internal_charge_lines",
+                {
+                    "target_cost_center": getattr(request, "cost_center", None),
+                    "expense_account": expense_account,
+                    "description": description,
+                    "amount": amount,
+                },
+            )
 
     ic.insert(ignore_permissions=True)
 

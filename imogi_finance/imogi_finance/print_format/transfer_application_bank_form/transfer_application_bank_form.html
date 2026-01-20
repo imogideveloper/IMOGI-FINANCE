@@ -66,12 +66,45 @@
 
   <table class="ta-table">
     <tr>
-      <th style="width:50%">Jumlah</th>
+      <th style="width:10%">No</th>
+      <th style="width:50%">Deskripsi</th>
+      <th style="width:20%">Jumlah</th>
+      <th style="width:20%">Jumlah Diharapkan</th>
+    </tr>
+    {% if doc.items %}
+      {% for item in doc.items %}
+      <tr>
+        <td style="text-align:center">{{ loop.index }}</td>
+        <td>
+          {{ item.description }}
+          {% if item.reference_doctype and item.reference_name %}
+            <br><small style="color:#666">(Ref: {{ item.reference_doctype }} {{ item.reference_name }})</small>
+          {% endif %}
+        </td>
+        <td style="text-align:right">{{ frappe.utils.fmt_money(item.amount, currency=doc.currency) }}</td>
+        <td style="text-align:right">{{ frappe.utils.fmt_money(item.expected_amount or item.amount, currency=doc.currency) }}</td>
+      </tr>
+      {% endfor %}
+      <tr style="font-weight:bold; background:#f0f0f0">
+        <td colspan="2" style="text-align:right">TOTAL</td>
+        <td style="text-align:right">{{ frappe.utils.fmt_money(doc.amount, currency=doc.currency) }}</td>
+        <td style="text-align:right">{{ frappe.utils.fmt_money(doc.expected_amount, currency=doc.currency) }}</td>
+      </tr>
+    {% else %}
+      <tr>
+        <td colspan="4" style="text-align:center; color:#999; padding:20px">Belum ada item ditambahkan</td>
+      </tr>
+    {% endif %}
+  </table>
+
+  <table class="ta-table">
+    <tr>
+      <th style="width:50%">Ringkasan</th>
       <th style="width:50%">Keterangan</th>
     </tr>
     <tr>
       <td>
-        <div><strong>Nilai:</strong> {{ frappe.utils.fmt_money(doc.amount, currency=doc.currency) }}</div>
+        <div><strong>Total Nilai:</strong> {{ frappe.utils.fmt_money(doc.amount, currency=doc.currency) }}</div>
         <div><strong>Terbilang:</strong> {{ doc.amount_in_words }}</div>
       </td>
       <td>

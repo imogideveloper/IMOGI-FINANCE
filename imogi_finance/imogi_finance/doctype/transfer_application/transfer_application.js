@@ -18,6 +18,38 @@ frappe.ui.form.on('Transfer Application', {
   },
 });
 
+// Handle item changes to recalculate totals
+frappe.ui.form.on('Transfer Application Item', {
+  amount(frm, cdt, cdn) {
+    calculate_totals(frm);
+  },
+  
+  expected_amount(frm, cdt, cdn) {
+    calculate_totals(frm);
+  },
+  
+  items_remove(frm, cdt, cdn) {
+    calculate_totals(frm);
+  },
+  
+  items_add(frm, cdt, cdn) {
+    calculate_totals(frm);
+  }
+});
+
+function calculate_totals(frm) {
+  let total_amount = 0;
+  let total_expected = 0;
+  
+  frm.doc.items?.forEach(item => {
+    total_amount += flt(item.amount);
+    total_expected += flt(item.expected_amount || item.amount);
+  });
+  
+  frm.set_value('amount', total_amount);
+  frm.set_value('expected_amount', total_expected);
+}
+
 function load_reference_options(frm) {
   frappe.call({
     method: 'imogi_finance.imogi_finance.doctype.transfer_application.transfer_application.fetch_reference_doctype_options',

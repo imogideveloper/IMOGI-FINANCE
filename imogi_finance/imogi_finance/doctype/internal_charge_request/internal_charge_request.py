@@ -120,13 +120,59 @@ class InternalChargeRequest(Document):
         if not lines:
             frappe.throw(_("Please add at least one Internal Charge Line."))
 
+        # Validate total amount matches
         total = sum(float(getattr(line, "amount", 0) or 0) for line in lines)
         if getattr(self, "total_amount", 0) and abs(total - float(self.total_amount)) > 0.0001:
             frappe.throw(_("Sum of line amounts ({0}) must equal Total Amount ({1}).").format(total, self.total_amount))
 
+        # Validate individual line amounts
         for line in lines:
             if getattr(line, "amount", 0) is None or float(line.amount) <= 0:
                 frappe.throw(_("Line amount must be greater than zero."))
+        
+        # Validate per-account totals match ER items
+        if getattr(self, "expense_request", None):
+            self._validate_per_account_totals()
+
+    def _validate_per_account_totals(self):
+        """Validate that sum of amounts per expense_account matches ER items."""
+        try:
+            expense_request = frappe.get_doc("Expense Request", self.expense_request)
+        except Exception:
+            return
+        
+        # Get ER item totals per account
+        er_items = expense_request.get("items") or []
+        er_account_totals = {}
+        for item in er_items:
+            account = getattr(item, "expense_account", None)
+            amount = float(getattr(item, "amount", 0) or 0)
+            if account:
+                er_account_totals[account] = er_account_totals.get(account, 0) + amount
+        
+        # Get ICR line totals per account
+        lines = getattr(self, "internal_charge_lines", []) or []
+        icr_account_totals = {}
+        for line in lines:
+            account = getattr(line, "expense_account", None)
+            amount = float(getattr(line, "amount", 0) or 0)
+            if account:
+                icr_account_totals[account] = icr_account_totals.get(account, 0) + amount
+        
+        # Compare totals
+        for account, er_total in er_account_totals.items():
+            icr_total = icr_account_totals.get(account, 0)
+            if abs(er_total - icr_total) > 0.01:
+                frappe.throw(
+                    _("Total allocation for account {0} ({1}) does not match Expense Request amount ({2}).").format(
+                        account, icr_total, er_total
+                    )
+                )
+        
+        # Check for extra accounts in ICR that are not in ER
+        for account in icr_account_totals:
+            if account not in er_account_totals:
+                frappe.throw(_("Account {0} in Internal Charge Lines is not present in Expense Request items.").format(account))
 
     def _populate_line_routes(self):
         if not getattr(self, "expense_request", None):
