@@ -143,11 +143,12 @@ def _resolve_amount(doc: Any) -> tuple[float, Optional[str]]:
 
 def _resolve_customer_name(doc: Any) -> str:
     return (
-        getattr(doc, "customer_name", None)
+        getattr(doc, "party_name", None)
+        or getattr(doc, "customer_name", None)
         or getattr(doc, "customer", None)
         or getattr(doc, "supplier_name", None)
         or getattr(doc, "supplier", None)
-        or getattr(doc, "party_name", None)
+        or getattr(doc, "party", None)
         or getattr(doc, "pay_to", None)
         or ""
     )
@@ -156,6 +157,7 @@ def _resolve_customer_name(doc: Any) -> str:
 def _resolve_invoice_number(doc: Any) -> Optional[str]:
     return (
         getattr(doc, "invoice_number", None)
+        or getattr(doc, "reference_name", None)
         or getattr(doc, "reference_no", None)
         or getattr(doc, "name", None)
         or getattr(doc, "sales_invoice", None)

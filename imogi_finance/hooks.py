@@ -50,6 +50,7 @@ from imogi_finance.api.payroll_sync import is_payroll_installed
 doctype_js = {
     "Bank Transaction": "public/js/bank_transaction.js",
     "Payment Entry": "public/js/payment_entry.js",
+    "Payment Request": "public/js/payment_request.js",
     "Purchase Invoice": [
         "public/js/purchase_invoice_tax_invoice.js",
         "public/js/advance_payment_allocation.js",
@@ -188,6 +189,7 @@ fixtures = [
 
 override_doctype_class = {
     "Sales Invoice": "imogi_finance.overrides.sales_invoice.CustomSalesInvoice",
+    "Payment Request": "imogi_finance.overrides.payment_request.CustomPaymentRequest",
 }
 
 # Document Events
