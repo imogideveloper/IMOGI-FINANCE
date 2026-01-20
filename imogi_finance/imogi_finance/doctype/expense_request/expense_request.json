@@ -9,13 +9,13 @@
   "editable_grid": 0,
   "engine": "InnoDB",
   "field_order": [
+    "tab_details",
     "header_section",
     "request_type",
     "request_date",
     "column_break_header",
     "status",
     "workflow_state",
-    "tab_details",
     "supplier_section",
     "supplier",
     "supplier_tax_id",
@@ -109,6 +109,11 @@
   ],
   "fields": [
     {
+      "fieldname": "tab_details",
+      "fieldtype": "Tab Break",
+      "label": "Details"
+    },
+    {
       "fieldname": "header_section",
       "fieldtype": "Section Break"
     },
@@ -153,11 +158,6 @@
       "label": "Workflow State",
       "options": "Workflow State",
       "read_only": 1
-    },
-    {
-      "fieldname": "tab_details",
-      "fieldtype": "Tab Break",
-      "label": "Details"
     },
     {
       "fieldname": "supplier_section",
