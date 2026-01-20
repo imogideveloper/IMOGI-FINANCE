@@ -248,6 +248,36 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     apply_ppn = is_ppn_applicable
     apply_pph = is_pph_applicable
 
+    # Validate PPN template exists when PPN applicable
+    if apply_ppn:
+        ppn_template = getattr(request, "ppn_template", None)
+        if not ppn_template:
+            frappe.throw(
+                _("PPN Template is required in Expense Request {0} before creating Purchase Invoice").format(request.name)
+            )
+        
+        # Validate template exists in system
+        template_exists = frappe.db.exists("Sales Taxes and Charges Template", ppn_template)
+        if not template_exists:
+            frappe.throw(
+                _("PPN Template '{0}' does not exist in system").format(ppn_template)
+            )
+
+    # Validate PPh category exists when PPh applicable
+    if apply_pph:
+        pph_type = getattr(request, "pph_type", None)
+        if not pph_type:
+            frappe.throw(
+                _("PPh Type is required in Expense Request {0} before creating Purchase Invoice").format(request.name)
+            )
+        
+        # Validate category exists in system
+        category_exists = frappe.db.exists("Tax Withholding Category", pph_type)
+        if not category_exists:
+            frappe.throw(
+                _("Tax Withholding Category '{0}' does not exist in system").format(pph_type)
+            )
+
     pi = frappe.new_doc("Purchase Invoice")
     pi.company = company
     pi.supplier = request.supplier
@@ -399,18 +429,60 @@ def create_purchase_invoice_from_request(expense_request_name: str) -> str:
     
     # Now recalculate with all items and settings in place
     if hasattr(pi, "calculate_taxes_and_totals"):
-        pi.calculate_taxes_and_totals()
-        for fieldname in (
-            "taxes_and_charges_added",
-            "taxes_and_charges_deducted",
-            "total_taxes_and_charges",
-        ):
-            if getattr(pi, fieldname, None) is None:
-                setattr(pi, fieldname, 0)
-        pi.save(ignore_permissions=True)
+        try:
+            pi.calculate_taxes_and_totals()
+            for fieldname in (
+                "taxes_and_charges_added",
+                "taxes_and_charges_deducted",
+                "total_taxes_and_charges",
+            ):
+                if getattr(pi, fieldname, None) is None:
+                    setattr(pi, fieldname, 0)
+            pi.save(ignore_permissions=True)
+        except Exception as e:
+            frappe.logger().error(f"Tax calculation failed for PI {pi.name}: {str(e)}")
+            frappe.msgprint(
+                _("Tax calculation encountered an error. Please review the Purchase Invoice {0} manually.").format(pi.name),
+                indicator="red",
+                alert=True
+            )
     
     # Reload again to get final calculated values
     pi.reload()
+
+    # Log tax calculation results for debugging
+    if apply_ppn or apply_pph:
+        frappe.logger().info(f"PI {pi.name} Tax Calculation Results:")
+        frappe.logger().info(f"  - Total: {flt(pi.total):,.2f}")
+        frappe.logger().info(f"  - Taxes Added: {flt(pi.taxes_and_charges_added):,.2f}")
+        frappe.logger().info(f"  - Taxes Deducted: {flt(pi.taxes_and_charges_deducted):,.2f}")
+        frappe.logger().info(f"  - Grand Total: {flt(pi.grand_total):,.2f}")
+        
+        # Warn if taxes are still zero
+        if apply_ppn and flt(pi.taxes_and_charges_added) == 0:
+            frappe.logger().warning(f"PPN not calculated for PI {pi.name} despite apply_ppn=True")
+        
+        if apply_pph and flt(pi.taxes_and_charges_deducted) == 0:
+            frappe.logger().warning(f"PPH not calculated for PI {pi.name} despite apply_pph=True")
+
+    # Validate taxes were actually calculated
+    if apply_ppn and flt(pi.taxes_and_charges_added) == 0:
+        frappe.msgprint(
+            _("Warning: PPN was not calculated. Please check PPN Template '{0}' configuration.").format(
+                getattr(request, "ppn_template", "")
+            ),
+            indicator="orange",
+            alert=True
+        )
+
+    if apply_pph and flt(pi.taxes_and_charges_deducted) == 0:
+        frappe.msgprint(
+            _("Warning: PPH was not calculated. Please check Tax Withholding Category '{0}' configuration.").format(
+                getattr(request, "pph_type", "")
+            ),
+            indicator="orange", 
+            alert=True
+        )
 
     _update_request_purchase_invoice_links(request, pi)
 
