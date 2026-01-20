@@ -30,28 +30,34 @@ def sync_expense_request_status_from_pi(doc, method=None):
     changes from Unpaid to Paid (after Payment Entry is applied).
     """
     expense_request = doc.get("imogi_expense_request")
-    if not expense_request:
-        return
+    branch_request = doc.get("branch_expense_request")
     
-    if not frappe.db.exists("Expense Request", expense_request):
-        return
+    # Handle Expense Request
+    if expense_request and frappe.db.exists("Expense Request", expense_request):
+        # Get current ER status based on PI status
+        request_links = get_expense_request_links(expense_request)
+        new_status = get_expense_request_status(request_links)
+        
+        # Get current status
+        current_status = frappe.db.get_value("Expense Request", expense_request, "status")
+        
+        # Update ER status if changed
+        if current_status != new_status:
+            frappe.db.set_value(
+                "Expense Request",
+                expense_request,
+                {"workflow_state": new_status, "status": new_status},
+                update_modified=False
+            )
+            frappe.logger().info(
+                f"[PI status sync] PI {doc.name} status changed to {doc.status}. "
+                f"Updated ER {expense_request} status: {current_status} → {new_status}"
+            )
     
-    # Get current ER status based on PI status
-    request_links = get_expense_request_links(expense_request)
-    new_status = get_expense_request_status(request_links)
-    
-    # Update ER workflow state if changed
-    current_status = frappe.db.get_value("Expense Request", expense_request, "workflow_state")
-    if current_status != new_status:
-        frappe.db.set_value(
-            "Expense Request",
-            expense_request,
-            {"workflow_state": new_status, "status": new_status}
-        )
-        frappe.logger().info(
-            f"[PI status sync] PI {doc.name} status changed. "
-            f"Updated ER {expense_request} status: {current_status} → {new_status}"
-        )
+    # Handle Branch Expense Request (if needed in future)
+    if branch_request and frappe.db.exists("Branch Expense Request", branch_request):
+        # Similar logic can be added for Branch Expense Request if needed
+        pass
 
 
 def validate_before_submit(doc, method=None):
@@ -337,15 +343,19 @@ def on_cancel(doc, method=None):
             title=_("Budget Reversal Error")
         )
     
-    # Update Expense Request workflow state
-    # Status akan auto-update via query (tidak ada PI submitted lagi)
+    # Update Expense Request workflow state and status
+    # After PI cancel, status should revert to Approved (no PI submitted anymore)
     if expense_request_name:
         request_links = get_expense_request_links(expense_request_name)
         next_status = get_expense_request_status(request_links)
         frappe.db.set_value(
             "Expense Request",
             expense_request_name,
-            {"workflow_state": next_status, "pending_purchase_invoice": None}
+            {"workflow_state": next_status, "status": next_status, "pending_purchase_invoice": None},
+            update_modified=False
+        )
+        frappe.logger().info(
+            f"[PI cancel] PI {doc.name} cancelled. Updated ER {expense_request_name} status to {next_status}"
         )
     
     # Update Branch Expense Request
@@ -377,14 +387,18 @@ def on_trash(doc, method=None):
             if current_linked == doc.name:
                 updates["linked_purchase_invoice"] = None
 
-            if updates or True:  # Always update workflow state
+            if updates or True:  # Always update workflow state and status
                 # Re-query untuk get status terbaru (after clearing links)
                 current_links = get_expense_request_links(expense_request)
                 next_status = get_expense_request_status(current_links)
                 updates["workflow_state"] = next_status
+                updates["status"] = next_status  # Update status field juga
                 
                 frappe.db.set_value("Expense Request", expense_request, updates)
                 frappe.db.commit()  # Commit immediately to ensure link is cleared
+                frappe.logger().info(
+                    f"[PI trash] PI {doc.name} deleted. Updated ER {expense_request} status to {next_status}"
+                )
     
     # Handle Branch Expense Request
     if branch_request:

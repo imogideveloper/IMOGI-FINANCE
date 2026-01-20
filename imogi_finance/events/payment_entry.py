@@ -379,7 +379,7 @@ def on_cancel(doc, method=None):
     expense_request_name = doc.get("imogi_expense_request")
     branch_request_name = doc.get("branch_expense_request")
     
-    # Update Expense Request workflow state based on PI status
+    # Update Expense Request workflow state and status based on PI status
     if expense_request_name:
         # Get current status based on PI (will reflect updated outstanding after cancel)
         request_links = get_expense_request_links(expense_request_name)
@@ -388,7 +388,8 @@ def on_cancel(doc, method=None):
         frappe.db.set_value(
             "Expense Request",
             expense_request_name,
-            {"workflow_state": next_status}
+            {"workflow_state": next_status, "status": next_status},
+            update_modified=False
         )
         
         frappe.logger().info(
@@ -567,7 +568,8 @@ def reverse_payment_entry(payment_entry_name: str, reversal_date: str | None = N
         frappe.db.set_value(
             "Expense Request",
             expense_request,
-            {"workflow_state": next_status}
+            {"workflow_state": next_status, "status": next_status},
+            update_modified=False
         )
         
         frappe.logger().info(
@@ -583,7 +585,7 @@ def on_trash(doc, method=None):
     """Clear links from Expense Request before deleting PE to avoid LinkExistsError."""
     expense_request, branch_request = _resolve_expense_request(doc)
     
-    # Handle Expense Request - clear link and update workflow state
+    # Handle Expense Request - clear link and update workflow state and status
     if expense_request:
         if frappe.db.exists("Expense Request", expense_request):
             updates = {}
@@ -594,13 +596,17 @@ def on_trash(doc, method=None):
             if current_linked == doc.name:
                 updates["linked_payment_entry"] = None
             
-            # Update workflow state based on remaining links
+            # Update workflow state and status based on remaining links
             request_links = get_expense_request_links(expense_request)
             next_status = get_expense_request_status(request_links)
             updates["workflow_state"] = next_status
+            updates["status"] = next_status  # Update status field juga
             
             frappe.db.set_value("Expense Request", expense_request, updates)
             frappe.db.commit()  # Commit immediately to ensure link is cleared
+            frappe.logger().info(
+                f"[PE trash] PE {doc.name} deleted. Updated ER {expense_request} status to {next_status}"
+            )
     
     # Handle Branch Expense Request
     if branch_request:

@@ -105,15 +105,22 @@ def get_expense_request_status(request_links: dict, *, check_pi_docstatus: bool 
     
     Returns:
         - "Paid" if Purchase Invoice status = "Paid" (auto-updated by ERPNext)
+        - "Return" if Purchase Invoice status = "Return" (debit note issued)
         - "PI Created" if Purchase Invoice exists (submitted)
         - "Approved" otherwise
     """
-    # Status priority: Paid > PI Created > Approved
-    # Check PI status badge (auto-updated by ERPNext based on outstanding_amount)
-    if request_links.get("linked_purchase_invoice") and request_links.get("pi_status") == "Paid":
+    # Status priority: Paid > Return > PI Created > Approved
+    pi_name = request_links.get("linked_purchase_invoice")
+    pi_status = request_links.get("pi_status")
+    
+    # Check PI status badge (auto-updated by ERPNext based on outstanding_amount and returns)
+    if pi_name and pi_status == "Paid":
         return "Paid"
     
-    if request_links.get("linked_purchase_invoice"):
+    if pi_name and pi_status == "Return":
+        return "Return"
+    
+    if pi_name:
         return "PI Created"
     
     return "Approved"
