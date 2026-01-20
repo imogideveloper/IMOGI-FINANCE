@@ -138,7 +138,6 @@
       "reqd": 1
     },
     {
-      "default": "frappe.session.user",
       "fieldname": "requester",
       "fieldtype": "Link",
       "in_standard_filter": 1,
