@@ -72,7 +72,6 @@ doctype_js = {
     ],
 }
 doctype_list_js = {
-    "BCA Bank Statement Import": "imogi_finance/doctype/bca_bank_statement_import/bca_bank_statement_import_list.js",
     "Administrative Payment Voucher": "imogi_finance/doctype/administrative_payment_voucher/administrative_payment_voucher_list.js",
     "Expense Request": "imogi_finance/doctype/expense_request/expense_request_list.js",
     "Advanced Expense Request": "imogi_finance/doctype/advanced_expense_request/advanced_expense_request_list.js",

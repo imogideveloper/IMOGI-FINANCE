@@ -1,260 +1,275 @@
 [
-  {
-    "doctype": "Workspace",
-    "name": "FINANCE IMOGI",
-    "title": "FINANCE IMOGI",
-    "label": "FINANCE IMOGI",
-    "type": "Workspace",
-    "icon": "briefcase",
-    "module": "Imogi Finance",
-    "public": 1,
-    "sequence": 10,
-    "is_hidden": 0,
-    "hide_custom": 0,
-    "content_type": "Blocks",
-    "content": "[{\"id\": \"hdr1\", \"type\": \"header\", \"data\": {\"text\": \"Expense & Approval\", \"col\": 12}}, {\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Expense Request\", \"col\": 3}}, {\"id\": \"s1a\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Advanced Expense Request\", \"col\": 3}}, {\"id\": \"s1b\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Purchase Invoice\", \"col\": 3}}, {\"id\": \"s1c\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Payment Entry\", \"col\": 3}}, {\"id\": \"s1d\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Administrative Payment Voucher\", \"col\": 3}}, {\"id\": \"s1e\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Expense Claim\", \"col\": 3}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Expense Approval Setting\", \"col\": 3}}, {\"id\": \"spacer_advance\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_advance\", \"type\": \"header\", \"data\": {\"text\": \"Advance Payment\", \"col\": 12}}, {\"id\": \"adv1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Advance Payment Dashboard\", \"col\": 3}}, {\"id\": \"spacer_approval_mgmt\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_approval_mgmt\", \"type\": \"header\", \"data\": {\"text\": \"Approval Management\", \"col\": 12}}, {\"id\": \"approval1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Outstanding Approvals Dashboard\", \"col\": 3}}, {\"id\": \"spacer_deferred\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_deferred\", \"type\": \"header\", \"data\": {\"text\": \"Deferred Expense\", \"col\": 12}}, {\"id\": \"def1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Expense Deferred Settings\", \"col\": 3}}, {\"id\": \"def3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Deferred Expense Tracker\", \"col\": 3}}, {\"id\": \"spacer_budget\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_budget\", \"type\": \"header\", \"data\": {\"text\": \"Budget Control\", \"col\": 12}}, {\"id\": \"budget0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Budget\", \"col\": 3}}, {\"id\": \"budget1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Budget Control Entry\", \"col\": 3}}, {\"id\": \"budget2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Budget Reclass Request\", \"col\": 3}}, {\"id\": \"budget3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Additional Budget Request\", \"col\": 3}}, {\"id\": \"budget4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Budget Control Settings\", \"col\": 3}}, {\"id\": \"budget4a\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Budget Approval Setting\", \"col\": 3}}, {\"id\": \"budget5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Budget Control Dashboard\", \"col\": 3}}, {\"id\": \"spacer_internal\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_internal\", \"type\": \"header\", \"data\": {\"text\": \"Internal Charges\", \"col\": 12}}, {\"id\": \"ic1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Internal Charge Request\", \"col\": 3}}, {\"id\": \"spacer_cashbank\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_cashbank\", \"type\": \"header\", \"data\": {\"text\": \"Cash/Bank Reporting\", \"col\": 12}}, {\"id\": \"cb1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Cash Bank Daily Report\", \"col\": 3}}, {\"id\": \"spacer1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr2\", \"type\": \"header\", \"data\": {\"text\": \"Tax Management\", \"col\": 12}}, {\"id\": \"tax1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Period Closing\", \"col\": 3}}, {\"id\": \"tax2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Payment Batch\", \"col\": 3}}, {\"id\": \"tax3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Profile\", \"col\": 3}}, {\"id\": \"tax4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Invoice OCR Settings\", \"col\": 3}}, {\"id\": \"tax5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Invoice Type\", \"col\": 3}}, {\"id\": \"tax5a\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Invoice OCR Monitoring\", \"col\": 3}}, {\"id\": \"tax5b\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Invoice OCR Upload\", \"col\": 3}}, {\"id\": \"tax5c\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Invoice Upload\", \"col\": 3}}, {\"id\": \"tax5d\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"VAT OUT Batch\", \"col\": 3}}, {\"id\": \"tax6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"CoreTax Export Settings\", \"col\": 3}}, {\"id\": \"spacer_reg\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_reg\", \"type\": \"header\", \"data\": {\"text\": \"Tax Registers\", \"col\": 12}}, {\"id\": \"reg1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"VAT Input Register Verified\", \"col\": 3}}, {\"id\": \"reg2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"VAT Output Register Verified\", \"col\": 3}}, {\"id\": \"reg3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Withholding Register\", \"col\": 3}}, {\"id\": \"reg4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"PB1 Register\", \"col\": 3}}, {\"id\": \"reg5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"BPJS Contribution Summary\", \"col\": 3}}, {\"id\": \"reg6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"VAT OUT Batch Register\", \"col\": 3}}, {\"id\": \"spacer2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr3\", \"type\": \"header\", \"data\": {\"text\": \"Settings & Tools\", \"col\": 12}}, {\"id\": \"d1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Finance Control Settings\", \"col\": 3}}, {\"id\": \"d2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Statement Bank List\", \"col\": 3}}, {\"id\": \"d5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Receipt Design\", \"col\": 3}}, {\"id\": \"d5a\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Letter Template Settings\", \"col\": 3}}, {\"id\": \"d5b\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Letter Template\", \"col\": 3}}, {\"id\": \"d12\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Digital Stamp Template\", \"col\": 3}}, {\"id\": \"d13\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Digital Stamp Expense Report\", \"col\": 3}}, {\"id\": \"spacer_receipt\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_receipt\", \"type\": \"header\", \"data\": {\"text\": \"Customer Receipt\", \"col\": 12}}, {\"id\": \"d8\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Customer Receipt\", \"col\": 3}}, {\"id\": \"d8a\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Customer Receipt Control Report\", \"col\": 3}}, {\"id\": \"transfer_hdr\", \"type\": \"header\", \"data\": {\"text\": \"Transfer Applications\", \"col\": 12}}, {\"id\": \"transfer_s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transfer Application\", \"col\": 3}}, {\"id\": \"transfer_s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transfer Application Settings\", \"col\": 3}}]",
-    "shortcuts": [
-      {
-        "label": "Expense Request",
-        "link_to": "Expense Request",
-        "type": "DocType"
-      },
-      {
-        "label": "Advanced Expense Request",
-        "link_to": "Advanced Expense Request",
-        "type": "DocType"
-      },
-      {
-        "label": "Purchase Invoice",
-        "link_to": "Purchase Invoice",
-        "type": "DocType"
-      },
-      {
-        "label": "Payment Entry",
-        "link_to": "Payment Entry",
-        "type": "DocType"
-      },
-      {
-        "label": "Administrative Payment Voucher",
-        "link_to": "Administrative Payment Voucher",
-        "type": "DocType"
-      },
-      {
-        "label": "Expense Claim",
-        "link_to": "Expense Claim",
-        "type": "DocType"
-      },
-      {
-        "label": "Expense Approval Setting",
-        "link_to": "Expense Approval Setting",
-        "type": "DocType"
-      },
-      {
-        "label": "Advance Payment Dashboard",
-        "link_to": "Advance Payment Dashboard",
-        "type": "Report"
-      },
-      {
-        "label": "Outstanding Approvals Dashboard",
-        "link_to": "Outstanding Approvals Dashboard",
-        "type": "Report"
-      },
-      {
-        "label": "Budget",
-        "link_to": "Budget",
-        "type": "DocType"
-      },
-      {
-        "label": "Budget Control Entry",
-        "link_to": "Budget Control Entry",
-        "type": "DocType"
-      },
-      {
-        "label": "Budget Reclass Request",
-        "link_to": "Budget Reclass Request",
-        "type": "DocType"
-      },
-      {
-        "label": "Additional Budget Request",
-        "link_to": "Additional Budget Request",
-        "type": "DocType"
-      },
-      {
-        "label": "Budget Control Settings",
-        "link_to": "Budget Control Settings",
-        "type": "DocType"
-      },
-      {
-        "label": "Budget Approval Setting",
-        "link_to": "Budget Approval Setting",
-        "type": "DocType"
-      },
-      {
-        "label": "Budget Control Dashboard",
-        "link_to": "Budget Control Dashboard",
-        "type": "Report"
-      },
-      {
-        "label": "Deferred Expense Tracker",
-        "link_to": "Deferred Expense Tracker",
-        "type": "Report"
-      },
-      {
-        "label": "Internal Charge Request",
-        "link_to": "Internal Charge Request",
-        "type": "DocType"
-      },
-      {
-        "label": "Cash Bank Daily Report",
-        "link_to": "Cash Bank Daily Report",
-        "type": "DocType"
-      },
-      {
-        "label": "Tax Period Closing",
-        "link_to": "Tax Period Closing",
-        "type": "DocType"
-      },
-      {
-        "label": "Tax Payment Batch",
-        "link_to": "Tax Payment Batch",
-        "type": "DocType"
-      },
-      {
-        "label": "Tax Profile",
-        "link_to": "Tax Profile",
-        "type": "DocType"
-      },
-      {
-        "label": "Tax Invoice OCR Settings",
-        "link_to": "Tax Invoice OCR Settings",
-        "type": "DocType"
-      },
-      {
-        "label": "Tax Invoice Type",
-        "link_to": "Tax Invoice Type",
-        "type": "DocType"
-      },
-      {
-        "label": "Tax Invoice OCR Monitoring",
-        "link_to": "Tax Invoice OCR Monitoring",
-        "type": "DocType"
-      },
-      {
-        "label": "Tax Invoice OCR Upload",
-        "link_to": "Tax Invoice OCR Upload",
-        "type": "DocType"
-      },
-      {
-        "label": "Tax Invoice Upload",
-        "link_to": "Tax Invoice Upload",
-        "type": "DocType"
-      },
-      {
-        "label": "VAT OUT Batch",
-        "link_to": "VAT OUT Batch",
-        "type": "DocType"
-      },
-      {
-        "label": "CoreTax Export Settings",
-        "link_to": "CoreTax Export Settings",
-        "type": "DocType"
-      },
-      {
-        "label": "VAT Input Register Verified",
-        "link_to": "VAT Input Register Verified",
-        "type": "Report"
-      },
-      {
-        "label": "VAT Output Register Verified",
-        "link_to": "VAT Output Register Verified",
-        "type": "Report"
-      },
-      {
-        "label": "Withholding Register",
-        "link_to": "Withholding Register",
-        "type": "Report"
-      },
-      {
-        "label": "PB1 Register",
-        "link_to": "PB1 Register",
-        "type": "Report"
-      },
-      {
-        "label": "BPJS Contribution Summary",
-        "link_to": "BPJS Contribution Summary",
-        "type": "Report"
-      },
-      {
-        "label": "VAT OUT Batch Register",
-        "link_to": "VAT OUT Batch Register",
-        "type": "Report"
-      },
-      {
-        "label": "Finance Control Settings",
-        "link_to": "Finance Control Settings",
-        "type": "DocType"
-      },
-      {
-        "label": "Bank Statement Bank List",
-        "link_to": "Bank Statement Bank List",
-        "type": "DocType"
-      },
-      {
-        "label": "Receipt Design",
-        "link_to": "Receipt Design",
-        "type": "DocType"
-      },
-      {
-        "label": "Letter Template Settings",
-        "link_to": "Letter Template Settings",
-        "type": "DocType"
-      },
-      {
-        "label": "Letter Template",
-        "link_to": "Letter Template",
-        "type": "DocType"
-      },
-      {
-        "label": "Digital Stamp Template",
-        "link_to": "Digital Stamp Template",
-        "type": "DocType"
-      },
-      {
-        "label": "Digital Stamp Expense Report",
-        "link_to": "Digital Stamp Expense Report",
-        "type": "Report"
-      },
-      {
-        "label": "Expense Deferred Settings",
-        "link_to": "Expense Deferred Settings",
-        "type": "DocType"
-      },
-      {
-        "label": "Customer Receipt",
-        "link_to": "Customer Receipt",
-        "type": "DocType"
-      },
-      {
-        "label": "Customer Receipt Control Report",
-        "link_to": "Customer Receipt Control Report",
-        "type": "Report"
-      },
-      {
-        "label": "Transfer Application",
-        "link_to": "Transfer Application",
-        "type": "DocType"
-      },
-      {
-        "label": "Transfer Application Settings",
-        "link_to": "Transfer Application Settings",
-        "type": "DocType"
-      }
-    ],
-    "cards": [],
-    "custom_blocks": [],
-    "links": [],
-    "charts": [],
-    "quick_lists": [],
-    "number_cards": []
-  }
+ {
+  "cards": [],
+  "charts": [],
+  "content": "[{\"id\": \"hdr1\", \"type\": \"header\", \"data\": {\"text\": \"Expense & Approval\", \"col\": 12}}, {\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Expense Request\", \"col\": 3}}, {\"id\": \"s1a\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Advanced Expense Request\", \"col\": 3}}, {\"id\": \"s1b\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Purchase Invoice\", \"col\": 3}}, {\"id\": \"s1c\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Payment Entry\", \"col\": 3}}, {\"id\": \"s1d\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Administrative Payment Voucher\", \"col\": 3}}, {\"id\": \"s1e\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Expense Claim\", \"col\": 3}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Expense Approval Setting\", \"col\": 3}}, {\"id\": \"spacer_advance\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_advance\", \"type\": \"header\", \"data\": {\"text\": \"Advance Payment\", \"col\": 12}}, {\"id\": \"adv1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Advance Payment Dashboard\", \"col\": 3}}, {\"id\": \"spacer_approval_mgmt\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_approval_mgmt\", \"type\": \"header\", \"data\": {\"text\": \"Approval Management\", \"col\": 12}}, {\"id\": \"approval1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Outstanding Approvals Dashboard\", \"col\": 3}}, {\"id\": \"spacer_deferred\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_deferred\", \"type\": \"header\", \"data\": {\"text\": \"Deferred Expense\", \"col\": 12}}, {\"id\": \"def1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Expense Deferred Settings\", \"col\": 3}}, {\"id\": \"def3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Deferred Expense Tracker\", \"col\": 3}}, {\"id\": \"spacer_budget\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_budget\", \"type\": \"header\", \"data\": {\"text\": \"Budget Control\", \"col\": 12}}, {\"id\": \"budget0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Budget\", \"col\": 3}}, {\"id\": \"budget1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Budget Control Entry\", \"col\": 3}}, {\"id\": \"budget2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Budget Reclass Request\", \"col\": 3}}, {\"id\": \"budget3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Additional Budget Request\", \"col\": 3}}, {\"id\": \"budget4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Budget Control Settings\", \"col\": 3}}, {\"id\": \"budget4a\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Budget Approval Setting\", \"col\": 3}}, {\"id\": \"budget5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Budget Control Dashboard\", \"col\": 3}}, {\"id\": \"spacer_internal\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_internal\", \"type\": \"header\", \"data\": {\"text\": \"Internal Charges\", \"col\": 12}}, {\"id\": \"ic1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Internal Charge Request\", \"col\": 3}}, {\"id\": \"spacer_cashbank\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_cashbank\", \"type\": \"header\", \"data\": {\"text\": \"Cash/Bank Reporting\", \"col\": 12}}, {\"id\": \"cb1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Cash Bank Daily Report\", \"col\": 3}}, {\"id\": \"cb_bank_transaction\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Transaction\", \"col\": 3}}, {\"id\": \"cb_bank_csv_import\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Statement Import\", \"col\": 3}}, {\"id\": \"cb_bank_account\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Account\", \"col\": 3}}, {\"id\": \"spacer1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr2\", \"type\": \"header\", \"data\": {\"text\": \"Tax Management\", \"col\": 12}}, {\"id\": \"tax1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Period Closing\", \"col\": 3}}, {\"id\": \"tax2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Payment Batch\", \"col\": 3}}, {\"id\": \"tax3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Profile\", \"col\": 3}}, {\"id\": \"tax4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Invoice OCR Settings\", \"col\": 3}}, {\"id\": \"tax5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Invoice Type\", \"col\": 3}}, {\"id\": \"tax5a\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Invoice OCR Monitoring\", \"col\": 3}}, {\"id\": \"tax5b\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Invoice OCR Upload\", \"col\": 3}}, {\"id\": \"tax5c\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tax Invoice Upload\", \"col\": 3}}, {\"id\": \"tax5d\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"VAT OUT Batch\", \"col\": 3}}, {\"id\": \"tax6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"CoreTax Export Settings\", \"col\": 3}}, {\"id\": \"spacer_reg\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_reg\", \"type\": \"header\", \"data\": {\"text\": \"Tax Registers\", \"col\": 12}}, {\"id\": \"reg1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"VAT Input Register Verified\", \"col\": 3}}, {\"id\": \"reg2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"VAT Output Register Verified\", \"col\": 3}}, {\"id\": \"reg3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Withholding Register\", \"col\": 3}}, {\"id\": \"reg4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"PB1 Register\", \"col\": 3}}, {\"id\": \"reg5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"BPJS Contribution Summary\", \"col\": 3}}, {\"id\": \"reg6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"VAT OUT Batch Register\", \"col\": 3}}, {\"id\": \"spacer2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr3\", \"type\": \"header\", \"data\": {\"text\": \"Settings & Tools\", \"col\": 12}}, {\"id\": \"d1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Finance Control Settings\", \"col\": 3}}, {\"id\": \"d2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Statement Bank List\", \"col\": 3}}, {\"id\": \"d5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Receipt Design\", \"col\": 3}}, {\"id\": \"d5a\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Letter Template Settings\", \"col\": 3}}, {\"id\": \"d5b\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Letter Template\", \"col\": 3}}, {\"id\": \"d12\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Digital Stamp Template\", \"col\": 3}}, {\"id\": \"d13\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Digital Stamp Expense Report\", \"col\": 3}}, {\"id\": \"spacer_receipt\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_receipt\", \"type\": \"header\", \"data\": {\"text\": \"Customer Receipt\", \"col\": 12}}, {\"id\": \"d8\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Customer Receipt\", \"col\": 3}}, {\"id\": \"d8a\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Customer Receipt Control Report\", \"col\": 3}}, {\"id\": \"transfer_hdr\", \"type\": \"header\", \"data\": {\"text\": \"Transfer Applications\", \"col\": 12}}, {\"id\": \"transfer_s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transfer Application\", \"col\": 3}}, {\"id\": \"transfer_s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transfer Application Settings\", \"col\": 3}}]",
+  "content_type": null,
+  "custom_blocks": [],
+  "doctype": "Workspace",
+  "hide_custom": 0,
+  "icon": "briefcase",
+  "is_hidden": 0,
+  "label": "FINANCE IMOGI",
+  "links": [],
+  "module": "Imogi Finance",
+  "name": "FINANCE IMOGI",
+  "number_cards": [],
+  "public": 1,
+  "quick_lists": [],
+  "sequence": null,
+  "shortcuts": [
+   {
+    "label": "Expense Request",
+    "link_to": "Expense Request",
+    "type": "DocType"
+   },
+   {
+    "label": "Advanced Expense Request",
+    "link_to": "Advanced Expense Request",
+    "type": "DocType"
+   },
+   {
+    "label": "Purchase Invoice",
+    "link_to": "Purchase Invoice",
+    "type": "DocType"
+   },
+   {
+    "label": "Payment Entry",
+    "link_to": "Payment Entry",
+    "type": "DocType"
+   },
+   {
+    "label": "Administrative Payment Voucher",
+    "link_to": "Administrative Payment Voucher",
+    "type": "DocType"
+   },
+   {
+    "label": "Expense Claim",
+    "link_to": "Expense Claim",
+    "type": "DocType"
+   },
+   {
+    "label": "Expense Approval Setting",
+    "link_to": "Expense Approval Setting",
+    "type": "DocType"
+   },
+   {
+    "label": "Advance Payment Dashboard",
+    "link_to": "Advance Payment Dashboard",
+    "type": "Report"
+   },
+   {
+    "label": "Outstanding Approvals Dashboard",
+    "link_to": "Outstanding Approvals Dashboard",
+    "type": "Report"
+   },
+   {
+    "label": "Budget",
+    "link_to": "Budget",
+    "type": "DocType"
+   },
+   {
+    "label": "Budget Control Entry",
+    "link_to": "Budget Control Entry",
+    "type": "DocType"
+   },
+   {
+    "label": "Budget Reclass Request",
+    "link_to": "Budget Reclass Request",
+    "type": "DocType"
+   },
+   {
+    "label": "Additional Budget Request",
+    "link_to": "Additional Budget Request",
+    "type": "DocType"
+   },
+   {
+    "label": "Budget Control Settings",
+    "link_to": "Budget Control Settings",
+    "type": "DocType"
+   },
+   {
+    "label": "Budget Approval Setting",
+    "link_to": "Budget Approval Setting",
+    "type": "DocType"
+   },
+   {
+    "label": "Budget Control Dashboard",
+    "link_to": "Budget Control Dashboard",
+    "type": "Report"
+   },
+   {
+    "label": "Deferred Expense Tracker",
+    "link_to": "Deferred Expense Tracker",
+    "type": "Report"
+   },
+   {
+    "label": "Internal Charge Request",
+    "link_to": "Internal Charge Request",
+    "type": "DocType"
+   },
+   {
+    "label": "Cash Bank Daily Report",
+    "link_to": "Cash Bank Daily Report",
+    "type": "DocType"
+   },
+   {
+    "label": "Tax Period Closing",
+    "link_to": "Tax Period Closing",
+    "type": "DocType"
+   },
+   {
+    "label": "Tax Payment Batch",
+    "link_to": "Tax Payment Batch",
+    "type": "DocType"
+   },
+   {
+    "label": "Tax Profile",
+    "link_to": "Tax Profile",
+    "type": "DocType"
+   },
+   {
+    "label": "Tax Invoice OCR Settings",
+    "link_to": "Tax Invoice OCR Settings",
+    "type": "DocType"
+   },
+   {
+    "label": "Tax Invoice Type",
+    "link_to": "Tax Invoice Type",
+    "type": "DocType"
+   },
+   {
+    "label": "Tax Invoice OCR Monitoring",
+    "link_to": "Tax Invoice OCR Monitoring",
+    "type": "DocType"
+   },
+   {
+    "label": "Tax Invoice OCR Upload",
+    "link_to": "Tax Invoice OCR Upload",
+    "type": "DocType"
+   },
+   {
+    "label": "Tax Invoice Upload",
+    "link_to": "Tax Invoice Upload",
+    "type": "DocType"
+   },
+   {
+    "label": "VAT OUT Batch",
+    "link_to": "VAT OUT Batch",
+    "type": "DocType"
+   },
+   {
+    "label": "CoreTax Export Settings",
+    "link_to": "CoreTax Export Settings",
+    "type": "DocType"
+   },
+   {
+    "label": "VAT Input Register Verified",
+    "link_to": "VAT Input Register Verified",
+    "type": "Report"
+   },
+   {
+    "label": "VAT Output Register Verified",
+    "link_to": "VAT Output Register Verified",
+    "type": "Report"
+   },
+   {
+    "label": "Withholding Register",
+    "link_to": "Withholding Register",
+    "type": "Report"
+   },
+   {
+    "label": "PB1 Register",
+    "link_to": "PB1 Register",
+    "type": "Report"
+   },
+   {
+    "label": "BPJS Contribution Summary",
+    "link_to": "BPJS Contribution Summary",
+    "type": "Report"
+   },
+   {
+    "label": "VAT OUT Batch Register",
+    "link_to": "VAT OUT Batch Register",
+    "type": "Report"
+   },
+   {
+    "label": "Finance Control Settings",
+    "link_to": "Finance Control Settings",
+    "type": "DocType"
+   },
+   {
+    "label": "Bank Statement Bank List",
+    "link_to": "Bank Statement Bank List",
+    "type": "DocType"
+   },
+   {
+    "label": "Receipt Design",
+    "link_to": "Receipt Design",
+    "type": "DocType"
+   },
+   {
+    "label": "Letter Template Settings",
+    "link_to": "Letter Template Settings",
+    "type": "DocType"
+   },
+   {
+    "label": "Letter Template",
+    "link_to": "Letter Template",
+    "type": "DocType"
+   },
+   {
+    "label": "Digital Stamp Template",
+    "link_to": "Digital Stamp Template",
+    "type": "DocType"
+   },
+   {
+    "label": "Digital Stamp Expense Report",
+    "link_to": "Digital Stamp Expense Report",
+    "type": "Report"
+   },
+   {
+    "label": "Expense Deferred Settings",
+    "link_to": "Expense Deferred Settings",
+    "type": "DocType"
+   },
+   {
+    "label": "Customer Receipt",
+    "link_to": "Customer Receipt",
+    "type": "DocType"
+   },
+   {
+    "label": "Customer Receipt Control Report",
+    "link_to": "Customer Receipt Control Report",
+    "type": "Report"
+   },
+   {
+    "label": "Transfer Application",
+    "link_to": "Transfer Application",
+    "type": "DocType"
+   },
+   {
+    "label": "Transfer Application Settings",
+    "link_to": "Transfer Application Settings",
+    "type": "DocType"
+   },
+   {
+    "label": "Bank Account",
+    "link_to": "Bank Account",
+    "type": "DocType"
+   },
+   {
+    "label": "Bank Statement Import",
+    "link_to": "Bank Statement Import",
+    "type": "DocType"
+   },
+   {
+    "label": "Bank Transaction",
+    "link_to": "Bank Transaction",
+    "type": "DocType"
+   }
+  ],
+  "title": "FINANCE IMOGI",
+  "type": null
+ }
 ]

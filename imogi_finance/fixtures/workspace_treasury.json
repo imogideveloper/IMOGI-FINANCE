@@ -1,143 +1,121 @@
 [
-  {
-    "doctype": "Workspace",
-    "name": "Treasury & Payments",
-    "title": "Treasury & Payments",
-    "label": "Treasury & Payments",
-    "parent_workspace": "FINANCE IMOGI",
-    "type": "Workspace",
-    "icon": "piggy-bank",
-    "module": "Imogi Finance",
-    "public": 1,
-    "sequence": 5,
-    "is_hidden": 0,
-    "hide_custom": 0,
-    "content_type": "Blocks",
-    "content": "[{\"id\": \"hdr_liq\", \"type\": \"header\", \"data\": {\"text\": \"Liquidity Management\", \"col\": 12}}, {\"id\": \"s_ba\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Account\", \"col\": 3}}, {\"id\": \"s_bt\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Transaction\", \"col\": 3}}, {\"id\": \"s_cbdr\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Cash Bank Daily Report\", \"col\": 3}}, {\"id\": \"s_brt\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Reconciliation Tool\", \"col\": 3}}, {\"id\": \"spacer_payment\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_payment\", \"type\": \"header\", \"data\": {\"text\": \"Payment Operations\", \"col\": 12}}, {\"id\": \"s_ta\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transfer Application\", \"col\": 3}}, {\"id\": \"s_pe\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Payment Entry\", \"col\": 3}}, {\"id\": \"s_pr\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Payment Request\", \"col\": 3}}, {\"id\": \"s_prec\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Payment Reconciliation\", \"col\": 3}}, {\"id\": \"s_tas\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transfer Application Settings\", \"col\": 3}}, {\"id\": \"spacer_bank\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_bank\", \"type\": \"header\", \"data\": {\"text\": \"Banking & Statement Import\", \"col\": 12}}, {\"id\": \"s_bsi\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Statement Import\", \"col\": 3}}, {\"id\": \"s_bcabsi\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"BCA Bank Statement Import\", \"col\": 3}}, {\"id\": \"s_bsbl\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Statement Bank List\", \"col\": 3}}, {\"id\": \"s_bsbfa\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Statement Field Alias\", \"col\": 3}}, {\"id\": \"s_bc\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Clearance\", \"col\": 3}}, {\"id\": \"spacer_advance\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_advance\", \"type\": \"header\", \"data\": {\"text\": \"Advance Payment Tracking\", \"col\": 12}}, {\"id\": \"s_ple\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Payment Ledger Entry\", \"col\": 3}}, {\"id\": \"s_er\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Expense Request\", \"col\": 3}}, {\"id\": \"s_apd\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Advance Payment Dashboard\", \"col\": 3}}, {\"id\": \"spacer_ic\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_ic\", \"type\": \"header\", \"data\": {\"text\": \"Inter-Company Transfers\", \"col\": 12}}, {\"id\": \"s_je\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Journal Entry\", \"col\": 3}}, {\"id\": \"spacer_loan\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_loan\", \"type\": \"header\", \"data\": {\"text\": \"Borrowing & Lending\", \"col\": 12}}, {\"id\": \"s_loan\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Loan\", \"col\": 3}}, {\"id\": \"s_loandisp\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Loan Disbursement\", \"col\": 3}}, {\"id\": \"s_loansec\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Loan Security\", \"col\": 3}}, {\"id\": \"spacer_config\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_config\", \"type\": \"header\", \"data\": {\"text\": \"Treasury Configuration\", \"col\": 12}}, {\"id\": \"s_tabac\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transfer Application Bank API Config\", \"col\": 3}}, {\"id\": \"s_fcs\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Finance Control Settings\", \"col\": 3}}]",
-    "shortcuts": [
-      {
-        "label": "Bank Account",
-        "link_to": "Bank Account",
-        "type": "DocType"
-      },
-
-      {
-        "label": "Bank Transaction",
-        "link_to": "Bank Transaction",
-        "type": "DocType"
-      },
-      {
-        "label": "Cash Bank Daily Report",
-        "link_to": "Cash Bank Daily Report",
-        "type": "DocType"
-      },
-      {
-        "label": "Bank Reconciliation Tool",
-        "link_to": "Bank Reconciliation Tool",
-        "type": "DocType"
-      },
-      {
-        "label": "Transfer Application",
-        "link_to": "Transfer Application",
-        "type": "DocType"
-      },
-      {
-        "label": "Payment Entry",
-        "link_to": "Payment Entry",
-        "type": "DocType"
-      },
-      {
-        "label": "Payment Request",
-        "link_to": "Payment Request",
-        "type": "DocType"
-      },
-      {
-        "label": "Payment Reconciliation",
-        "link_to": "Payment Reconciliation",
-        "type": "DocType"
-      },
-      {
-        "label": "Transfer Application Settings",
-        "link_to": "Transfer Application Settings",
-        "type": "DocType"
-      },
-      {
-        "label": "Bank Statement Import",
-        "link_to": "Bank Statement Import",
-        "type": "DocType"
-      },
-      {
-        "label": "BCA Bank Statement Import",
-        "link_to": "BCA Bank Statement Import",
-        "type": "DocType"
-      },
-      {
-        "label": "Bank Statement Bank List",
-        "link_to": "Bank Statement Bank List",
-        "type": "DocType"
-      },
-      {
-        "label": "Bank Statement Field Alias",
-        "link_to": "Bank Statement Field Alias",
-        "type": "DocType"
-      },
-      {
-        "label": "Bank Clearance",
-        "link_to": "Bank Clearance",
-        "type": "DocType"
-      },
-      {
-        "label": "Payment Ledger Entry",
-        "link_to": "Payment Ledger Entry",
-        "type": "DocType"
-      },
-      {
-        "label": "Expense Request",
-        "link_to": "Expense Request",
-        "type": "DocType"
-      },
-      {
-        "label": "Advance Payment Dashboard",
-        "link_to": "Advance Payment Dashboard",
-        "type": "Report"
-      },
-      {
-        "label": "Journal Entry",
-        "link_to": "Journal Entry",
-        "type": "DocType"
-      },
-      {
-        "label": "Loan",
-        "link_to": "Loan",
-        "type": "DocType"
-      },
-      {
-        "label": "Loan Disbursement",
-        "link_to": "Loan Disbursement",
-        "type": "DocType"
-      },
-
-      {
-        "label": "Loan Security",
-        "link_to": "Loan Security",
-        "type": "DocType"
-      },
-      {
-        "label": "Transfer Application Bank API Config",
-        "link_to": "Transfer Application Bank API Config",
-        "type": "DocType"
-      },
-      {
-        "label": "Finance Control Settings",
-        "link_to": "Finance Control Settings",
-        "type": "DocType"
-      }
-    ],
-    "cards": [],
-    "custom_blocks": [],
-    "links": [],
-    "charts": [],
-    "quick_lists": [],
-    "number_cards": []
-  }
+ {
+  "doctype": "Workspace",
+  "name": "Treasury & Payments",
+  "title": "Treasury & Payments",
+  "label": "Treasury & Payments",
+  "parent_workspace": "FINANCE IMOGI",
+  "type": "Workspace",
+  "icon": "piggy-bank",
+  "module": "Imogi Finance",
+  "public": 1,
+  "sequence": 5,
+  "is_hidden": 0,
+  "hide_custom": 0,
+  "content_type": "Blocks",
+  "content": "[{\"id\": \"hdr_liq\", \"type\": \"header\", \"data\": {\"text\": \"Liquidity Management\", \"col\": 12}}, {\"id\": \"s_ba\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Account\", \"col\": 3}}, {\"id\": \"s_bt\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Transaction\", \"col\": 3}}, {\"id\": \"s_cbdr\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Cash Bank Daily Report\", \"col\": 3}}, {\"id\": \"s_brt\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Reconciliation Tool\", \"col\": 3}}, {\"id\": \"spacer_payment\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_payment\", \"type\": \"header\", \"data\": {\"text\": \"Payment Operations\", \"col\": 12}}, {\"id\": \"s_ta\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transfer Application\", \"col\": 3}}, {\"id\": \"s_pe\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Payment Entry\", \"col\": 3}}, {\"id\": \"s_pr\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Payment Request\", \"col\": 3}}, {\"id\": \"s_prec\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Payment Reconciliation\", \"col\": 3}}, {\"id\": \"s_tas\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transfer Application Settings\", \"col\": 3}}, {\"id\": \"spacer_bank\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_bank\", \"type\": \"header\", \"data\": {\"text\": \"Banking & Statement Import\", \"col\": 12}}, {\"id\": \"s_bsi\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Statement Import\", \"col\": 3}}, {\"id\": \"s_bsbl\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Statement Bank List\", \"col\": 3}}, {\"id\": \"s_bsbfa\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Statement Field Alias\", \"col\": 3}}, {\"id\": \"s_bc\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Clearance\", \"col\": 3}}, {\"id\": \"spacer_advance\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_advance\", \"type\": \"header\", \"data\": {\"text\": \"Advance Payment Tracking\", \"col\": 12}}, {\"id\": \"s_ple\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Payment Ledger Entry\", \"col\": 3}}, {\"id\": \"s_er\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Expense Request\", \"col\": 3}}, {\"id\": \"s_apd\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Advance Payment Dashboard\", \"col\": 3}}, {\"id\": \"spacer_ic\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_ic\", \"type\": \"header\", \"data\": {\"text\": \"Inter-Company Transfers\", \"col\": 12}}, {\"id\": \"s_je\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Journal Entry\", \"col\": 3}}, {\"id\": \"spacer_loan\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_loan\", \"type\": \"header\", \"data\": {\"text\": \"Borrowing & Lending\", \"col\": 12}}, {\"id\": \"spacer_config\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"hdr_config\", \"type\": \"header\", \"data\": {\"text\": \"Treasury Configuration\", \"col\": 12}}, {\"id\": \"s_tabac\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Transfer Application Bank API Config\", \"col\": 3}}, {\"id\": \"s_fcs\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Finance Control Settings\", \"col\": 3}}]",
+  "shortcuts": [
+   {
+    "label": "Bank Account",
+    "link_to": "Bank Account",
+    "type": "DocType"
+   },
+   {
+    "label": "Bank Transaction",
+    "link_to": "Bank Transaction",
+    "type": "DocType"
+   },
+   {
+    "label": "Cash Bank Daily Report",
+    "link_to": "Cash Bank Daily Report",
+    "type": "DocType"
+   },
+   {
+    "label": "Bank Reconciliation Tool",
+    "link_to": "Bank Reconciliation Tool",
+    "type": "DocType"
+   },
+   {
+    "label": "Transfer Application",
+    "link_to": "Transfer Application",
+    "type": "DocType"
+   },
+   {
+    "label": "Payment Entry",
+    "link_to": "Payment Entry",
+    "type": "DocType"
+   },
+   {
+    "label": "Payment Request",
+    "link_to": "Payment Request",
+    "type": "DocType"
+   },
+   {
+    "label": "Payment Reconciliation",
+    "link_to": "Payment Reconciliation",
+    "type": "DocType"
+   },
+   {
+    "label": "Transfer Application Settings",
+    "link_to": "Transfer Application Settings",
+    "type": "DocType"
+   },
+   {
+    "label": "Bank Statement Import",
+    "link_to": "Bank Statement Import",
+    "type": "DocType"
+   },
+   {
+    "label": "Bank Statement Bank List",
+    "link_to": "Bank Statement Bank List",
+    "type": "DocType"
+   },
+   {
+    "label": "Bank Statement Field Alias",
+    "link_to": "Bank Statement Field Alias",
+    "type": "DocType"
+   },
+   {
+    "label": "Bank Clearance",
+    "link_to": "Bank Clearance",
+    "type": "DocType"
+   },
+   {
+    "label": "Payment Ledger Entry",
+    "link_to": "Payment Ledger Entry",
+    "type": "DocType"
+   },
+   {
+    "label": "Expense Request",
+    "link_to": "Expense Request",
+    "type": "DocType"
+   },
+   {
+    "label": "Advance Payment Dashboard",
+    "link_to": "Advance Payment Dashboard",
+    "type": "Report"
+   },
+   {
+    "label": "Journal Entry",
+    "link_to": "Journal Entry",
+    "type": "DocType"
+   },
+   {
+    "label": "Transfer Application Bank API Config",
+    "link_to": "Transfer Application Bank API Config",
+    "type": "DocType"
+   },
+   {
+    "label": "Finance Control Settings",
+    "link_to": "Finance Control Settings",
+    "type": "DocType"
+   }
+  ],
+  "cards": [],
+  "custom_blocks": [],
+  "links": [],
+  "charts": [],
+  "quick_lists": [],
+  "number_cards": []
+ }
 ]
